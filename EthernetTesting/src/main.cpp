@@ -8,7 +8,7 @@ IPAddress gateway(192, 168, 8, 1);
 IPAddress subnet(255, 255, 255, 0);
 
 // Laptop running Mosquitto
-IPAddress mqttServer(192, 168, 8, 107);
+IPAddress mqttServer(192, 168, 8, 134);
 
 // Ethernet MAC
 byte mac[] = { 0x04, 0xE9, 0xE5, 0x12, 0x34, 0x56 };
@@ -19,13 +19,14 @@ PubSubClient client(ethClient);
 
 //Function called when data is received from the teensy due to subscription
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (unsigned int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
+  String message;
+  for (int i = 0; i < length; i++){
+    message += (char)payload[i];
   }
-  Serial.println();
+  if (message == "ping"){
+    Serial.print("Current baud rate: ");
+    Serial.println(Serial.baud());
+  }
 }
 
 void reconnect() {
