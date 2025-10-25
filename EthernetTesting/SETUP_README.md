@@ -16,7 +16,7 @@ password: H0tFire!
 
 ## 2. Start Mosquitto Broker
 
-If not done, add Mosquitto to your path ENVIRONMENT VARIABLE. (probably similar to C:\Program Files\mosquitto)
+If not done, add Mosquitto to your path ENVIRONMENT VARIABLE (probably similar to C:\Program Files\mosquitto) to be able to run it from the command line.
 
 ### Default configuration
 
@@ -37,16 +37,25 @@ Once the MQTT broker gets started, connect your MQTT Explorer to it.
 
 In `main.cpp` make sure that if the Teensy tries to start an MQTT server that the correct IP address is used.
 It will look like `IPAddress mqttServer(w, x, y, z);`. If you do need to go get the IP,
-navigate to `192.168.8.1` in your browser (password: H0tFire!) and locate your device's MAC address, which is the address that you will use to start the MQTT server.
+navigate to `192.168.8.1` in your browser, while connected to MRT-GS (password: H0tFire!), and locate your device's MAC address, which is the address that you will use to start the MQTT server.
 
 Protocol: mqtt://  
 Host: localhost (or your server IP)  
 Port: 1883 (default)
 
-Need to verify that your firewall is not blocking connection attempts
+Need to verify that your firewall is not blocking connection attempts.
 
 ## 4. Setup Teensy 4.1
 
 1. Connect teensy 4.1 physically to modem LAN port
 2. Push main.cpp into teensy 4.1
 3. Monitor result in the serial monitor
+
+## Publish from command line to Teensy
+
+From your active Mosquitto server, you can manually publish content to any topic.
+Simply run
+
+```bash
+mosquitto_pub -h <broker_ip> -t "test/topic" -m "Hello Teensy!"
+```
