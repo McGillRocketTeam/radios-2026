@@ -1,0 +1,6 @@
+
+.clang-tidy
+.idea/editor.xml
+/.idea
+/TelemetryPackets/.idea
+TestPacket.exe
