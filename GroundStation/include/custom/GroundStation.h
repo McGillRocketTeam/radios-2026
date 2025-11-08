@@ -3,9 +3,8 @@
 #include "RadioParams.h"
 #include "RadioModule.h"
 #include "CommandParser.h"
-#include "PacketController.h"
+#include "frame_view.h"
 #include "IntervalTimer.h"
-#include <PacketPrinter.h>
 
 /**
  * @class GroundStation
@@ -222,7 +221,7 @@ private:
     CommandParser* commandParser;
 
     /// Pointer to current packet controller for received packet
-    PacketController* currentPacketController;
+    FrameView* currentFrameView;
 
     /// Currently active radio parameters
     RadioParams currentParams;
