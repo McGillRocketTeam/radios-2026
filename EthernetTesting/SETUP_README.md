@@ -59,3 +59,11 @@ Simply run
 ```bash
 mosquitto_pub -h <broker_ip> -t "test/topic" -m "Hello Teensy!"
 ```
+
+# Possible issues with setting up tx-rx-mqtt
+
+You may run into Build issues when building the tx and the rx code in preparation for uploading.
+If `NativeEthernet.h` is not found, run `git submodule update --init --recursive` as NativeEthernet is actually defined
+in .gitmodules. Remove NativeEthernet from lib_deps if it is there. `Clean` then `Build` in PlatformIO.
+
+The setup that was used in testing was (Teensy 4.0 tx) -> (Teensy 4.1 rx + MQTT publish)
