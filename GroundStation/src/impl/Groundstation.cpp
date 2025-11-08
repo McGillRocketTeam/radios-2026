@@ -1,650 +1,650 @@
-#include "GroundStation.h"
-#include <ConsoleRouter.h>
-#include <LoggerGS.h>
+// #include "GroundStation.h"
+// #include <ConsoleRouter.h>
+// #include <LoggerGS.h>
 
-volatile bool GroundStation::commandParserFlag = false;
+// volatile bool GroundStation::commandParserFlag = false;
 
-GroundStation::GroundStation()
-    : radioModule(new RadioModule()),
-      commandParser(new CommandParser()),
-      currentPacketController(new PacketController()),
-      awaitingAck(false),
-      enableTXFromCTS(ENABLE_RADIO_TX)
-{
-    currentParams.freq = radioModule->getFreq();
-    currentParams.bw = radioModule->getBandwidth();
-    currentParams.cr = radioModule->getCodingRate();
-    currentParams.sf = radioModule->getSpreadingFactor();
-    currentParams.pow = radioModule->getPowerOutput();
-}
+// GroundStation::GroundStation()
+//     : radioModule(new RadioModule()),
+//       commandParser(new CommandParser()),
+//       currentPacketController(new PacketController()),
+//       awaitingAck(false),
+//       enableTXFromCTS(ENABLE_RADIO_TX)
+// {
+//     currentParams.freq = radioModule->getFreq();
+//     currentParams.bw = radioModule->getBandwidth();
+//     currentParams.cr = radioModule->getCodingRate();
+//     currentParams.sf = radioModule->getSpreadingFactor();
+//     currentParams.pow = radioModule->getPowerOutput();
+// }
 
-GroundStation::~GroundStation()
-{
-    delete radioModule;
-    delete commandParser;
-    delete currentPacketController;
-}
+// GroundStation::~GroundStation()
+// {
+//     delete radioModule;
+//     delete commandParser;
+//     delete currentPacketController;
+// }
 
-GroundStation *GroundStation::getInstance()
-{
-    if (instance == nullptr)
-    {
-        instance = new GroundStation();
-    }
-    return instance;
-}
+// GroundStation *GroundStation::getInstance()
+// {
+//     if (instance == nullptr)
+//     {
+//         instance = new GroundStation();
+//     }
+//     return instance;
+// }
 
-void GroundStation::initialise()
-{
+// void GroundStation::initialise()
+// {
 
-    startCommandParser();
-    startAsyncReceive();
-    LOGGING(DEBUG_GS, "Ground station initialised, ready to receive commands via radio and console");
-}
+//     startCommandParser();
+//     startAsyncReceive();
+//     LOGGING(DEBUG_GS, "Ground station initialised, ready to receive commands via radio and console");
+// }
 
-RadioModule *GroundStation::getRadioModule()
-{
-    return radioModule;
-}
+// RadioModule *GroundStation::getRadioModule()
+// {
+//     return radioModule;
+// }
 
-void GroundStation::startCommandParser()
-{
-    commandParserTimer.begin(raiseCommandParserFlag, 10000);
-}
+// void GroundStation::startCommandParser()
+// {
+//     commandParserTimer.begin(raiseCommandParserFlag, 10000);
+// }
 
-void GroundStation::startAsyncReceive()
-{
-    radioModule->receiveMode();
-}
+// void GroundStation::startAsyncReceive()
+// {
+//     radioModule->receiveMode();
+// }
 
-RadioParams GroundStation::getCurrentRadioParams()
-{
-    return currentParams;
-}
+// RadioParams GroundStation::getCurrentRadioParams()
+// {
+//     return currentParams;
+// }
 
-void GroundStation::matchCurrentRadioParamsWithRadioModule()
-{
-    currentParams.freq = radioModule->getFreq();
-    currentParams.bw = radioModule->getBandwidth();
-    currentParams.cr = radioModule->getCodingRate();
-    currentParams.sf = radioModule->getSpreadingFactor();
-    currentParams.pow = radioModule->getPowerOutput();
-}
+// void GroundStation::matchCurrentRadioParamsWithRadioModule()
+// {
+//     currentParams.freq = radioModule->getFreq();
+//     currentParams.bw = radioModule->getBandwidth();
+//     currentParams.cr = radioModule->getCodingRate();
+//     currentParams.sf = radioModule->getSpreadingFactor();
+//     currentParams.pow = radioModule->getPowerOutput();
+// }
 
-void GroundStation::printPacketToGui(PacketController *packetController)
-{
-    if (!LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT))
-    {
-        return;
-    }
-    if (packetController->getType() == TelemetryPacketType::PACKET_1)
-    {
-        PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket1(), packetController);
-    }
-    else if (packetController->getType() == TelemetryPacketType::PACKET_2)
-    {
-        PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket2(), packetController);
-    }
-    else if (packetController->getType() == TelemetryPacketType::PACKET_3)
-    {
-        PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket3(), packetController);
-    }
-    else if (packetController->getType() == TelemetryPacketType::PACKET_4)
-    {
-        PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket4(), packetController);
-    }
-    else if (packetController->getType() == TelemetryPacketType::ACK)
-    {
-        PacketPrinter::ack_to_serial(packetController->getAckText(), strlen(packetController->getAckText()));
-    }
-    else if (packetController->getType() == TelemetryPacketType::PLAIN_TEXT)
-    {
-        //Never send non telemtry to the GUI inside of handle non telemtry there is already a debug print
-        //Just pass this case
-    }
-    else
-    {
-        LOGGING(DEBUG_GS,"Error when print to gui packet");
-    }
-}
+// void GroundStation::printPacketToGui(PacketController *packetController)
+// {
+//     if (!LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT))
+//     {
+//         return;
+//     }
+//     if (packetController->getType() == TelemetryPacketType::PACKET_1)
+//     {
+//         PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket1(), packetController);
+//     }
+//     else if (packetController->getType() == TelemetryPacketType::PACKET_2)
+//     {
+//         PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket2(), packetController);
+//     }
+//     else if (packetController->getType() == TelemetryPacketType::PACKET_3)
+//     {
+//         PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket3(), packetController);
+//     }
+//     else if (packetController->getType() == TelemetryPacketType::PACKET_4)
+//     {
+//         PacketPrinter::packet_to_serial_variable_length(&packetController->getPacket4(), packetController);
+//     }
+//     else if (packetController->getType() == TelemetryPacketType::ACK)
+//     {
+//         PacketPrinter::ack_to_serial(packetController->getAckText(), strlen(packetController->getAckText()));
+//     }
+//     else if (packetController->getType() == TelemetryPacketType::PLAIN_TEXT)
+//     {
+//         //Never send non telemtry to the GUI inside of handle non telemtry there is already a debug print
+//         //Just pass this case
+//     }
+//     else
+//     {
+//         LOGGING(DEBUG_GS,"Error when print to gui packet");
+//     }
+// }
 
-void GroundStation::handleRadioCommand()
-{
-    String radioCommand;
-    if (commandParser->getNextRadioCommand(radioCommand))
-    {
-        implementRadioParamCommand(radioCommand);
-    }
-}
+// void GroundStation::handleRadioCommand()
+// {
+//     String radioCommand;
+//     if (commandParser->getNextRadioCommand(radioCommand))
+//     {
+//         implementRadioParamCommand(radioCommand);
+//     }
+// }
 
-void GroundStation::handleReceivedPacket()
-{
-    // Assuming that we are already in receive mode check if we have an interupt raised
-    if (radioModule->checkInterruptReceived())
-    {
-        // readReceivedPacket will update the current packet variable and return it
-        PacketController *latestReadPacketController = readReceivedPacket();
-        printPacketToGui(latestReadPacketController);
+// void GroundStation::handleReceivedPacket()
+// {
+//     // Assuming that we are already in receive mode check if we have an interupt raised
+//     if (radioModule->checkInterruptReceived())
+//     {
+//         // readReceivedPacket will update the current packet variable and return it
+//         PacketController *latestReadPacketController = readReceivedPacket();
+//         printPacketToGui(latestReadPacketController);
 
-        if (awaitingAck)
-        {
-            // Got something under the new params: accept them as current
-            paramRevertTimer.end();
-            oldParams = currentParams;
-            awaitingAck = false;
-            Console.println("New params confirmed by traffic.");
-            LOGGING(DEBUG_GS,"Sending nops to confirm traffic with FC");
-            sendRocketCommand("nop");
-            delay(50);
-            radioModule->receiveMode();
-        }
+//         if (awaitingAck)
+//         {
+//             // Got something under the new params: accept them as current
+//             paramRevertTimer.end();
+//             oldParams = currentParams;
+//             awaitingAck = false;
+//             Console.println("New params confirmed by traffic.");
+//             LOGGING(DEBUG_GS,"Sending nops to confirm traffic with FC");
+//             sendRocketCommand("nop");
+//             delay(50);
+//             radioModule->receiveMode();
+//         }
 
-        // Check the CTS flag and if we want to be able to transmit
-        if (latestReadPacketController->checkCTS() && enableTXFromCTS)
-        {
-            // With the CTS flag we know to send another command to the rocket,
-            handleRocketCommand();
-        }
-    }
-}
+//         // Check the CTS flag and if we want to be able to transmit
+//         if (latestReadPacketController->checkCTS() && enableTXFromCTS)
+//         {
+//             // With the CTS flag we know to send another command to the rocket,
+//             handleRocketCommand();
+//         }
+//     }
+// }
 
-void GroundStation::handleRocketCommand()
-{
-    String rocketCommand = "nop";
-    commandParser->getNextRocketCommand(rocketCommand);
+// void GroundStation::handleRocketCommand()
+// {
+//     String rocketCommand = "nop";
+//     commandParser->getNextRocketCommand(rocketCommand);
 
-    // Check for our magic “change param” command:
-    const String prefix = "change param ";
-    if (rocketCommand.startsWith(prefix))
-    {
-        handleRocketRadioParamChange(rocketCommand, prefix);
-    }
-    else
-    {
-        // Otherwise normal send:
-        sendRocketCommand(rocketCommand);
-    }
-}
+//     // Check for our magic “change param” command:
+//     const String prefix = "change param ";
+//     if (rocketCommand.startsWith(prefix))
+//     {
+//         handleRocketRadioParamChange(rocketCommand, prefix);
+//     }
+//     else
+//     {
+//         // Otherwise normal send:
+//         sendRocketCommand(rocketCommand);
+//     }
+// }
 
-void GroundStation::handleRocketRadioParamChange(String rocketRadioParamChangeCommand, String rocketRadioChangePrefix)
-{
-    // Grab the part after the prefix
-    String nums = rocketRadioParamChangeCommand.substring(rocketRadioChangePrefix.length());
-    // e.g. "903,7,125,8"
-    // change param 433 8 125 8 (freq,sf,bw,cr)
+// void GroundStation::handleRocketRadioParamChange(String rocketRadioParamChangeCommand, String rocketRadioChangePrefix)
+// {
+//     // Grab the part after the prefix
+//     String nums = rocketRadioParamChangeCommand.substring(rocketRadioChangePrefix.length());
+//     // e.g. "903,7,125,8"
+//     // change param 433 8 125 8 (freq,sf,bw,cr)
 
-    // Split on spaces
-    float parts[4] = {0};
-    int idx = 0;
-    int start = 0;
-    while (idx < 4)
-    {
-        int comma = nums.indexOf(' ', start);
-        String token;
-        if (comma == -1)
-        {
-            token = nums.substring(start);
-        }
-        else
-        {
-            token = nums.substring(start, comma);
-        }
-        parts[idx++] = token.toFloat();
-        if (comma == -1)
-            break;
-        start = comma + 1;
-    }
-    if (idx != 4)
-    {
-        LOGGING(DEBUG_GS, "Invalid change param format; expect four space separated values");
-        return;
-    }
+//     // Split on spaces
+//     float parts[4] = {0};
+//     int idx = 0;
+//     int start = 0;
+//     while (idx < 4)
+//     {
+//         int comma = nums.indexOf(' ', start);
+//         String token;
+//         if (comma == -1)
+//         {
+//             token = nums.substring(start);
+//         }
+//         else
+//         {
+//             token = nums.substring(start, comma);
+//         }
+//         parts[idx++] = token.toFloat();
+//         if (comma == -1)
+//             break;
+//         start = comma + 1;
+//     }
+//     if (idx != 4)
+//     {
+//         LOGGING(DEBUG_GS, "Invalid change param format; expect four space separated values");
+//         return;
+//     }
 
-    // Save old, set pending (leave power unchanged)
-    oldParams = currentParams;
+//     // Save old, set pending (leave power unchanged)
+//     oldParams = currentParams;
 
-    currentParams.freq = (parts[0]);
-    currentParams.sf = static_cast<int>(parts[1]);
-    currentParams.bw = (parts[2]);
-    currentParams.cr = static_cast<int>(parts[3]);
+//     currentParams.freq = (parts[0]);
+//     currentParams.sf = static_cast<int>(parts[1]);
+//     currentParams.bw = (parts[2]);
+//     currentParams.cr = static_cast<int>(parts[3]);
 
-    // New Lora Params (FREQ=W (uint32_t), SF=X (uint8_t), BW=Y (uint8_t), CR=Z (uint8_t)
-    uint8_t buf[9];
-    buf[0] = 'r';
-    buf[1] = 'l';
-    buf[2] = static_cast<uint8_t>(parts[1]); // SF
-    buf[3] = toLoraBwEnum(parts[2]); // Convert BW from GS MHz format to rocket enum format
+//     // New Lora Params (FREQ=W (uint32_t), SF=X (uint8_t), BW=Y (uint8_t), CR=Z (uint8_t)
+//     uint8_t buf[9];
+//     buf[0] = 'r';
+//     buf[1] = 'l';
+//     buf[2] = static_cast<uint8_t>(parts[1]); // SF
+//     buf[3] = toLoraBwEnum(parts[2]); // Convert BW from GS MHz format to rocket enum format
 
-    uint32_t freq_hz = static_cast<uint32_t>(parts[0] * 1e6); // Convert MHz to Hz
-    memcpy(&buf[4], &freq_hz, 4);                             // Little endian assumed
+//     uint32_t freq_hz = static_cast<uint32_t>(parts[0] * 1e6); // Convert MHz to Hz
+//     memcpy(&buf[4], &freq_hz, 4);                             // Little endian assumed
 
-    buf[8] = toLoraCrEnum(parts[3]); // Convert CR from GS format to rocket enum format
+//     buf[8] = toLoraCrEnum(parts[3]); // Convert CR from GS format to rocket enum format
 
-    sendSerialisedRocketCommand(buf, 9);
+//     sendSerialisedRocketCommand(buf, 9);
 
-    LOGGING(DEBUG_GS, "Sending a ROCKET RADIO PARAM CHANGE command");
+//     LOGGING(DEBUG_GS, "Sending a ROCKET RADIO PARAM CHANGE command");
 
-    applyParams(currentParams);
+//     applyParams(currentParams);
 
-    // Tell the GUI of the theoretical new params if we fail we resend in revertParams
-    printRadioParamsToGui();
-    // Arm the revert timer:
-    awaitingAck = true;
-    paramRevertTimer.begin([]()
-                           { GroundStation::getInstance()->revertParams(); }, 10000000); // 10 000 000 µs == 5 s
-    return;
-}
+//     // Tell the GUI of the theoretical new params if we fail we resend in revertParams
+//     printRadioParamsToGui();
+//     // Arm the revert timer:
+//     awaitingAck = true;
+//     paramRevertTimer.begin([]()
+//                            { GroundStation::getInstance()->revertParams(); }, 10000000); // 10 000 000 µs == 5 s
+//     return;
+// }
 
-void GroundStation::getQueueStatus()
-{
-    commandParser->printRadioQueueStatus();
-    commandParser->printRocketQueueStatus();
-}
+// void GroundStation::getQueueStatus()
+// {
+//     commandParser->printRadioQueueStatus();
+//     commandParser->printRocketQueueStatus();
+// }
 
-void GroundStation::setEnableTXFromCTS(bool enable)
-{
-    enableTXFromCTS = enable;
-}
+// void GroundStation::setEnableTXFromCTS(bool enable)
+// {
+//     enableTXFromCTS = enable;
+// }
 
-void GroundStation::raiseCommandParserFlag()
-{
-    commandParserFlag = true;
-}
+// void GroundStation::raiseCommandParserFlag()
+// {
+//     commandParserFlag = true;
+// }
 
-void GroundStation::handleCommandParserUpdate()
-{
-    if (commandParserFlag)
-    {
-        commandParserFlag = false;
-        commandParser->update();
-    }
-}
+// void GroundStation::handleCommandParserUpdate()
+// {
+//     if (commandParserFlag)
+//     {
+//         commandParserFlag = false;
+//         commandParser->update();
+//     }
+// }
 
-void GroundStation::applyParams(const RadioParams rp)
-{
-    radioModule->setFreq(rp.freq);
-    radioModule->setBandwidth(rp.bw);
-    radioModule->setCodingRate(rp.cr);
-    radioModule->setSpreadingFactor(rp.sf);
-    radioModule->setPowerOutput(rp.pow);
+// void GroundStation::applyParams(const RadioParams rp)
+// {
+//     radioModule->setFreq(rp.freq);
+//     radioModule->setBandwidth(rp.bw);
+//     radioModule->setCodingRate(rp.cr);
+//     radioModule->setSpreadingFactor(rp.sf);
+//     radioModule->setPowerOutput(rp.pow);
 
-    currentParams.freq = rp.freq;
-    currentParams.bw = rp.bw;
-    currentParams.cr = rp.cr;
-    currentParams.sf = rp.sf;
-    currentParams.pow = rp.pow;
-}
+//     currentParams.freq = rp.freq;
+//     currentParams.bw = rp.bw;
+//     currentParams.cr = rp.cr;
+//     currentParams.sf = rp.sf;
+//     currentParams.pow = rp.pow;
+// }
 
-void GroundStation::revertParams()
-{
-    if (!awaitingAck)
-        return;
-    applyParams(oldParams);
-    // Update GUI since we need to revert
-    printRadioParamsToGui();
-    awaitingAck = false;
-    LOGGING(DEBUG_GS, "No packets on new params; reverted to old settings.");
-}
+// void GroundStation::revertParams()
+// {
+//     if (!awaitingAck)
+//         return;
+//     applyParams(oldParams);
+//     // Update GUI since we need to revert
+//     printRadioParamsToGui();
+//     awaitingAck = false;
+//     LOGGING(DEBUG_GS, "No packets on new params; reverted to old settings.");
+// }
 
-void GroundStation::setVerbosePacket(bool state)
-{
-    LoggerGS::getInstance().setEnabled(DEBUG_VERBOSE_PACKET, state);
-}
+// void GroundStation::setVerbosePacket(bool state)
+// {
+//     LoggerGS::getInstance().setEnabled(DEBUG_VERBOSE_PACKET, state);
+// }
 
-void GroundStation::setPrintToGui(bool state)
-{
-    LoggerGS::getInstance().setEnabled(DEBUG_GUI_PRINT, state);
-}
+// void GroundStation::setPrintToGui(bool state)
+// {
+//     LoggerGS::getInstance().setEnabled(DEBUG_GUI_PRINT, state);
+// }
 
-void GroundStation::implementRadioParamCommand(String radioCommand)
-{
-    String param;
-    String value;
+// void GroundStation::implementRadioParamCommand(String radioCommand)
+// {
+//     String param;
+//     String value;
 
-    int firstSpace = radioCommand.indexOf(' ');
-    int secondSpace = radioCommand.indexOf(' ', firstSpace + 1);
+//     int firstSpace = radioCommand.indexOf(' ');
+//     int secondSpace = radioCommand.indexOf(' ', firstSpace + 1);
 
-    if (firstSpace == -1)
-    {
-        Console.println("Radio command missing a first space");
-        return;
-    }
+//     if (firstSpace == -1)
+//     {
+//         Console.println("Radio command missing a first space");
+//         return;
+//     }
 
-    // Extract param and value (if exists)
-    if (secondSpace == -1)
-    {
-        param = radioCommand.substring(firstSpace + 1);
-        value = "";
-    }
-    else
-    {
-        param = radioCommand.substring(firstSpace + 1, secondSpace);
-        value = radioCommand.substring(secondSpace + 1);
-    }
+//     // Extract param and value (if exists)
+//     if (secondSpace == -1)
+//     {
+//         param = radioCommand.substring(firstSpace + 1);
+//         value = "";
+//     }
+//     else
+//     {
+//         param = radioCommand.substring(firstSpace + 1, secondSpace);
+//         value = radioCommand.substring(secondSpace + 1);
+//     }
 
-    // Now handle all supported commands
-    if (param == "freq")
-    {
-        //"VERIFY THE HW WHEN SETTING THE FREQUENCY"
-        radioModule->setFreq(value.toInt());
-        currentParams.freq = value.toInt();
-        syncCurrentParamsWithRadioModule();
-    }
-    else if (param == "bw")
-    {
-        radioModule->setBandwidth(value.toFloat());
-        currentParams.bw = value.toFloat();
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
-    }
-    else if (param == "cr")
-    {
-        radioModule->setCodingRate(value.toInt());
-        currentParams.cr = value.toInt();
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
-    }
-    else if (param == "sf")
-    {
-        radioModule->setSpreadingFactor(value.toInt());
-        currentParams.sf = value.toInt();
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
-    }
-    else if (param == "pow")
-    {
-        radioModule->setPowerOutput(value.toInt());
-        currentParams.pow = value.toInt();
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
-    }
-    else if (param == "param")
-    {
-        radioModule->checkParams();
-    }
-    else if (param == "ground")
-    {
-        radioModule->checkParams();
-        Console.print("gsc_verbose_packet: ");
-        Console.print(LoggerGS::getInstance().isEnabled(DEBUG_VERBOSE_PACKET));
-        Console.print(" gsc_gui_print ");
-        Console.print(LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT));
-        Console.print(" TxFromCTS ");
-        Console.print(enableTXFromCTS);
-        Console.print(" booleans_print ");
-        Console.print(LoggerGS::getInstance().isEnabled(DEBUG_BOOLEANS_PACKET));
-        Console.print(" fc_print ");
-        Console.println(LoggerGS::getInstance().isEnabled(DEBUG_FC_PACKET));
-    }
-    else if (param == "ping")
-    {
-        radioModule->pingParams();
-    }
-    else if (param == "init")
-    {
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
-    }
-    else if (param == "bypass")
-    {
-        sendRocketCommand(value);
-    }
-    else if (param == "debug")
-    {
-        if (value == "t" || value == "f")
-        {
-            radioModule->setDebug(value == "t");
-        }
-        else
-        {
-            Console.println("debug accepts only 't' or 'f' as values");
-        }
-    }
-    else if (param == "setTx")
-    {
-        if (value == "t" || value == "f")
-        {
-            setEnableTXFromCTS(value == "t");
-            LOGGING(DEBUG_GS, "setting tx from cts");
-            LOGGING(DEBUG_GS, value);
-        }
-        else
-        {
-            Console.println("setTx accepts only 't' or 'f' as values");
-        }
-    }
-    else if (param == "verbose")
-    {
-        if (value == "t" || value == "f")
-        {
-            setVerbosePacket(value == "t");
-        }
-        else
-        {
-            Console.println("verbose accepts only 't' or 'f' as values");
-        }
-    }
-    else if (param == "gui")
-    {
-        if (value == "t" || value == 'f')
-        {
-            setPrintToGui(value == 't');
-        }
-        else
-        {
-            Console.println("gui accepts only 't' or 'f' as values");
-        }
-    }
-    else
-    {
-        Console.println("command not recognised, please check spelling");
-    }
-}
+//     // Now handle all supported commands
+//     if (param == "freq")
+//     {
+//         //"VERIFY THE HW WHEN SETTING THE FREQUENCY"
+//         radioModule->setFreq(value.toInt());
+//         currentParams.freq = value.toInt();
+//         syncCurrentParamsWithRadioModule();
+//     }
+//     else if (param == "bw")
+//     {
+//         radioModule->setBandwidth(value.toFloat());
+//         currentParams.bw = value.toFloat();
+//         syncCurrentParamsWithRadioModule();
+//         printRadioParamsToGui();
+//     }
+//     else if (param == "cr")
+//     {
+//         radioModule->setCodingRate(value.toInt());
+//         currentParams.cr = value.toInt();
+//         syncCurrentParamsWithRadioModule();
+//         printRadioParamsToGui();
+//     }
+//     else if (param == "sf")
+//     {
+//         radioModule->setSpreadingFactor(value.toInt());
+//         currentParams.sf = value.toInt();
+//         syncCurrentParamsWithRadioModule();
+//         printRadioParamsToGui();
+//     }
+//     else if (param == "pow")
+//     {
+//         radioModule->setPowerOutput(value.toInt());
+//         currentParams.pow = value.toInt();
+//         syncCurrentParamsWithRadioModule();
+//         printRadioParamsToGui();
+//     }
+//     else if (param == "param")
+//     {
+//         radioModule->checkParams();
+//     }
+//     else if (param == "ground")
+//     {
+//         radioModule->checkParams();
+//         Console.print("gsc_verbose_packet: ");
+//         Console.print(LoggerGS::getInstance().isEnabled(DEBUG_VERBOSE_PACKET));
+//         Console.print(" gsc_gui_print ");
+//         Console.print(LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT));
+//         Console.print(" TxFromCTS ");
+//         Console.print(enableTXFromCTS);
+//         Console.print(" booleans_print ");
+//         Console.print(LoggerGS::getInstance().isEnabled(DEBUG_BOOLEANS_PACKET));
+//         Console.print(" fc_print ");
+//         Console.println(LoggerGS::getInstance().isEnabled(DEBUG_FC_PACKET));
+//     }
+//     else if (param == "ping")
+//     {
+//         radioModule->pingParams();
+//     }
+//     else if (param == "init")
+//     {
+//         syncCurrentParamsWithRadioModule();
+//         printRadioParamsToGui();
+//     }
+//     else if (param == "bypass")
+//     {
+//         sendRocketCommand(value);
+//     }
+//     else if (param == "debug")
+//     {
+//         if (value == "t" || value == "f")
+//         {
+//             radioModule->setDebug(value == "t");
+//         }
+//         else
+//         {
+//             Console.println("debug accepts only 't' or 'f' as values");
+//         }
+//     }
+//     else if (param == "setTx")
+//     {
+//         if (value == "t" || value == "f")
+//         {
+//             setEnableTXFromCTS(value == "t");
+//             LOGGING(DEBUG_GS, "setting tx from cts");
+//             LOGGING(DEBUG_GS, value);
+//         }
+//         else
+//         {
+//             Console.println("setTx accepts only 't' or 'f' as values");
+//         }
+//     }
+//     else if (param == "verbose")
+//     {
+//         if (value == "t" || value == "f")
+//         {
+//             setVerbosePacket(value == "t");
+//         }
+//         else
+//         {
+//             Console.println("verbose accepts only 't' or 'f' as values");
+//         }
+//     }
+//     else if (param == "gui")
+//     {
+//         if (value == "t" || value == 'f')
+//         {
+//             setPrintToGui(value == 't');
+//         }
+//         else
+//         {
+//             Console.println("gui accepts only 't' or 'f' as values");
+//         }
+//     }
+//     else
+//     {
+//         Console.println("command not recognised, please check spelling");
+//     }
+// }
 
-void GroundStation::sendSerialisedRocketCommand(const uint8_t *data, size_t length)
-{
-    if (!radioModule)
-    {
-        Console.println("Error: Radio module is not initialized.");
-        return;
-    }
+// void GroundStation::sendSerialisedRocketCommand(const uint8_t *data, size_t length)
+// {
+//     if (!radioModule)
+//     {
+//         Console.println("Error: Radio module is not initialized.");
+//         return;
+//     }
 
-    LOGGING(DEBUG_GS, "Sending rocket command serialised length:" + String(length));
-    //Always send at least once the transmit 
-    radioModule->transmitInterrupt(data, length);
-    radioModule->receiveMode();
+//     LOGGING(DEBUG_GS, "Sending rocket command serialised length:" + String(length));
+//     //Always send at least once the transmit 
+//     radioModule->transmitInterrupt(data, length);
+//     radioModule->receiveMode();
 
-    // This block is if we need multiple commands to be sent per CTS
-    int repeatCount = (int)CTS_TO_CMD_RATIO - 1;
-    for (int i = 0; i < repeatCount ; i++)
-    {
-        radioModule->transmitInterrupt(data, length);
-        radioModule->receiveMode();
-        delay(DELAYS_BETWEEN_REPEATED_CMD);
-    }
-}
+//     // This block is if we need multiple commands to be sent per CTS
+//     int repeatCount = (int)CTS_TO_CMD_RATIO - 1;
+//     for (int i = 0; i < repeatCount ; i++)
+//     {
+//         radioModule->transmitInterrupt(data, length);
+//         radioModule->receiveMode();
+//         delay(DELAYS_BETWEEN_REPEATED_CMD);
+//     }
+// }
 
-void GroundStation::sendRocketCommand(const String &rocketCommand)
-{
-    // String formattedCommand = String(RADIO_CALL_SIGN) + " " + rocketCommand;
-    String formattedCommand = rocketCommand;
-    LOGGING(DEBUG_GS, "Sending to rocket string command:" + formattedCommand);
+// void GroundStation::sendRocketCommand(const String &rocketCommand)
+// {
+//     // String formattedCommand = String(RADIO_CALL_SIGN) + " " + rocketCommand;
+//     String formattedCommand = rocketCommand;
+//     LOGGING(DEBUG_GS, "Sending to rocket string command:" + formattedCommand);
 
-    sendSerialisedRocketCommand(reinterpret_cast<const uint8_t *>(formattedCommand.c_str()),
-                                formattedCommand.length() + 1); // Sending an extra for the null terminator
-}
+//     sendSerialisedRocketCommand(reinterpret_cast<const uint8_t *>(formattedCommand.c_str()),
+//                                 formattedCommand.length() + 1); // Sending an extra for the null terminator
+// }
 
-template <typename T>
-void GroundStation::processTelemetryPacket(T &packet, uint8_t *receivedData)
-{
-    memcpy(&packet, receivedData, sizeof(T));
-}
+// template <typename T>
+// void GroundStation::processTelemetryPacket(T &packet, uint8_t *receivedData)
+// {
+//     memcpy(&packet, receivedData, sizeof(T));
+// }
 
-PacketController *GroundStation::readReceivedPacket()
-{
-    uint8_t *receivedData = radioModule->readPacket();
-    int packetLength = radioModule->getPacketLength();
-    LOGGING(DEBUG_GS, "Received something time to read it");
+// PacketController *GroundStation::readReceivedPacket()
+// {
+//     uint8_t *receivedData = radioModule->readPacket();
+//     int packetLength = radioModule->getPacketLength();
+//     LOGGING(DEBUG_GS, "Received something time to read it");
 
-    if (receivedData == nullptr || packetLength <= 0)
-    {
-        Console.println("Error: No data received or invalid length");
-        return currentPacketController;
-    }
+//     if (receivedData == nullptr || packetLength <= 0)
+//     {
+//         Console.println("Error: No data received or invalid length");
+//         return currentPacketController;
+//     }
 
-    currentPacketController->setLocalRadioData(radioModule->getRSSI(), radioModule->getSNR());
+//     currentPacketController->setLocalRadioData(radioModule->getRSSI(), radioModule->getSNR());
 
-    if (packetLength == sizeof(telemetry_packet_1))
-    {
-        telemetry_packet_1 receivedPacket;
-        processTelemetryPacket(receivedPacket, receivedData);
-        currentPacketController->setPacket1(receivedPacket);
-        printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket1());
-        printTabbedBooleans(&receivedPacket);
-        printTabbedFCPacket(&receivedPacket);
-    }
-    else if (packetLength == sizeof(telemetry_packet_2))
-    {
-        telemetry_packet_2 receivedPacket;
-        processTelemetryPacket(receivedPacket, receivedData);
-        currentPacketController->setPacket2(receivedPacket);
-        printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket2());
-        printTabbedBooleans(&receivedPacket);
-        printTabbedFCPacket(&receivedPacket);
-    }
-    else if (packetLength == sizeof(telemetry_packet_3))
-    {
-        telemetry_packet_3 receivedPacket;
-        processTelemetryPacket(receivedPacket, receivedData);
-        currentPacketController->setPacket3(receivedPacket);
-        printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket3());
-        printTabbedBooleans(&receivedPacket);
-        printTabbedFCPacket(&receivedPacket);
-    }
-    else if (packetLength == sizeof(telemetry_packet_4))
-    {
-        telemetry_packet_4 receivedPacket;
-        processTelemetryPacket(receivedPacket, receivedData);
-        currentPacketController->setPacket4(receivedPacket);
-        printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket4());
-        printTabbedBooleans(&receivedPacket);
-        printTabbedFCPacket(&receivedPacket);
-    }
-    else
-    {
-        handleNonTelemetry(receivedData);
-    }
-    return currentPacketController;
-}
+//     if (packetLength == sizeof(telemetry_packet_1))
+//     {
+//         telemetry_packet_1 receivedPacket;
+//         processTelemetryPacket(receivedPacket, receivedData);
+//         currentPacketController->setPacket1(receivedPacket);
+//         printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket1());
+//         printTabbedBooleans(&receivedPacket);
+//         printTabbedFCPacket(&receivedPacket);
+//     }
+//     else if (packetLength == sizeof(telemetry_packet_2))
+//     {
+//         telemetry_packet_2 receivedPacket;
+//         processTelemetryPacket(receivedPacket, receivedData);
+//         currentPacketController->setPacket2(receivedPacket);
+//         printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket2());
+//         printTabbedBooleans(&receivedPacket);
+//         printTabbedFCPacket(&receivedPacket);
+//     }
+//     else if (packetLength == sizeof(telemetry_packet_3))
+//     {
+//         telemetry_packet_3 receivedPacket;
+//         processTelemetryPacket(receivedPacket, receivedData);
+//         currentPacketController->setPacket3(receivedPacket);
+//         printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket3());
+//         printTabbedBooleans(&receivedPacket);
+//         printTabbedFCPacket(&receivedPacket);
+//     }
+//     else if (packetLength == sizeof(telemetry_packet_4))
+//     {
+//         telemetry_packet_4 receivedPacket;
+//         processTelemetryPacket(receivedPacket, receivedData);
+//         currentPacketController->setPacket4(receivedPacket);
+//         printVerboseTelemetryPacket(currentPacketController, &currentPacketController->getPacket4());
+//         printTabbedBooleans(&receivedPacket);
+//         printTabbedFCPacket(&receivedPacket);
+//     }
+//     else
+//     {
+//         handleNonTelemetry(receivedData);
+//     }
+//     return currentPacketController;
+// }
 
-template <typename T>
-void GroundStation::printVerboseTelemetryPacket(PacketController *packetController, T *packet)
-{
-    if (!LoggerGS::getInstance().isEnabled(DEBUG_VERBOSE_PACKET))
-    {
-        // LOGGING(DEBUG_GS, "Print verbose called, print is disabled");
-        return;
-    }
-    PacketPrinter::print_telemetry_packet(packet);
-    Console.print("ID,RSSI,SNR:");
-    PacketPrinter::print_packet_id(packet);
-    int RSSI = packetController->getRSSI();
-    int SNR = packetController->getSNR();
-    char dataStore[13] = {0};
-    snprintf(dataStore, sizeof(dataStore), ",%-4d,%-3d", RSSI, SNR);
-    Console.println(dataStore);
-}
+// template <typename T>
+// void GroundStation::printVerboseTelemetryPacket(PacketController *packetController, T *packet)
+// {
+//     if (!LoggerGS::getInstance().isEnabled(DEBUG_VERBOSE_PACKET))
+//     {
+//         // LOGGING(DEBUG_GS, "Print verbose called, print is disabled");
+//         return;
+//     }
+//     PacketPrinter::print_telemetry_packet(packet);
+//     Console.print("ID,RSSI,SNR:");
+//     PacketPrinter::print_packet_id(packet);
+//     int RSSI = packetController->getRSSI();
+//     int SNR = packetController->getSNR();
+//     char dataStore[13] = {0};
+//     snprintf(dataStore, sizeof(dataStore), ",%-4d,%-3d", RSSI, SNR);
+//     Console.println(dataStore);
+// }
 
-template <typename T>
-void GroundStation::printTabbedBooleans(T *packet)
-{
-    if (LoggerGS::getInstance().isEnabled(DEBUG_BOOLEANS_PACKET))
-    {
-        PacketPrinter::print_only_booleans<T>(packet);
-        Console.println(" ");
-    }
-}
+// template <typename T>
+// void GroundStation::printTabbedBooleans(T *packet)
+// {
+//     if (LoggerGS::getInstance().isEnabled(DEBUG_BOOLEANS_PACKET))
+//     {
+//         PacketPrinter::print_only_booleans<T>(packet);
+//         Console.println(" ");
+//     }
+// }
 
-template <typename T>
-void GroundStation::printTabbedFCPacket(T *packet)
-{
-    if (LoggerGS::getInstance().isEnabled(DEBUG_FC_PACKET))
-    {
-        PacketPrinter::print_only_FC_packet<T>(packet);
-        Console.println(" ");
-    }
-}
+// template <typename T>
+// void GroundStation::printTabbedFCPacket(T *packet)
+// {
+//     if (LoggerGS::getInstance().isEnabled(DEBUG_FC_PACKET))
+//     {
+//         PacketPrinter::print_only_FC_packet<T>(packet);
+//         Console.println(" ");
+//     }
+// }
 
-void GroundStation::handleNonTelemetry(uint8_t *nonTelemetryData)
-{
-    String nonTelemetryString = reinterpret_cast<const char *>(nonTelemetryData);
-    const char *nonTelemetryPointer = reinterpret_cast<const char *>(nonTelemetryData);
-    if (nonTelemetryString.charAt(0) == 'A' && nonTelemetryString.charAt(1) == 'C' && nonTelemetryString.charAt(2) == 'K')
-    {
-        LOGGING(DEBUG_GS, "ACK received");
-        currentPacketController->setAckText(nonTelemetryPointer);
-    }
-    // If we have debug GS just print the non telemetry, if not just dont print
-    else if (LoggerGS::getInstance().isEnabled(DEBUG_GS))
-    {
-        // If it gets to this case the packet is not of a type we know so just treat as a string
-        currentPacketController->setText(nonTelemetryPointer);
-        LOGGING(DEBUG_GS, nonTelemetryString);
-        Console.print("Received data doesnt match existing telemetry types or ACK attempting to print as string: ");
-        Console.println(nonTelemetryPointer);
-    }
-}
+// void GroundStation::handleNonTelemetry(uint8_t *nonTelemetryData)
+// {
+//     String nonTelemetryString = reinterpret_cast<const char *>(nonTelemetryData);
+//     const char *nonTelemetryPointer = reinterpret_cast<const char *>(nonTelemetryData);
+//     if (nonTelemetryString.charAt(0) == 'A' && nonTelemetryString.charAt(1) == 'C' && nonTelemetryString.charAt(2) == 'K')
+//     {
+//         LOGGING(DEBUG_GS, "ACK received");
+//         currentPacketController->setAckText(nonTelemetryPointer);
+//     }
+//     // If we have debug GS just print the non telemetry, if not just dont print
+//     else if (LoggerGS::getInstance().isEnabled(DEBUG_GS))
+//     {
+//         // If it gets to this case the packet is not of a type we know so just treat as a string
+//         currentPacketController->setText(nonTelemetryPointer);
+//         LOGGING(DEBUG_GS, nonTelemetryString);
+//         Console.print("Received data doesnt match existing telemetry types or ACK attempting to print as string: ");
+//         Console.println(nonTelemetryPointer);
+//     }
+// }
 
-bool GroundStation::verifyRadioStates()
-{
-    if (radioModule->getFreq() != currentParams.freq)
-    {
-        LOGGING(DEBUG_GS, "Frequency setting failed");
-        return false;
-    }
-    if (radioModule->getBandwidth() != currentParams.bw)
-    {
-        LOGGING(DEBUG_GS, "Bandwdith setting failed");
-        return false;
-    }
-    if (radioModule->getCodingRate() != currentParams.cr)
-    {
-        LOGGING(DEBUG_GS, "Coding Rate setting failed");
-        return false;
-    }
-    if (radioModule->getSpreadingFactor() != currentParams.sf)
-    {
-        LOGGING(DEBUG_GS, "SF setting failed");
-        return false;
-    }
-    if (radioModule->getPowerOutput() != currentParams.pow)
-    {
-        LOGGING(DEBUG_GS, "Power setting failed");
-        return false;
-    }
-    return true;
-}
+// bool GroundStation::verifyRadioStates()
+// {
+//     if (radioModule->getFreq() != currentParams.freq)
+//     {
+//         LOGGING(DEBUG_GS, "Frequency setting failed");
+//         return false;
+//     }
+//     if (radioModule->getBandwidth() != currentParams.bw)
+//     {
+//         LOGGING(DEBUG_GS, "Bandwdith setting failed");
+//         return false;
+//     }
+//     if (radioModule->getCodingRate() != currentParams.cr)
+//     {
+//         LOGGING(DEBUG_GS, "Coding Rate setting failed");
+//         return false;
+//     }
+//     if (radioModule->getSpreadingFactor() != currentParams.sf)
+//     {
+//         LOGGING(DEBUG_GS, "SF setting failed");
+//         return false;
+//     }
+//     if (radioModule->getPowerOutput() != currentParams.pow)
+//     {
+//         LOGGING(DEBUG_GS, "Power setting failed");
+//         return false;
+//     }
+//     return true;
+// }
 
-void GroundStation::printRadioParamsToGui()
-{
-    if (!LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT))
-    {
-        LOGGING(DEBUG_GS, "Debug gui print is not enabled not printing params");
-        return;
-    }
-    // print the ack to tell GUI we received the radio command
-    Console.print(RADIO_ACK_FOR_GUI);
-    // print the serialised data
-    PacketPrinter::radio_params_to_console(&currentParams);
-}
+// void GroundStation::printRadioParamsToGui()
+// {
+//     if (!LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT))
+//     {
+//         LOGGING(DEBUG_GS, "Debug gui print is not enabled not printing params");
+//         return;
+//     }
+//     // print the ack to tell GUI we received the radio command
+//     Console.print(RADIO_ACK_FOR_GUI);
+//     // print the serialised data
+//     PacketPrinter::radio_params_to_console(&currentParams);
+// }
 
-void GroundStation::syncCurrentParamsWithRadioModule()
-{
-    if (!verifyRadioStates())
-    {
-        // State of chip and GS not matching, set the GS current params back to match chip
-        matchCurrentRadioParamsWithRadioModule();
-    }
-}
+// void GroundStation::syncCurrentParamsWithRadioModule()
+// {
+//     if (!verifyRadioStates())
+//     {
+//         // State of chip and GS not matching, set the GS current params back to match chip
+//         matchCurrentRadioParamsWithRadioModule();
+//     }
+// }
 
-GroundStation *GroundStation::instance = nullptr;
+// GroundStation *GroundStation::instance = nullptr;

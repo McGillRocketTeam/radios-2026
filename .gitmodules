@@ -4,3 +4,6 @@
 [submodule "radios-2025"]
 	path = radios-2025
 	url = https://github.com/McGillRocketTeam/radios-2025.git
+[submodule "telemetry-2026"]
+	path = telemetry-2026
+	url = https://github.com/McGillRocketTeam/telemetry-2026.git
