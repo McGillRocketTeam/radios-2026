@@ -8,33 +8,21 @@ enum class ParseError : uint8_t { Ok=0, TooShort, PayloadTooShort, UnknownAtomic
 
 class FrameView {
 public:
-    FrameView(const uint8_t* bytes, size_t len) : base_(bytes), len_(len) {}
+    FrameView();
+    FrameView(const uint8_t* bytes, size_t len);
+    void reset(const uint8_t* bytes, size_t len);
 
-    ParseError validate() const {
-        if (len_ < sizeof(FrameHeader)) return ParseError::TooShort;
-        const auto* h = header();
-        const uint32_t need = payload_length_from_bitmap(h->atomics_bitmap);
-        if (sizeof(FrameHeader) + need > len_) return ParseError::PayloadTooShort;
-        for (int i = 0; i < AT_TOTAL; ++i)
-            if ((h->atomics_bitmap & (1u << i)) && AT_SIZE[i] == 0)
-                return ParseError::UnknownAtomicSize;
-        return ParseError::Ok;
-    }
+    ParseError validate() const;
 
-    const FrameHeader* header() const {
-        return reinterpret_cast<const FrameHeader*>(base_);
-    }
-    const uint8_t* payload() const { return base_ + sizeof(FrameHeader); }
-    size_t payload_len() const { return len_ - sizeof(FrameHeader); }
+    const FrameHeader* header() const;
+    const uint8_t* payload() const;
+    size_t payload_len() const;
 
-    bool hasAtomic(int idx) const { return (header()->atomics_bitmap & (1u << idx)) != 0; }
+    bool cts() const;
+    bool ack() const;
 
-    const uint8_t* atomicPtr(int idx) const {
-        if (!hasAtomic(idx)) return nullptr;
-        const uint32_t off = atomic_offset(header()->atomics_bitmap, idx);
-        if (off + AT_SIZE[idx] > payload_len()) return nullptr;
-        return payload() + off;
-    }
+    bool hasAtomic(int idx) const;
+    const uint8_t* atomicPtr(int idx) const;
 
     template <typename T>
     const T* atomicAs(int idx) const {
@@ -43,6 +31,6 @@ public:
     }
 
 private:
-    const uint8_t* base_;
-    size_t         len_;
+    const uint8_t* _base;
+    size_t _len;
 };

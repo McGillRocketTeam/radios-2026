@@ -1,6 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <Arduino.h>
+
+
 // Both frequency values are in MHz for RadioLib
 constexpr float FREQUENCY_435 = 435.00f;
 constexpr float FREQUENCY_903 = 903.00f;

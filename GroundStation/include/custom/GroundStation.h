@@ -72,12 +72,7 @@ public:
      */
     RadioModule* getRadioModule();
 
-    /**
-     * @brief Checks with logger if verbose is allowed then prints packet in human readable formate
-     * @param packet Pointer to the packet
-     */
-    template <typename T>
-    void printVerboseTelemetryPacket(PacketController *packetController, T *packet);
+    void printVerboseTelemetryPacket();
 
     /**
      * @brief Enables or disables TX (transmit) functionality based on CTS logic.
@@ -154,17 +149,10 @@ private:
      */
     void sendRocketCommand(const String& command);
 
-    /**
-     * @brief Prints a decoded packet to GUI (if enabled).
-     * @param controller The PacketController holding parsed packet data.
-     */
-    void printPacketToGui(PacketController* controller);
 
-    /**
-     * @brief Reads and parses the most recent received packet.
-     * @return Pointer to the PacketController containing the packet data.
-     */
-    PacketController* readReceivedPacket();
+    void printPacketToGui();
+
+    void readReceivedPacket();
 
     /**
      * @brief Implements parameter changes from a radio command string.
@@ -189,30 +177,6 @@ private:
      */
     void setPrintToGui(bool state);
 
-    /**
-     * @brief Generic method to process and decode any telemetry packet type.
-     * @tparam T Type of telemetry packet.
-     * @param packet Packet data structure to populate.
-     * @param receivedData Raw byte array containing packet data.
-     */
-    template<typename T>
-    void processTelemetryPacket(T &packet, uint8_t *receivedData);
-
-    /**
-     * @brief Handles the logic for setting or printing non telemetry info.
-     * @param nonTelemetryData the pointer to the raw uint8_t data.
-     */
-    void handleNonTelemetry(uint8_t * nonTelemetryData);
-
-    /**
-     * @brief Checks logger if tabbed booleans is enabled, and then prints the packet's booleans in readable format
-     * @param packet pointer to a generic packet type.
-     */
-    template<typename T>
-    void printTabbedBooleans(T *packet);
-
-    template<typename T>
-    void printTabbedFCPacket(T *packet);
 
     /// Pointer to the radio module
     RadioModule* radioModule;
@@ -220,8 +184,12 @@ private:
     /// Pointer to the command parser
     CommandParser* commandParser;
 
-    /// Pointer to current packet controller for received packet
-    FrameView* currentFrameView;
+    //Frame view setup 
+    // Buffer that persists for the life of Ground Station
+    // Default value of the received length
+    uint8_t rxBuf[512];
+    size_t  rxLen = 0;   
+    FrameView currentFrameView;
 
     /// Currently active radio parameters
     RadioParams currentParams;

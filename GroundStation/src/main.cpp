@@ -4,8 +4,9 @@
 #include "telemetry_packets.h"
 #include "frame_view.h"
 #include "frame_printer.h"
+#include "ConsoleRouter.h"
 
-static void printHex(const uint8_t* data, size_t len) {
+static void printHex(const uint8_t *data, size_t len) {
   for (size_t i = 0; i < len; ++i) {
     if (i && (i % 16 == 0)) Serial.println();
     if (data[i] < 16) Serial.print('0');
@@ -15,39 +16,57 @@ static void printHex(const uint8_t* data, size_t len) {
   Serial.println();
 }
 
+// Publish at most once per second
+static uint32_t lastSentMs = 0;
+
 void setup() {
-  Serial.begin(115200);
-  const uint32_t start = millis();
-  while (!Serial && (millis() - start < 3000)) { /* wait */ }
+  // Console.begin() initializes Serial (at GS_SERIAL_BAUD_RATE), Ethernet, and MQTT.
+  // Do NOT Serial.begin(...) here unless it matches GS_SERIAL_BAUD_RATE.
+  Console.begin();
+}
+
+void loop() {
+  // Keep Ethernet/MQTT alive and reconnect if needed
+  Console.handleConsoleReconnect();
+  Console.mqttLoop();
+
+  // Throttle publishes (optional but recommended)
+  uint32_t now = millis();
+  if (now - lastSentMs < 1000) return;
+  lastSentMs = now;
 
   Serial.println(F("=== Building telemetry frame ==="));
 
+  // --- Fill atomics ---
   prop_atomic_data prop{};
-  prop.cc_pressure  = 1234;
-  prop.tank_pressure= 2310;
-  prop.tank_temp    = 875;
-  prop.vent_temp    = 200;
+  prop.cc_pressure   = 1234;
+  prop.tank_pressure = 2310;
+  prop.tank_temp     = 875;
+  prop.vent_temp     = 200;
   prop.mov_hall_state = true;
 
   valve_atomic_data valve{};
   valve.fdov_armed_SW            = true;
-  valve.fdov_armed_HW            = true;
+  valve.fdov_armed_HW            = false;
   valve.fdov_energized_SW        = false;
   valve.fdov_energizedGate_HW    = false;
   valve.fdov_energizedCurrent_HW = true;
-  valve.fdov_continuity_HW       = true;
-  valve.mov_armed_SW             = true;
+  valve.fdov_continuity_HW       = false;
+  valve.mov_armed_SW             = false;
   valve.mov_armed_HW             = true;
   valve.mov_energized_SW         = false;
   valve.mov_energizedGate_HW     = false;
   valve.mov_energizedCurrent_HW  = true;
-  valve.mov_continuity_HW        = true;
+  valve.mov_continuity_HW        = false;
 
+  // --- Build frame ---
   uint8_t frameBuf[256] = {0};
-
   FrameBuilder fb(frameBuf, sizeof(frameBuf));
 
   bool ok = true;
+  Serial.println(sizeof(FrameHeader));
+  Serial.println(sizeof(prop));
+  Serial.println(sizeof(valve));
   ok &= fb.addAtomic((int)AT_PROP_ATOMIC,  &prop,  sizeof(prop));
   ok &= fb.addAtomic((int)AT_VALVE_ATOMIC, &valve, sizeof(valve));
 
@@ -75,21 +94,22 @@ void setup() {
   }
 
   const FrameHeader* h = view.header();
-  Serial.println(F("\n--- Header ---"));
-  Serial.print(F("seq: "));   Serial.println(h->seq);
-  Serial.print(F("flags: 0x")); Serial.println(h->flags, HEX);
-  Serial.print(F("ack_id: "));  Serial.println(h->ack_id);
-  Serial.print(F("bitmap: 0x")); Serial.println(h->atomics_bitmap, HEX);
+//   Serial.println(F("\n--- Header ---"));
+//   Serial.print(F("seq: "));     Serial.println(h->seq);
+//   Serial.print(F("flags: 0x"));  Serial.println(h->flags, HEX);
+//   Serial.print(F("ack_id: "));   Serial.println(h->ack_id);
+//   Serial.print(F("bitmap: 0x")); Serial.println(h->atomics_bitmap, HEX);
 
-  Serial.println(F("\n--- Atomics present ---"));
-  for (int i = 0; i < AT_TOTAL; ++i) {
-    if (view.hasAtomic(i)) {
-      Serial.print(F(" - AT index ")); Serial.print(i);
-      Serial.print(F(", size ")); Serial.println(AT_SIZE[i]);
-    }
-  }
+//   Serial.println(F("\n--- Atomics present ---"));
+//   for (int i = 0; i < AT_TOTAL; ++i) {
+//     if (view.hasAtomic(i)) {
+//       Serial.print(F(" - AT index "));
+//       Serial.print(i);
+//       Serial.print(F(", size "));
+//       Serial.println(AT_SIZE[i]);
+//     }
+//   }
 
-  printAtomics( view );
+//   printAtomics(view);
+  Console.write(frameBuf, frameLen);
 }
-
-void loop() {}

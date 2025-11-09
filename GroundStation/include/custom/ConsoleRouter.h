@@ -1,126 +1,61 @@
 #pragma once
 #include <Arduino.h>
-#include <Config.h>
+#include <IntervalTimer.h>
 
-#if TEENSY_BOARD_VERSION == 41
-#include <NativeEthernet.h>
-#endif
-
-// Gets the console router instance, a substitute for standard Serial calls
 #define Console ConsoleRouter::getInstance()
 
-class ConsoleRouter : public Stream
-{
-private:
-    #if TEENSY_BOARD_VERSION == 41
-        EthernetClient client;
-        IntervalTimer ethernetTimer;
-    #endif
-    ConsoleRouter();
-
+class ConsoleRouter {
 public:
+    // Singleton accessor
     static ConsoleRouter &getInstance();
 
+    // Init Serial, Ethernet, MQTT
     void begin();
-    /*
-    Checks for physical connection and if LinkOn tries to connect
-    */
-    static void ethernetCheckISR();
-    void ethernetInit();
-    // Tries to reconnect to the Ethernet client if there is a link
+
+    // Call regularly in loop() to (re)connect Ethernet/MQTT
     void handleConsoleReconnect();
-    int available() override;
-    int read() override;
-    int peek() override;
-    size_t write(uint8_t c) override;
-    size_t write(const uint8_t *buffer, size_t size);
 
-    /*
-    Printer to debug the console, only serial enabled
-    */
-    template <typename T>
-    void debugPrint(const T &msg)
-    {
-        if (CONSOLE_ROOT_DEBUG)
-        {
-            Serial.println(msg);
-        }
-    }
+    // Must be called often to keep MQTT alive
+    void mqttLoop();
 
-    int ethernetAvailble(){
-        #if TEENSY_BOARD_VERSION == 41
-            return client.available();
-        #endif
-        return -1;
-    }
+    // Console-like API (read from Serial, publish on write)
+    int     available();
+    int     read();
+    int     peek();
+    size_t  write(uint8_t c);
+    size_t  write(const uint8_t *buffer, size_t size);
 
-    bool checkEthernetConnected() {
-        #if TEENSY_BOARD_VERSION == 41
-        return (Ethernet.linkStatus() == LinkON) && client.connected();
-        #else
-        return false;
-        #endif
-    }
+    template <typename T> void print(const T& v)   { _printString(String(v), false); }
+    template <typename T> void println(const T& v) { _printString(String(v), true ); }
+    // Common fast paths
+    void print(const char* s);
+    void println(const char* s);
+    void print(const String& s);
+    void println(const String& s);
+    void print(char c);
+    void println();
+    // PROGMEM strings like F("text")
+    void print(const __FlashStringHelper* fs);
+    void println(const __FlashStringHelper* fs);
 
-    template <typename T>
-    void println(const T &msg)
-    {
-        Serial.println(msg);
-        if (checkEthernetConnected())
-        {
-            #if TEENSY_BOARD_VERSION == 41
-            client.println(msg);
-            #endif
-            
-        }
-    }
+private:
+    ConsoleRouter();
+    ConsoleRouter(const ConsoleRouter&) = delete;
+    ConsoleRouter& operator=(const ConsoleRouter&) = delete;
 
-    void println()
-    {
-        Serial.println();
-        if (checkEthernetConnected())
-        {
-            #if TEENSY_BOARD_VERSION == 41
-            client.println();
-            #endif
-        }
-    }
+    // Ethernet bring-up and periodic check ISR
+    void        ethernetInit();
+    static void ethernetCheckISR();
 
-    template <typename T>
-    void print(const T &msg)
-    {
-        Serial.print(msg);
-        if (checkEthernetConnected())
-        {
-            #if TEENSY_BOARD_VERSION == 41
-            client.print(msg);
-            #endif
-        }
-    }
+    // Timer for periodic link checks
+    IntervalTimer ethernetTimer;
 
     
+    // Internal helpers for printing/publishing
+    void _printString(const String& s, bool newline);
+    void _publishBytes(const uint8_t* data, size_t len);
 
-    void print(const __FlashStringHelper *msg)
-    {
-        Serial.print(msg);
-        if (checkEthernetConnected())
-        {
-            #if TEENSY_BOARD_VERSION == 41
-            client.print(msg);
-            #endif
-        }
-    }
-
-    void println(const __FlashStringHelper *msg)
-    {
-        Serial.println(msg);
-        if (checkEthernetConnected())
-        {
-            #if TEENSY_BOARD_VERSION == 41
-            client.println(msg);
-            #endif
-        }
-    }
-
-    using Print::write; // Enables inherited write(buffer, size)
 };
+
+// Global flag used by ISR (defined in .cpp)
+extern volatile bool ethernetReconnectNeeded;

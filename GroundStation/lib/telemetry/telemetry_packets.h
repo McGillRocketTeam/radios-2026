@@ -1,6 +1,5 @@
 // AUTO-GENERATED. Do not edit by hand.
-#ifndef TELEMETRY_PACKETS_H
-#define TELEMETRY_PACKETS_H
+#pragma once
 
 #include <cstdint>
 
@@ -9,6 +8,8 @@ enum AtomicType {
     AT_PROP_ATOMIC          = 0,  // bit 0
     AT_VALVE_ATOMIC         = 1,  // bit 1
     AT_TEST_ATOMIC          = 2,  // bit 2
+    AT_RECOV_ATOMIC         = 3,  // bit 3
+    AT_FLIGHT_ATOMIC        = 4,  // bit 4
     AT_TOTAL                             // total count
 };
 
@@ -20,6 +21,13 @@ typedef struct __attribute__((__packed__)) prop_atomic_data
     uint16_t tank_temp;
     uint8_t vent_temp;
     bool mov_hall_state;
+    bool prop_energized_electric;
+    bool vent_armed_SW;
+    bool vent_armed_HW;
+    bool vent_energized_SW;
+    bool vent_energizedGate_HW;
+    bool vent_energizedCurrent_HW;
+    bool vent_continuity_HW;
 } prop_atomic_data;
 
 typedef union prop_atomic_packet {
@@ -55,6 +63,11 @@ typedef struct __attribute__((__packed__)) test_atomic_data
     bool mov_hall_state;
     bool fdov_continuity_HW;
     uint16_t tank_temp;
+    float atm_pressure;
+    float barometer_altitude;
+    float atm_temp;
+    uint16_t fc_rssi;
+    int8_t fc_snr;
 } test_atomic_data;
 
 typedef union test_atomic_packet {
@@ -62,11 +75,53 @@ typedef union test_atomic_packet {
     uint8_t bytes[sizeof(test_atomic_data)];
 } test_atomic_packet;
 
-// ---------- Atomic Size Catalog ----------
-static const uint16_t AT_SIZE[AT_TOTAL] = {
-    /*0*/ sizeof(prop_atomic_data),
-    /*1*/ sizeof(valve_atomic_data),
-    /*2*/ sizeof(test_atomic_data),
-};
+// ---------- recov_atomic atomic ----------
+typedef struct __attribute__((__packed__)) recov_atomic_data
+{
+    bool pilot_armed_SW;
+    bool pilot_armed_HW;
+    bool pilot_energized_SW;
+    bool pilot_energizedGate_HW;
+    bool pilot_energizedCurrent_HW;
+    bool pilot_continuity_HW;
+    bool ring_armed_SW;
+    bool ring_armed_HW;
+    bool ring_energized_SW;
+    bool ring_energizedGate_HW;
+    bool ring_energizedCurrent_HW;
+    bool ring_continuity_HW;
+} recov_atomic_data;
 
-#endif // TELEMETRY_PACKETS_H
+typedef union recov_atomic_packet {
+    recov_atomic_data data;
+    uint8_t bytes[sizeof(recov_atomic_data)];
+} recov_atomic_packet;
+
+// ---------- flight_atomic atomic ----------
+typedef struct __attribute__((__packed__)) flight_atomic_data
+{
+    uint8_t flight_stage;
+    float altimeter_altitude;
+    float altitude_from_sea_level;
+    float apogee_from_ground;
+    float gps_latitude;
+    float gps_longitude;
+    float gps_altitude;
+    float gps_time_last_update;
+    int32_t vertical_speed;
+    int16_t acceleration_x;
+    int16_t acceleration_y;
+    int16_t acceleration_z;
+    uint16_t angle_yaw;
+    uint16_t angle_pitch;
+    uint16_t angle_roll;
+} flight_atomic_data;
+
+typedef union flight_atomic_packet {
+    flight_atomic_data data;
+    uint8_t bytes[sizeof(flight_atomic_data)];
+} flight_atomic_packet;
+
+// ---------- Atomic Size Catalog (declaration) ----------
+extern const uint16_t AT_SIZE[AT_TOTAL];
+
