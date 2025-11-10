@@ -20,9 +20,5 @@ typedef union {
     uint8_t     bytes[sizeof(FrameHeader)];
 } FrameHeaderPacket;
 
-#if defined(_MSC_VER)
-  #pragma pack(pop)
-#endif
-
 static inline bool header_has_cts(const FrameHeader* h) { return (h->flags & FLAG_CTS) != 0; }
 static inline bool header_has_ack(const FrameHeader* h) { return (h->flags & FLAG_ACK) != 0; }

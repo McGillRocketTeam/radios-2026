@@ -20,8 +20,6 @@ static void printHex(const uint8_t *data, size_t len) {
 static uint32_t lastSentMs = 0;
 
 void setup() {
-  // Console.begin() initializes Serial (at GS_SERIAL_BAUD_RATE), Ethernet, and MQTT.
-  // Do NOT Serial.begin(...) here unless it matches GS_SERIAL_BAUD_RATE.
   Console.begin();
 }
 
@@ -94,22 +92,5 @@ void loop() {
   }
 
   const FrameHeader* h = view.header();
-//   Serial.println(F("\n--- Header ---"));
-//   Serial.print(F("seq: "));     Serial.println(h->seq);
-//   Serial.print(F("flags: 0x"));  Serial.println(h->flags, HEX);
-//   Serial.print(F("ack_id: "));   Serial.println(h->ack_id);
-//   Serial.print(F("bitmap: 0x")); Serial.println(h->atomics_bitmap, HEX);
-
-//   Serial.println(F("\n--- Atomics present ---"));
-//   for (int i = 0; i < AT_TOTAL; ++i) {
-//     if (view.hasAtomic(i)) {
-//       Serial.print(F(" - AT index "));
-//       Serial.print(i);
-//       Serial.print(F(", size "));
-//       Serial.println(AT_SIZE[i]);
-//     }
-//   }
-
-//   printAtomics(view);
   Console.write(frameBuf, frameLen);
 }

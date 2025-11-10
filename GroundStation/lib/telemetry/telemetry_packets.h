@@ -1,6 +1,5 @@
 // AUTO-GENERATED. Do not edit by hand.
 #pragma once
-
 #include <cstdint>
 
 // ---------- AtomicType Enum ----------
@@ -20,14 +19,14 @@ typedef struct __attribute__((__packed__)) prop_atomic_data
     uint16_t tank_pressure;
     uint16_t tank_temp;
     uint8_t vent_temp;
-    bool mov_hall_state;
-    bool prop_energized_electric;
-    bool vent_armed_SW;
-    bool vent_armed_HW;
-    bool vent_energized_SW;
-    bool vent_energizedGate_HW;
-    bool vent_energizedCurrent_HW;
-    bool vent_continuity_HW;
+    bool mov_hall_state : 1;
+    bool prop_energized_electric : 1;
+    bool vent_armed_SW : 1;
+    bool vent_armed_HW : 1;
+    bool vent_energized_SW : 1;
+    bool vent_energizedGate_HW : 1;
+    bool vent_energizedCurrent_HW : 1;
+    bool vent_continuity_HW : 1;
 } prop_atomic_data;
 
 typedef union prop_atomic_packet {
@@ -38,18 +37,18 @@ typedef union prop_atomic_packet {
 // ---------- valve_atomic atomic ----------
 typedef struct __attribute__((__packed__)) valve_atomic_data
 {
-    bool fdov_armed_SW;
-    bool fdov_armed_HW;
-    bool fdov_energized_SW;
-    bool fdov_energizedGate_HW;
-    bool fdov_energizedCurrent_HW;
-    bool fdov_continuity_HW;
-    bool mov_armed_SW;
-    bool mov_armed_HW;
-    bool mov_energized_SW;
-    bool mov_energizedGate_HW;
-    bool mov_energizedCurrent_HW;
-    bool mov_continuity_HW;
+    bool fdov_armed_SW : 1;
+    bool fdov_armed_HW : 1;
+    bool fdov_energized_SW : 1;
+    bool fdov_energizedGate_HW : 1;
+    bool fdov_energizedCurrent_HW : 1;
+    bool fdov_continuity_HW : 1;
+    bool mov_armed_SW : 1;
+    bool mov_armed_HW : 1;
+    bool mov_energized_SW : 1;
+    bool mov_energizedGate_HW : 1;
+    bool mov_energizedCurrent_HW : 1;
+    bool mov_continuity_HW : 1;
 } valve_atomic_data;
 
 typedef union valve_atomic_packet {
@@ -60,8 +59,8 @@ typedef union valve_atomic_packet {
 // ---------- test_atomic atomic ----------
 typedef struct __attribute__((__packed__)) test_atomic_data
 {
-    bool mov_hall_state;
-    bool fdov_continuity_HW;
+    bool mov_hall_state : 1;
+    bool fdov_continuity_HW : 1;
     uint16_t tank_temp;
     float atm_pressure;
     float barometer_altitude;
@@ -78,18 +77,18 @@ typedef union test_atomic_packet {
 // ---------- recov_atomic atomic ----------
 typedef struct __attribute__((__packed__)) recov_atomic_data
 {
-    bool pilot_armed_SW;
-    bool pilot_armed_HW;
-    bool pilot_energized_SW;
-    bool pilot_energizedGate_HW;
-    bool pilot_energizedCurrent_HW;
-    bool pilot_continuity_HW;
-    bool ring_armed_SW;
-    bool ring_armed_HW;
-    bool ring_energized_SW;
-    bool ring_energizedGate_HW;
-    bool ring_energizedCurrent_HW;
-    bool ring_continuity_HW;
+    bool pilot_armed_SW : 1;
+    bool pilot_armed_HW : 1;
+    bool pilot_energized_SW : 1;
+    bool pilot_energizedGate_HW : 1;
+    bool pilot_energizedCurrent_HW : 1;
+    bool pilot_continuity_HW : 1;
+    bool ring_armed_SW : 1;
+    bool ring_armed_HW : 1;
+    bool ring_energized_SW : 1;
+    bool ring_energizedGate_HW : 1;
+    bool ring_energizedCurrent_HW : 1;
+    bool ring_continuity_HW : 1;
 } recov_atomic_data;
 
 typedef union recov_atomic_packet {
@@ -124,4 +123,3 @@ typedef union flight_atomic_packet {
 
 // ---------- Atomic Size Catalog (declaration) ----------
 extern const uint16_t AT_SIZE[AT_TOTAL];
-
