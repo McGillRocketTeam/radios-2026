@@ -32,10 +32,11 @@ void ConsoleRouter::ethernetInit()
     if (MAC == nullptr) return;
 
     Serial.println("Ethernet init (Teensy 4.1)...");
+    Serial.println("This is a BLOCKING begin");
+    Serial.println("if there is no physical link it will halt the code");
     Ethernet.begin(MAC, STATIC_IP);
 
-    // Shorter TCP connect timeout for broker reachability.
-    ethClient.setConnectionTimeout(2000);
+    ethClient.setConnectionTimeout(TCP_TIMEOUT_SETTING);
 
     delay(1000);
 

@@ -74,6 +74,7 @@ void GroundStation::matchCurrentRadioParamsWithRadioModule()
 
 void GroundStation::printPacketToGui()
 {
+    Console.write(currentFrameView._base,currentFrameView._len);
     return;
 }
 

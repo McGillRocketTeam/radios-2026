@@ -45,6 +45,7 @@ size_t FrameBuilder::finalize(uint16_t seq, uint8_t flags, uint8_t ack_id) {
             current_offset += sz;
         }
     }
+    used = current_offset;
 
     return current_offset;
 }

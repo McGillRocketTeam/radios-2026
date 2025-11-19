@@ -9,7 +9,8 @@ IPAddress STATIC_IP(192, 168, 8, 50);   // Teensy's static IP
 IPAddress SERVER_IP(192, 168, 8, 194);  // Your PC running the server
 const int SERVER_PORT = 1883;
 
-// Defaults
+const int TCP_TIMEOUT_SETTING = 4000;
+
 const IPAddress GATEWAY_IP(192, 168, 8, 1);
 const IPAddress SUBNET_MASK(255, 255, 255, 0);
 const IPAddress DNS_IP(192, 168, 8, 1);

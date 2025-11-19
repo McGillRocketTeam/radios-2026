@@ -186,7 +186,7 @@ private:
 
     //Frame view setup 
     // Buffer that persists for the life of Ground Station
-    // Default value of the received length
+    // It will hold the actual bytes for the frame view
     uint8_t rxBuf[512];
     size_t  rxLen = 0;   
     FrameView currentFrameView;

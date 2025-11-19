@@ -30,7 +30,6 @@ public:
         return p ? reinterpret_cast<const T*>(p) : nullptr;
     }
 
-private:
     const uint8_t* _base;
     size_t _len;
 };
