@@ -3,6 +3,7 @@
 #include "frame_printer.h"
 #include "RadioPrinter.h"
 #include <LoggerGS.h>
+#include "command_packet.h"
 
 volatile bool GroundStation::commandParserFlag = false;
 
@@ -425,7 +426,25 @@ void GroundStation::sendSerialisedRocketCommand(const uint8_t *data, size_t leng
 void GroundStation::sendRocketCommand(const String &rocketCommand)
 {
     // String formattedCommand = String(RADIO_CALL_SIGN) + " " + rocketCommand;
-    String formattedCommand = rocketCommand;
+    String formattedCommand;
+    if (rocketCommand.length() == 3) 
+    {
+        command_packet packet;
+
+        packet.data.command_id = static_cast<uint8_t>(rocketCommand.charAt(0) - '0');  // Convert '3' to 3
+
+        packet.data.command_string[0] = rocketCommand.charAt(1);  
+        packet.data.command_string[1] = rocketCommand.charAt(2);
+
+        packet.data.command_string[2] = '\0';
+        packet.bytes[sizeof(packet.data) - 1] = '\0';
+
+        formattedCommand = String(reinterpret_cast<char*>(packet.bytes));
+    }
+    else
+    {
+        formattedCommand = rocketCommand;
+    }
     LOGGING(DEBUG_GS, "Sending to rocket string command:" + formattedCommand);
 
     sendSerialisedRocketCommand(reinterpret_cast<const uint8_t *>(formattedCommand.c_str()),
