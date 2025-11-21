@@ -464,6 +464,9 @@ void GroundStation::readReceivedPacket()
     currentFrameView.reset(rxBuf, rxLen);
 
     if (currentFrameView.validate() != ParseError::Ok) {
+        Serial.println(static_cast<uint8_t>( currentFrameView.validate()));
+        Serial.println(currentFrameView._len);
+        Serial.println(sizeof(rxBuf));
         LOGGING( DEBUG_GS, "PROBLEMS with frame");
     }
 }

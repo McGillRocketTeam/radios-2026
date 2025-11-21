@@ -16,7 +16,7 @@ bool FrameBuilder::addAtomic(int idx, const void* src, size_t sz) {
     if (AT_SIZE[idx] != sz) return false;
     if (temp_used + sz > cap) return false;
 
-    if (h.atomics_bitmap && (1u << idx)) return false;
+    if (h.atomics_bitmap & (1u << idx)) return false;
     
     std::memcpy(temp_buffer + temp_used, src, sz);
 
@@ -46,6 +46,8 @@ size_t FrameBuilder::finalize(uint16_t seq, uint8_t flags, uint8_t ack_id) {
         }
     }
     used = current_offset;
+    // we need to clean the atomic pointers
+    // need to clean temp_used
 
     return current_offset;
 }
