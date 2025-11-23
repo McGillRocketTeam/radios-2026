@@ -1,18 +1,15 @@
 
-#if TEENSY_BOARD_VERSION == 41
 #include <NativeEthernet.h>
 #include <fnet.h>
 
 byte MAC[] = { 0x04, 0xE9, 0xE5, 0x12, 0x34, 0x56 };
-IPAddress STATIC_IP(192, 168, 8, 50);   // Teensy's static IP
+IPAddress STATIC_IP(192, 168, 0, 50);   // Teensy's static IP
 // IPAddress SERVER_IP(192, 168, 8, 248);  // Your PC running the server
-IPAddress SERVER_IP(192, 168, 8, 194);  // Your PC running the server
+IPAddress SERVER_IP(192, 168, 0, 105);  // Your PC running the server
 const int SERVER_PORT = 1883;
 
 const int TCP_TIMEOUT_SETTING = 4000;
 
-const IPAddress GATEWAY_IP(192, 168, 8, 1);
+const IPAddress GATEWAY_IP(192, 168, 0, 1);
 const IPAddress SUBNET_MASK(255, 255, 255, 0);
-const IPAddress DNS_IP(192, 168, 8, 1);
-
-#endif
+const IPAddress DNS_IP(192, 168, 0, 1);

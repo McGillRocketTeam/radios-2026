@@ -29,6 +29,7 @@ void loop() {
 
     Console.handleConsoleReconnect();
     Console.mqttLoop();
+    Console.print("radio alive");
     // Handle received commands and packets from the ground station
     groundStation->handleCommandParserUpdate();
     groundStation->handleRadioCommand();
