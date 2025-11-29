@@ -38,7 +38,6 @@ GroundStation *GroundStation::getInstance()
 
 void GroundStation::initialise()
 {
-
     startCommandParser();
     startAsyncReceive();
     LOGGING(DEBUG_GS, "Ground station initialised, ready to receive commands via radio and console");
@@ -75,7 +74,7 @@ void GroundStation::matchCurrentRadioParamsWithRadioModule()
 
 void GroundStation::printPacketToGui()
 {
-    Console.write(currentFrameView._base,currentFrameView._len);
+    Console.sendTelemetry(currentFrameView._base,currentFrameView._len);
     return;
 }
 

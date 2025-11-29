@@ -12,7 +12,7 @@ public:
     // Init Serial, Ethernet, MQTT
     void begin();
 
-    // Call regularly in loop() to (re)connect Ethernet/MQTT
+    // Call  in loop() to (re)connect Ethernet/MQTT
     void handleConsoleReconnect();
 
     // Must be called often to keep MQTT alive
@@ -22,8 +22,12 @@ public:
     int     available();
     int     read();
     int     peek();
-    size_t  write(uint8_t c);
-    size_t  write(const uint8_t *buffer, size_t size);
+
+    // Only publish serialised bytes to telemetry
+
+    void sendTelemetry(const uint8_t *buffer, size_t size);
+
+    void sendStatus();
 
     template <typename T> void print(const T& v)   { _printString(String(v), false); }
     template <typename T> void println(const T& v) { _printString(String(v), true ); }
@@ -39,18 +43,26 @@ public:
     void println(const __FlashStringHelper* fs);
 
 private:
+
+    size_t  write(uint8_t c);
+    size_t  write(const uint8_t *buffer, size_t size);
+
     ConsoleRouter();
     ConsoleRouter(const ConsoleRouter&) = delete;
     ConsoleRouter& operator=(const ConsoleRouter&) = delete;
 
+    void setTopicsFromPins();
     // Ethernet bring-up and periodic check ISR
     void        ethernetInit();
     static void ethernetCheckISR();
 
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
+    const char* metadataTopic;
+    const char* telemetryTopic;
+    const char* debugTopic;
 
-    
+
     // Internal helpers for printing/publishing
     void _printString(const String& s, bool newline);
     void _publishBytes(const uint8_t* data, size_t len);

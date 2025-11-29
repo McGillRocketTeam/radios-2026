@@ -1,5 +1,4 @@
-#ifndef PINLAYOUT_H
-#define PINLAYOUT_H
+#pragma once
 /*
  * Connections to Teensy 4.0
  * Pins:  13    14     15    18   22       24
@@ -20,5 +19,3 @@ constexpr int DIO1_PIN = 14;
 constexpr int BUSY_PIN = 15;
 constexpr int RST_PIN = 18;
 constexpr int FREQ_PIN = 22;
-
-#endif //PINLAYOUT_H

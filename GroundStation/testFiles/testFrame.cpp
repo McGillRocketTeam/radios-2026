@@ -18,7 +18,6 @@ void setup() {
     Console.begin();
     groundStation = GroundStation::getInstance();
     groundStation->initialise();
-    
     groundStation->setEnableTXFromCTS(false);
 
 }
@@ -29,6 +28,7 @@ void loop() {
 
     Console.handleConsoleReconnect();
     Console.mqttLoop();
+    // Console.print("radio alive");
     // Handle received commands and packets from the ground station
     groundStation->handleCommandParserUpdate();
     groundStation->handleRadioCommand();

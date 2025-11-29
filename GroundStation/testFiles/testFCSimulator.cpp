@@ -110,7 +110,7 @@ void loop()
 
     // Initialize radio_atomic_data
     radio_atomic_data radio{};
-    strncpy(radio.call_sign, "VA2JWL", sizeof(radio.call_sign));
+    strncpy(radio.call_sign, "VU2JWL", sizeof(radio.call_sign));
 
     uint8_t frameBuf[512] = {0};
 

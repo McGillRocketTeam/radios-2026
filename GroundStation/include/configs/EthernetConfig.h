@@ -13,3 +13,5 @@ const int TCP_TIMEOUT_SETTING = 4000;
 const IPAddress GATEWAY_IP(192, 168, 0, 1);
 const IPAddress SUBNET_MASK(255, 255, 255, 0);
 const IPAddress DNS_IP(192, 168, 0, 1);
+
+
