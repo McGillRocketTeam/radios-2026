@@ -78,7 +78,7 @@ public:
      * @brief Enables or disables TX (transmit) functionality based on CTS logic.
      * @param enable True to enable TX when CTS is set; false to disable.
      */
-    void setEnableTXFromCTS(bool enable);
+    void setCanTXFromCTS(bool enable);
 
     /**
      * @brief Destructor for GroundStation.
@@ -171,12 +171,6 @@ private:
      */
     void setVerbosePacket(bool state);
 
-    /**
-     * @brief Enables or disables printing parsed packets to GUI.
-     * @param state True to enable GUI output.
-     */
-    void setPrintToGui(bool state);
-
 
     /// Pointer to the radio module
     RadioModule* radioModule;
@@ -210,7 +204,9 @@ private:
     static volatile bool commandParserFlag;
 
     /// Enables or disables TX based on CTS logic
-    bool enableTXFromCTS;
+    bool canTXFromCTS;
 
+    /// Controls if we print the human readble telmetry
+    bool canPrintTelemetryVerbose = false;
 };
 

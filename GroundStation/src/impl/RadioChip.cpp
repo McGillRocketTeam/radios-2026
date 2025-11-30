@@ -87,13 +87,13 @@ int32_t RadioChip::getSNR() {
 
 float RadioChip::getFrequencyByBandPin(){
     pinMode(FREQ_PIN,INPUT);
-    LOGGING(DEBUG_RADIO,"Checking freq pin: ");
+    LOGGING(DEBUG,"Checking freq pin: ");
     if (digitalRead(FREQ_PIN) == HIGH) {
-        LOGGING(DEBUG_RADIO,"HIGH so 903");
+        LOGGING(DEBUG,"HIGH so 903");
         return FREQUENCY_903;
     }
     else {
-        LOGGING(DEBUG_RADIO,"LOW so 435");
+        LOGGING(DEBUG,"LOW so 435");
         return FREQUENCY_435;
     }
 }

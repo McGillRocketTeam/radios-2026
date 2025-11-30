@@ -9,43 +9,46 @@
 static EthernetClient ethClient;
 static PubSubClient mqttClient(ethClient);
 
-//Topics 
+// Topics
 
 // MQTT Topics
 
 // Topics radio-<location>-<a or b for freq>/...
 
-const char* TOPIC_RADIO_PD_A_TELEMETRY  = "radio-pad-a/telemetry";
-const char* TOPIC_RADIO_PD_A_METADATA   = "radio-pad-a/metadata";
-const char* TOPIC_RADIO_PD_B_TELEMETRY  = "radio-pad-b/telemetry";
-const char* TOPIC_RADIO_PD_B_METADATA   = "radio-pad-b/metadata";
-const char* TOPIC_RADIO_CS_A_TELEMETRY  = "radio-controlstation-a/telemetry";
-const char* TOPIC_RADIO_CS_A_METADATA   = "radio-controlstation-a/metadata";
-const char* TOPIC_RADIO_CS_A_DEBUG   = "radio-controlstation-a/debug";
-const char* TOPIC_RADIO_CS_B_TELEMETRY  = "radio-controlstation-b/telemetry";
-const char* TOPIC_RADIO_CS_B_METADATA   = "radio-controlstation-b/metadata";
-const char* TOPIC_RADIO_CS_B_DEBUG   = "radio-controlstation-b/debug";
+const char *TOPIC_RADIO_PD_A_TELEMETRY = "radio-pad-a/telemetry";
+const char *TOPIC_RADIO_PD_A_METADATA = "radio-pad-a/metadata";
+const char *TOPIC_RADIO_PD_B_TELEMETRY = "radio-pad-b/telemetry";
+const char *TOPIC_RADIO_PD_B_METADATA = "radio-pad-b/metadata";
+const char *TOPIC_RADIO_CS_A_TELEMETRY = "radio-controlstation-a/telemetry";
+const char *TOPIC_RADIO_CS_A_METADATA = "radio-controlstation-a/metadata";
+const char *TOPIC_RADIO_CS_A_DEBUG = "radio-controlstation-a/debug";
+const char *TOPIC_RADIO_CS_B_TELEMETRY = "radio-controlstation-b/telemetry";
+const char *TOPIC_RADIO_CS_B_METADATA = "radio-controlstation-b/metadata";
+const char *TOPIC_RADIO_CS_B_DEBUG = "radio-controlstation-b/debug";
 
 static bool ethernetUp();
 static bool mqttUp();
-static bool mqttReconnect(const char* topic);
+static bool mqttReconnect(const char *topic);
 
 volatile bool ethernetReconnectNeeded = false;
 
-ConsoleRouter::ConsoleRouter() = default;
+ConsoleRouter::ConsoleRouter() : identifier('c') {}
 
-void ConsoleRouter::setTopicsFromPins(){
-    pinMode(FREQ_PIN,INPUT);
-    if (digitalRead(FREQ_PIN) == HIGH) {
+void ConsoleRouter::setTopicsFromPins()
+{
+    pinMode(FREQ_PIN, INPUT);
+    if (digitalRead(FREQ_PIN) == HIGH)
+    {
         // High on freq pin means 915 band so radio B
-        metadataTopic   = TOPIC_RADIO_CS_B_METADATA;
-        telemetryTopic  = TOPIC_RADIO_CS_B_TELEMETRY;
-        debugTopic      = TOPIC_RADIO_CS_B_DEBUG;
+        metadataTopic = TOPIC_RADIO_CS_B_METADATA;
+        telemetryTopic = TOPIC_RADIO_CS_B_TELEMETRY;
+        debugTopic = TOPIC_RADIO_CS_B_DEBUG;
     }
-    else {
-        metadataTopic   = TOPIC_RADIO_CS_A_METADATA;
-        telemetryTopic  = TOPIC_RADIO_CS_A_TELEMETRY;
-        debugTopic      = TOPIC_RADIO_CS_A_DEBUG;
+    else
+    {
+        metadataTopic = TOPIC_RADIO_CS_A_METADATA;
+        telemetryTopic = TOPIC_RADIO_CS_A_TELEMETRY;
+        debugTopic = TOPIC_RADIO_CS_A_DEBUG;
     }
 }
 
@@ -57,7 +60,7 @@ void ConsoleRouter::begin()
 
     ethernetInit();
     sendStatus();
-    ethernetTimer.begin(ethernetCheckISR, 10 * 1000 * 1000);
+    ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
 }
 
 void ConsoleRouter::ethernetInit()
@@ -85,8 +88,6 @@ void ConsoleRouter::ethernetInit()
     Serial.println(SERVER_IP);
 
     mqttClient.setServer(SERVER_IP, SERVER_PORT);
-
-    // Connect immediately to ensure first publish won’t fail
     mqttReconnect(metadataTopic);
 }
 
@@ -141,8 +142,8 @@ int ConsoleRouter::peek()
     return -1;
 }
 
-
-void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size){
+void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size)
+{
     if (ethernetUp())
     {
         if (!mqttUp())
@@ -156,34 +157,36 @@ void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size){
                 Serial.println("MQTT publish failed (packet too large or socket issue).");
             }
         }
-    }   
+    }
 }
 
-void ConsoleRouter::sendStatus() {
-    if (ethernetUp()) {
+void ConsoleRouter::sendStatus()
+{
+    if (ethernetUp())
+    {
         Serial.println("send status call");
         if (!mqttUp())
             mqttReconnect(metadataTopic);
         Serial.println("mqtt up");
-        if (mqttUp()) {
+        if (mqttUp())
+        {
             JsonDocument doc;
 
             doc["status"] = "OK";
             doc["frequency"] = "435.00";
             doc["long_status"] = "this is the long status";
-            
+
             uint8_t jsonBuffer[512];
             size_t jsonSize = serializeJson(doc, jsonBuffer);
-            
-            bool ok = mqttClient.publish(metadataTopic, jsonBuffer,jsonSize, true);
-            if (!ok) {
+
+            bool ok = mqttClient.publish(metadataTopic, jsonBuffer, jsonSize, true);
+            if (!ok)
+            {
                 Serial.println("MQTT publish failed (packet too large or socket issue).");
             }
         }
     }
 }
-
-
 
 size_t ConsoleRouter::write(uint8_t c)
 {
@@ -229,13 +232,13 @@ static bool mqttUp()
     return mqttClient.connected();
 }
 
-static bool mqttReconnect(const char* topic)
+static bool mqttReconnect(const char *topic)
 {
     if (!ethernetUp())
         return false;
 
     const char *clientId = "teensy41-console";
-    if (mqttClient.connect(clientId,"","",topic,0,true,""))
+    if (mqttClient.connect(clientId, "", "", topic, 0, true, ""))
     // if (mqttClient.connect(clientId))
     {
         Serial.println("MQTT connected.");
@@ -252,8 +255,10 @@ void ConsoleRouter::mqttLoop()
 {
     if (ethernetUp())
     {
-        if (!mqttUp()){
-            if ( mqttReconnect(metadataTopic)) {
+        if (!mqttUp())
+        {
+            if (mqttReconnect(metadataTopic))
+            {
                 sendStatus();
             }
         }

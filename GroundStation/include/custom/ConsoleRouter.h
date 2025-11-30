@@ -9,35 +9,42 @@ public:
     // Singleton accessor
     static ConsoleRouter &getInstance();
 
-    // Init Serial, Ethernet, MQTT
+    // Init Serial, Ethernet Physical Link, MQTT Digital Link
     void begin();
 
-    // Call  in loop() to (re)connect Ethernet/MQTT
+    // Call in loop() to (re)connect Ethernet/MQTT
     void handleConsoleReconnect();
 
-    // Must be called often to keep MQTT alive
+    // Call in loop() to keep connection MQTT alive
     void mqttLoop();
 
-    // Console-like API (read from Serial, publish on write)
+    // Stream API methods linked to serial debuging
+
+    // Availabillity of serial, mqtt is checked seperately
     int     available();
+
+    // Read from Serial
     int     read();
+
+    //Peak from Serial
     int     peek();
 
-    // Only publish serialised bytes to telemetry
-
+    // Sending serialised telemetry buffer via MQTT
     void sendTelemetry(const uint8_t *buffer, size_t size);
 
+    // Sending status of radio over MQTT
     void sendStatus();
 
     template <typename T> void print(const T& v)   { _printString(String(v), false); }
     template <typename T> void println(const T& v) { _printString(String(v), true ); }
-    // Common fast paths
+    
     void print(const char* s);
     void println(const char* s);
     void print(const String& s);
     void println(const String& s);
     void print(char c);
     void println();
+
     // PROGMEM strings like F("text")
     void print(const __FlashStringHelper* fs);
     void println(const __FlashStringHelper* fs);
@@ -51,13 +58,18 @@ private:
     ConsoleRouter(const ConsoleRouter&) = delete;
     ConsoleRouter& operator=(const ConsoleRouter&) = delete;
 
+    // Checks the pins and sets the topics based on the frequency
     void setTopicsFromPins();
+
     // Ethernet bring-up and periodic check ISR
     void        ethernetInit();
     static void ethernetCheckISR();
 
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
+
+    // This identifier determines a (900) or b (435) band
+    char identifier;
     const char* metadataTopic;
     const char* telemetryTopic;
     const char* debugTopic;

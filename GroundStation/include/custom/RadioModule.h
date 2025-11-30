@@ -38,7 +38,9 @@ private:
 public:
     RadioModule();
 
+    // Transmit data array of bytes and stay in transmit mode
     bool transmitInterrupt(const uint8_t* data, size_t size);
+
     bool receiveMode();
     uint8_t* readPacket();
     bool checkInterruptReceived();
@@ -55,7 +57,6 @@ public:
     void setSpreadingFactor(int newSpreadingFactor);
     void setCodingRate(int newCodingRate);
     void setPowerOutput(int newPowerOutput);
-    void setDebug(bool debugDesired);
 
     void checkParams();
     void pingParams();

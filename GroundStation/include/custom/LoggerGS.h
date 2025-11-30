@@ -1,31 +1,41 @@
 #pragma once
 #include <Arduino.h>
-#include <map>
 #include <ConsoleRouter.h>
+#include "LoggerConfig.h"
 
-//For logging to work the console router must be initialised
-#define LOGGING(tag, msg) LoggerGS::getInstance().log(tag, msg)
+// For logging to work above PIPE level, the console router must be initialized
+#define LOGGING(level, msg) LoggerGS::getInstance().log(level, msg)
 
-class LoggerGS
-{
+class LoggerGS {
 public:
     static LoggerGS &getInstance();
-    void configure(const std::map<String, bool> &config);
-    void setEnabled(const String &tag, bool state);
-    bool isEnabled(const String &tag) const;
 
+    // Configure the log level for the system
+    void configure(LogLevel level);
+
+    // Set the global log level
+    void setLogLevel(LogLevel level);
+
+    // Get the global log level
+    LogLevel getLogLevel() const;
+
+    // Log method to handle messages at different log levels
     template <typename T>
-    void log(const String &tag, const T &msg)
-    {
-        if (isEnabled(tag))
-        {
-            Console.println(msg);
-        }
-    }
+    void log(LogLevel level, const T &msg);
 
 private:
-    LoggerGS();                
-    static LoggerGS *instance; 
-
-    std::map<String, bool> enabledTags;
+    LoggerGS();
+    
+    LogLevel globalLogLevel = GS_LOG_LEVEL;
 };
+
+template <typename T>
+void LoggerGS::log(LogLevel level, const T &msg) {
+    if (level >= getLogLevel()) {  // Only log if level >= global log level
+        if (level == SERIAL) {
+            Serial.println(msg);  // Direct output to Serial for SERIAL logs
+        } else {
+            Console.println(msg);  // Use Console for other log levels
+        }
+    }
+}

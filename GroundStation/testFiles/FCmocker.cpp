@@ -8,7 +8,6 @@
 #include "ConsoleRouter.h"
 #include "RadioModule.h"
 
-// Flight Computer Simulator
 
 static uint16_t sequenceNumber = 1;
 static RadioModule *radioModule = nullptr;

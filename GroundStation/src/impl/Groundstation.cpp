@@ -12,7 +12,7 @@ GroundStation::GroundStation()
       commandParser(new CommandParser()),
       currentFrameView(),
       awaitingAck(false),
-      enableTXFromCTS(ENABLE_RADIO_TX)
+      canTXFromCTS(ENABLE_RADIO_TX)
 {
     currentParams.freq = radioModule->getFreq();
     currentParams.bw = radioModule->getBandwidth();
@@ -40,7 +40,7 @@ void GroundStation::initialise()
 {
     startCommandParser();
     startAsyncReceive();
-    LOGGING(DEBUG_GS, "Ground station initialised, ready to receive commands via radio and console");
+    LOGGING(DEBUG, "Ground station initialised, ready to receive commands via radio and console");
 }
 
 RadioModule *GroundStation::getRadioModule()
@@ -98,7 +98,7 @@ void GroundStation::handleReceivedPacket()
         printVerboseTelemetryPacket();
 
         // Check the CTS flag and if we want to be able to transmit
-        if ( currentFrameView.cts() && enableTXFromCTS)
+        if ( currentFrameView.cts() && canTXFromCTS)
         {
             // With the CTS flag we know to send another command to the rocket,
             handleRocketCommand();
@@ -154,7 +154,7 @@ void GroundStation::handleRocketRadioParamChange(String rocketRadioParamChangeCo
     }
     if (idx != 4)
     {
-        LOGGING(DEBUG_GS, "Invalid change param format; expect four space separated values");
+        LOGGING(DEBUG, "Invalid change param format; expect four space separated values");
         return;
     }
 
@@ -180,7 +180,7 @@ void GroundStation::handleRocketRadioParamChange(String rocketRadioParamChangeCo
 
     sendSerialisedRocketCommand(buf, 9);
 
-    LOGGING(DEBUG_GS, "Sending a ROCKET RADIO PARAM CHANGE command");
+    LOGGING(INFO, "Sending a ROCKET RADIO PARAM CHANGE command");
 
     applyParams(currentParams);
 
@@ -199,9 +199,9 @@ void GroundStation::getQueueStatus()
     commandParser->printRocketQueueStatus();
 }
 
-void GroundStation::setEnableTXFromCTS(bool enable)
+void GroundStation::setCanTXFromCTS(bool enable)
 {
-    enableTXFromCTS = enable;
+    canTXFromCTS = enable;
 }
 
 void GroundStation::raiseCommandParserFlag()
@@ -241,18 +241,14 @@ void GroundStation::revertParams()
     // Update GUI since we need to revert
     printRadioParamsToGui();
     awaitingAck = false;
-    LOGGING(DEBUG_GS, "No packets on new params; reverted to old settings.");
+    LOGGING(INFO, "No packets on new params; reverted to old settings.");
 }
 
 void GroundStation::setVerbosePacket(bool state)
 {
-    LoggerGS::getInstance().setEnabled(DEBUG_VERBOSE_PACKET, state);
+    canPrintTelemetryVerbose = state;
 }
 
-void GroundStation::setPrintToGui(bool state)
-{
-    LoggerGS::getInstance().setEnabled(DEBUG_GUI_PRINT, state);
-}
 
 void GroundStation::implementRadioParamCommand(String radioCommand)
 {
@@ -324,15 +320,9 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     {
         radioModule->checkParams();
         Console.print("gsc_verbose_packet: ");
-        Console.print(LoggerGS::getInstance().isEnabled(DEBUG_VERBOSE_PACKET));
-        Console.print(" gsc_gui_print ");
-        Console.print(LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT));
+        Console.print(canPrintTelemetryVerbose);
         Console.print(" TxFromCTS ");
-        Console.print(enableTXFromCTS);
-        Console.print(" booleans_print ");
-        Console.print(LoggerGS::getInstance().isEnabled(DEBUG_BOOLEANS_PACKET));
-        Console.print(" fc_print ");
-        Console.println(LoggerGS::getInstance().isEnabled(DEBUG_FC_PACKET));
+        Console.print(canTXFromCTS);
     }
     else if (param == "ping")
     {
@@ -347,24 +337,13 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     {
         sendRocketCommand(value);
     }
-    else if (param == "debug")
-    {
-        if (value == "t" || value == "f")
-        {
-            radioModule->setDebug(value == "t");
-        }
-        else
-        {
-            Console.println("debug accepts only 't' or 'f' as values");
-        }
-    }
     else if (param == "setTx")
     {
         if (value == "t" || value == "f")
         {
-            setEnableTXFromCTS(value == "t");
-            LOGGING(DEBUG_GS, "setting tx from cts");
-            LOGGING(DEBUG_GS, value);
+            setCanTXFromCTS(value == "t");
+            LOGGING(DEBUG, "setting tx from cts");
+            LOGGING(DEBUG, value);
         }
         else
         {
@@ -382,17 +361,6 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
             Console.println("verbose accepts only 't' or 'f' as values");
         }
     }
-    else if (param == "gui")
-    {
-        if (value == "t" || value == 'f')
-        {
-            setPrintToGui(value == 't');
-        }
-        else
-        {
-            Console.println("gui accepts only 't' or 'f' as values");
-        }
-    }
     else
     {
         Console.println("command not recognised, please check spelling");
@@ -407,19 +375,10 @@ void GroundStation::sendSerialisedRocketCommand(const uint8_t *data, size_t leng
         return;
     }
 
-    LOGGING(DEBUG_GS, "Sending rocket command serialised length:" + String(length));
+    LOGGING(DEBUG, "Sending rocket command serialised length:" + String(length));
     //Always send at least once the transmit 
     radioModule->transmitInterrupt(data, length);
     radioModule->receiveMode();
-
-    // This block is if we need multiple commands to be sent per CTS
-    int repeatCount = (int)CTS_TO_CMD_RATIO - 1;
-    for (int i = 0; i < repeatCount ; i++)
-    {
-        radioModule->transmitInterrupt(data, length);
-        radioModule->receiveMode();
-        delay(DELAYS_BETWEEN_REPEATED_CMD);
-    }
 }
 
 void GroundStation::sendRocketCommand(const String &rocketCommand)
@@ -444,7 +403,7 @@ void GroundStation::sendRocketCommand(const String &rocketCommand)
     {
         formattedCommand = rocketCommand;
     }
-    LOGGING(DEBUG_GS, "Sending to rocket string command:" + formattedCommand);
+    LOGGING(DEBUG, "Sending to rocket string command:" + formattedCommand);
 
     sendSerialisedRocketCommand(reinterpret_cast<const uint8_t *>(formattedCommand.c_str()),
                                 formattedCommand.length() + 1); // Sending an extra for the null terminator
@@ -455,7 +414,7 @@ void GroundStation::readReceivedPacket()
 {
     uint8_t *receivedData = radioModule->readPacket();
     int packetLength = radioModule->getPacketLength();
-    LOGGING(DEBUG_GS, "Received something time to read it");
+    LOGGING(DEBUG, "Received something time to read it");
 
     rxLen = min(packetLength, sizeof(rxBuf));
     memcpy(rxBuf, receivedData, rxLen);
@@ -466,17 +425,12 @@ void GroundStation::readReceivedPacket()
         Serial.println(static_cast<uint8_t>( currentFrameView.validate()));
         Serial.println(currentFrameView._len);
         Serial.println(sizeof(rxBuf));
-        LOGGING( DEBUG_GS, "PROBLEMS with frame");
+        LOGGING( CRIT, "PROBLEMS with frame");
     }
 }
 
 void GroundStation::printVerboseTelemetryPacket()
 {
-    if (!LoggerGS::getInstance().isEnabled(DEBUG_VERBOSE_PACKET))
-    {
-        // LOGGING(DEBUG_GS, "Print verbose called, print is disabled");
-        return;
-    }
     printAtomics( currentFrameView );
     
     // int RSSI = packetController->getRSSI();
@@ -492,27 +446,27 @@ bool GroundStation::verifyRadioStates()
 {
     if (radioModule->getFreq() != currentParams.freq)
     {
-        LOGGING(DEBUG_GS, "Frequency setting failed");
+        LOGGING(CRIT, "Frequency setting failed");
         return false;
     }
     if (radioModule->getBandwidth() != currentParams.bw)
     {
-        LOGGING(DEBUG_GS, "Bandwdith setting failed");
+        LOGGING(CRIT, "Bandwdith setting failed");
         return false;
     }
     if (radioModule->getCodingRate() != currentParams.cr)
     {
-        LOGGING(DEBUG_GS, "Coding Rate setting failed");
+        LOGGING(CRIT, "Coding Rate setting failed");
         return false;
     }
     if (radioModule->getSpreadingFactor() != currentParams.sf)
     {
-        LOGGING(DEBUG_GS, "SF setting failed");
+        LOGGING(CRIT, "SF setting failed");
         return false;
     }
     if (radioModule->getPowerOutput() != currentParams.pow)
     {
-        LOGGING(DEBUG_GS, "Power setting failed");
+        LOGGING(CRIT, "Power setting failed");
         return false;
     }
     return true;
@@ -520,15 +474,8 @@ bool GroundStation::verifyRadioStates()
 
 void GroundStation::printRadioParamsToGui()
 {
-    if (!LoggerGS::getInstance().isEnabled(DEBUG_GUI_PRINT))
-    {
-        LOGGING(DEBUG_GS, "Debug gui print is not enabled not printing params");
-        return;
-    }
-    // print the ack to tell GUI we received the radio command
-    Console.print(RADIO_ACK_FOR_GUI);
-    // print the serialised data
-    RadioPrinter::radio_params_to_console(&currentParams);
+    // TO DO be able to publish all the params to meta data
+    return;
 }
 
 void GroundStation::syncCurrentParamsWithRadioModule()

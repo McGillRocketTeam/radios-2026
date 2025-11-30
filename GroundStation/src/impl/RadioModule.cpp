@@ -32,7 +32,6 @@ RadioModule::RadioModule()
     memset(buffer, 0, sizeof(buffer));
 }
 
-// Transmit data array of bytes and stay in transmit mode
 bool RadioModule::transmitInterrupt(const uint8_t *data, size_t size)
 {
     state = radio.startTransmit(data, size);
@@ -40,7 +39,7 @@ bool RadioModule::transmitInterrupt(const uint8_t *data, size_t size)
     while (interruptReceived == false)
     {
         delay(10);
-        LOGGING(DEBUG_RADIO,"waiting for data to transmit");
+        LOGGING(DEBUG,"waiting for data to transmit");
     }
     interruptReceived = false;
     return true;
@@ -144,11 +143,6 @@ void RadioModule::setPowerOutput(int newPowerOutput)
     }
 }
 
-void RadioModule::setDebug(bool debugDesired)
-{
-    LoggerGS::getInstance().setEnabled(DEBUG_RADIO,debugDesired);
-}
-
 void RadioModule::checkParams()
 {
     Console.print("frequency: ");
@@ -165,9 +159,6 @@ void RadioModule::checkParams()
 
     Console.print(" power output: ");
     Console.print(powerOutput);
-
-    Console.print(" debug state: ");
-    Console.println(LoggerGS::getInstance().isEnabled(DEBUG_RADIO));
 }
 
 void RadioModule::pingParams()
@@ -205,12 +196,12 @@ float RadioModule::getFrequencyByBandPin()
 {
     if (digitalRead(FREQ_PIN) == HIGH)
     {
-        LOGGING(DEBUG_RADIO,"FREQ_PIN is HIGH using 903.00 MHz");
+        LOGGING(DEBUG,"FREQ_PIN is HIGH using 903.00 MHz");
         return FREQUENCY_903;
     }
     else
     {
-        LOGGING(DEBUG_RADIO,"FREQ_PIN is LOW using 435.00 MHz");
+        LOGGING(DEBUG,"FREQ_PIN is LOW using 435.00 MHz");
         return FREQUENCY_435;
     }
 }
@@ -220,12 +211,12 @@ bool RadioModule::verifyRadioState(String message)
 {
     if (state == RADIOLIB_ERR_NONE)
     {
-        LOGGING(DEBUG_RADIO,message + " Success!");
+        LOGGING(DEBUG,message + " Success!");
         return true;
     }
     else
     {
-        LOGGING(DEBUG_RADIO,message + " Failure. Error code: " + String(state));
+        LOGGING(DEBUG,message + " Failure. Error code: " + String(state));
         return false;
     }
 }
