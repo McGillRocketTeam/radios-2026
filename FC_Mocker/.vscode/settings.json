@@ -1,0 +1,10 @@
+{
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/include",
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/../../Telemetry_2026/telemetry/fixed",
+        "${workspaceFolder}/../../Telemetry_2026/telemetry/gen"
+    ],
+    "C_Cpp.intelliSenseEngine": "default",
+    "C_Cpp.errorSquiggles": "enabledIfIncludesResolve"
+}
