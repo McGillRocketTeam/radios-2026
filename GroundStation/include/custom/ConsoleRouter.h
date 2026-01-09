@@ -67,9 +67,7 @@ private:
 
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
-
-    // This identifier determines a (900) or b (435) band
-    char identifier;
+    
     const char* metadataTopic;
     const char* telemetryTopic;
     const char* debugTopic;

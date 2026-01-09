@@ -111,86 +111,8 @@ void GroundStation::handleRocketCommand()
     String rocketCommand = "nop";
     commandParser->getNextRocketCommand(rocketCommand);
 
-    // Check for our magic “change param” command:
-    const String prefix = "change param ";
-    if (rocketCommand.startsWith(prefix))
-    {
-        handleRocketRadioParamChange(rocketCommand, prefix);
-    }
-    else
-    {
-        // Otherwise normal send:
-        sendRocketCommand(rocketCommand);
-    }
-}
-
-void GroundStation::handleRocketRadioParamChange(String rocketRadioParamChangeCommand, String rocketRadioChangePrefix)
-{
-    // Grab the part after the prefix
-    String nums = rocketRadioParamChangeCommand.substring(rocketRadioChangePrefix.length());
-    // e.g. "903,7,125,8"
-    // change param 433 8 125 8 (freq,sf,bw,cr)
-
-    // Split on spaces
-    float parts[4] = {0};
-    int idx = 0;
-    int start = 0;
-    while (idx < 4)
-    {
-        int comma = nums.indexOf(' ', start);
-        String token;
-        if (comma == -1)
-        {
-            token = nums.substring(start);
-        }
-        else
-        {
-            token = nums.substring(start, comma);
-        }
-        parts[idx++] = token.toFloat();
-        if (comma == -1)
-            break;
-        start = comma + 1;
-    }
-    if (idx != 4)
-    {
-        LOGGING(DEBUG, "Invalid change param format; expect four space separated values");
-        return;
-    }
-
-    // Save old, set pending (leave power unchanged)
-    oldParams = currentParams;
-
-    currentParams.freq = (parts[0]);
-    currentParams.sf = static_cast<int>(parts[1]);
-    currentParams.bw = (parts[2]);
-    currentParams.cr = static_cast<int>(parts[3]);
-
-    // New Lora Params (FREQ=W (uint32_t), SF=X (uint8_t), BW=Y (uint8_t), CR=Z (uint8_t)
-    uint8_t buf[9];
-    buf[0] = 'r';
-    buf[1] = 'l';
-    buf[2] = static_cast<uint8_t>(parts[1]); // SF
-    buf[3] = toLoraBwEnum(parts[2]); // Convert BW from GS MHz format to rocket enum format
-
-    uint32_t freq_hz = static_cast<uint32_t>(parts[0] * 1e6); // Convert MHz to Hz
-    memcpy(&buf[4], &freq_hz, 4);                             // Little endian assumed
-
-    buf[8] = toLoraCrEnum(parts[3]); // Convert CR from GS format to rocket enum format
-
-    sendSerialisedRocketCommand(buf, 9);
-
-    LOGGING(INFO, "Sending a ROCKET RADIO PARAM CHANGE command");
-
-    applyParams(currentParams);
-
-    // Tell the GUI of the theoretical new params if we fail we resend in revertParams
-    printRadioParamsToGui();
-    // Arm the revert timer:
-    awaitingAck = true;
-    paramRevertTimer.begin([]()
-                           { GroundStation::getInstance()->revertParams(); }, 10000000); // 10 000 000 µs == 5 s
-    return;
+    sendRocketCommand(rocketCommand);
+    
 }
 
 void GroundStation::getQueueStatus()
@@ -218,31 +140,7 @@ void GroundStation::handleCommandParserUpdate()
     }
 }
 
-void GroundStation::applyParams(const RadioParams rp)
-{
-    radioModule->setFreq(rp.freq);
-    radioModule->setBandwidth(rp.bw);
-    radioModule->setCodingRate(rp.cr);
-    radioModule->setSpreadingFactor(rp.sf);
-    radioModule->setPowerOutput(rp.pow);
 
-    currentParams.freq = rp.freq;
-    currentParams.bw = rp.bw;
-    currentParams.cr = rp.cr;
-    currentParams.sf = rp.sf;
-    currentParams.pow = rp.pow;
-}
-
-void GroundStation::revertParams()
-{
-    if (!awaitingAck)
-        return;
-    applyParams(oldParams);
-    // Update GUI since we need to revert
-    printRadioParamsToGui();
-    awaitingAck = false;
-    LOGGING(INFO, "No packets on new params; reverted to old settings.");
-}
 
 void GroundStation::setVerbosePacket(bool state)
 {

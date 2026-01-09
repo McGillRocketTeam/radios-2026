@@ -100,12 +100,6 @@ private:
     /// Singleton instance pointer
     static GroundStation* instance;
 
-    /**
-     * @brief Parses and applies rocket command to change radio parameters based on prefix.
-     * @param command Full input command.
-     * @param prefix Prefix indicating the target parameter set.
-     */
-    void handleRocketRadioParamChange(String command, String prefix);
 
     //Get the current radio params of the ground station
     RadioParams getCurrentRadioParams();
@@ -122,17 +116,6 @@ private:
     //Just like print packet to GUI instead prints the Radio Params held in current Radio Params of GS
     void printRadioParamsToGui();
 
-    /**
-     * @brief Applies a new set of radio parameters to the current GS params and sets them in the radio Chip
-     * @param rp The new RadioParams object.
-     */
-    void applyParams(const RadioParams rp);
-
-    /**
-     * @brief Reverts the radio parameters to the last known working configuration.
-     */
-    void revertParams();
-
 
     /**
      * @brief Sends a serialised rocket command via the radio module.
@@ -148,7 +131,6 @@ private:
      * @param command The command to send.
      */
     void sendRocketCommand(const String& command);
-
 
     void printPacketToGui();
 
@@ -187,9 +169,6 @@ private:
 
     /// Currently active radio parameters
     RadioParams currentParams;
-
-    /// Parameters pending application (used for temporary switching)
-    RadioParams oldParams;
 
     /// Timer for raising the commandParserFlag every 10ms
     IntervalTimer commandParserTimer;

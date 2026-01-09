@@ -32,7 +32,7 @@ static bool mqttReconnect(const char *topic);
 
 volatile bool ethernetReconnectNeeded = false;
 
-ConsoleRouter::ConsoleRouter() : identifier('c') {}
+ConsoleRouter::ConsoleRouter() {}
 
 void ConsoleRouter::setTopicsFromPins()
 {
@@ -60,6 +60,8 @@ void ConsoleRouter::begin()
 
     ethernetInit();
     sendStatus();
+    // This ISR will work with the reconnect function
+    // to reconnect the ethernet connection if it fails
     ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
 }
 
@@ -239,7 +241,6 @@ static bool mqttReconnect(const char *topic)
 
     const char *clientId = "teensy41-console";
     if (mqttClient.connect(clientId, "", "", topic, 0, true, ""))
-    // if (mqttClient.connect(clientId))
     {
         Serial.println("MQTT connected.");
         return true;

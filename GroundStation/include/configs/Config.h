@@ -7,7 +7,7 @@
 
 //This is a special debug outside of the logger specific to the console. 
 constexpr bool CONSOLE_ROOT_DEBUG = true; 
-constexpr int GS_SERIAL_BAUD_RATE = 9600;
+constexpr int GS_SERIAL_BAUD_RATE = 115200;
 
 // Controls whether this code is allowed to transmit
 constexpr bool ENABLE_RADIO_TX = true;
