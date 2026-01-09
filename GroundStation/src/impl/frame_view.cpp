@@ -8,10 +8,7 @@ void FrameView::reset(const uint8_t* bytes, size_t len) { _base = bytes; _len = 
 ParseError FrameView::validate() const {
     if (_len < sizeof(FrameHeader)) return ParseError::TooShort;
     const auto* h = header();
-    Serial.print("akfnalsdknf");
-    Serial.println(h->atomics_bitmap);
     const uint32_t need = payload_length_from_bitmap(h->atomics_bitmap);
-    Serial.println(need);
     if (sizeof(FrameHeader) + need > _len) return ParseError::PayloadTooShort;
     for (int i = 0; i < AT_TOTAL; ++i)
         if ((h->atomics_bitmap & (1u << i)) && AT_SIZE[i] == 0)

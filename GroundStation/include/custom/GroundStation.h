@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "RadioParams.h"
 #include "RadioModule.h"
 #include "CommandParser.h"
@@ -15,11 +17,12 @@
  */
 class GroundStation {
 public:
+
     /**
      * @brief Get the singleton instance of the GroundStation.
      * @return Pointer to the GroundStation instance.
      */
-    static GroundStation* getInstance();
+    static GroundStation& getInstance();
 
     /**
      * @brief Initialize the ground station subsystems.
@@ -83,7 +86,7 @@ public:
     /**
      * @brief Destructor for GroundStation.
      */
-    ~GroundStation();
+    ~GroundStation() = default;
 
     // Delete copy and move constructors and assignment operators to enforce singleton pattern
     GroundStation(const GroundStation&) = delete;
@@ -97,16 +100,6 @@ private:
      */
     GroundStation();
 
-    /// Singleton instance pointer
-    static GroundStation* instance;
-
-
-    //Get the current radio params of the ground station
-    RadioParams getCurrentRadioParams();
-
-    //Make the current radio param match that of the chip
-    void matchCurrentRadioParamsWithRadioModule();
-
     //Check whether the params are matched and if not match them
     void syncCurrentParamsWithRadioModule();
 
@@ -116,24 +109,15 @@ private:
     //Just like print packet to GUI instead prints the Radio Params held in current Radio Params of GS
     void printRadioParamsToGui();
 
-
-    /**
-     * @brief Sends a serialised rocket command via the radio module.
-     * and puts the radio back to receive mode
-     * 
-     * @param data pointer to the byte array to send
-     * @param length length of the data to send
-     */
-    void sendSerialisedRocketCommand(const uint8_t *data, size_t length);
-
     /**
      * @brief Serialises string and sendes the serialised rocket command
      * @param command The command to send.
      */
-    void sendRocketCommand(const String& command);
+    void sendRocketCommand(command_packet& command);
 
     void printPacketToGui();
 
+    // Reads the received packet into the the currentFrameView and validates it
     void readReceivedPacket();
 
     /**
@@ -155,10 +139,10 @@ private:
 
 
     /// Pointer to the radio module
-    RadioModule* radioModule;
+    std::unique_ptr<RadioModule> radioModule;
 
     /// Pointer to the command parser
-    CommandParser* commandParser;
+    std::unique_ptr<CommandParser> commandParser;
 
     //Frame view setup 
     // Buffer that persists for the life of Ground Station
@@ -170,6 +154,10 @@ private:
     /// Currently active radio parameters
     RadioParams currentParams;
 
+    /// RSSI and SNR of the last packet received
+    float lastRSSI = 0;
+    float lastSNR = 0;
+
     /// Timer for raising the commandParserFlag every 10ms
     IntervalTimer commandParserTimer;
 
@@ -180,7 +168,7 @@ private:
     IntervalTimer paramRevertTimer;
 
     /// Flag raised by the timer interrupt to indicate it's time to update the parser
-    static volatile bool commandParserFlag;
+    static volatile bool commandParserFlag; // Shared global thing
 
     /// Enables or disables TX based on CTS logic
     bool canTXFromCTS;

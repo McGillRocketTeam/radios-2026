@@ -9,12 +9,9 @@
 static EthernetClient ethClient;
 static PubSubClient mqttClient(ethClient);
 
-// Topics
-
 // MQTT Topics
 
 // Topics radio-<location>-<a or b for freq>/...
-
 const char *TOPIC_RADIO_PD_A_TELEMETRY = "radio-pad-a/telemetry";
 const char *TOPIC_RADIO_PD_A_METADATA = "radio-pad-a/metadata";
 const char *TOPIC_RADIO_PD_B_TELEMETRY = "radio-pad-b/telemetry";
@@ -34,6 +31,22 @@ volatile bool ethernetReconnectNeeded = false;
 
 ConsoleRouter::ConsoleRouter() {}
 
+void ConsoleRouter::begin()
+{
+    Serial.begin(GS_SERIAL_BAUD_RATE);
+    
+    if (!ENABLE_ETHERNET_CONNECTION) return;
+
+    setTopicsFromPins();
+    delay(100);
+
+    ethernetInit();
+    sendStatus();
+    // This ISR will work with the reconnect function
+    // to reconnect the ethernet connection if it fails
+    ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
+}
+
 void ConsoleRouter::setTopicsFromPins()
 {
     pinMode(FREQ_PIN, INPUT);
@@ -50,19 +63,6 @@ void ConsoleRouter::setTopicsFromPins()
         telemetryTopic = TOPIC_RADIO_CS_A_TELEMETRY;
         debugTopic = TOPIC_RADIO_CS_A_DEBUG;
     }
-}
-
-void ConsoleRouter::begin()
-{
-    Serial.begin(GS_SERIAL_BAUD_RATE);
-    setTopicsFromPins();
-    delay(100);
-
-    ethernetInit();
-    sendStatus();
-    // This ISR will work with the reconnect function
-    // to reconnect the ethernet connection if it fails
-    ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
 }
 
 void ConsoleRouter::ethernetInit()
@@ -95,6 +95,8 @@ void ConsoleRouter::ethernetInit()
 
 void ConsoleRouter::handleConsoleReconnect()
 {
+    if (!ENABLE_ETHERNET_CONNECTION) return;
+
     if (ethernetReconnectNeeded)
     {
         ethernetReconnectNeeded = false;
@@ -110,6 +112,23 @@ void ConsoleRouter::handleConsoleReconnect()
             Serial.println("MQTT disconnected. Reconnecting...");
             mqttReconnect(metadataTopic);
         }
+    }
+}
+
+void ConsoleRouter::mqttLoop()
+{
+    if (!ENABLE_ETHERNET_CONNECTION) return;
+    
+    if (ethernetUp())
+    {
+        if (!mqttUp())
+        {
+            if (mqttReconnect(metadataTopic))
+            {
+                sendStatus();
+            }
+        }
+        mqttClient.loop();
     }
 }
 
@@ -252,21 +271,6 @@ static bool mqttReconnect(const char *topic)
     }
 }
 
-void ConsoleRouter::mqttLoop()
-{
-    if (ethernetUp())
-    {
-        if (!mqttUp())
-        {
-            if (mqttReconnect(metadataTopic))
-            {
-                sendStatus();
-            }
-        }
-        mqttClient.loop();
-    }
-}
-
 void ConsoleRouter::_publishBytes(const uint8_t *data, size_t len)
 {
     if (ethernetUp() && mqttUp() && data && len)
@@ -286,8 +290,8 @@ void ConsoleRouter::_printString(const String &s, bool newline)
     {
         Serial.println(s);
         _publishBytes(reinterpret_cast<const uint8_t *>(s.c_str()), s.length());
-        const char nl = '\n';
-        _publishBytes(reinterpret_cast<const uint8_t *>(&nl), 1);
+        // const char nl = '\n';
+        // _publishBytes(reinterpret_cast<const uint8_t *>(&nl), 1);
     }
 }
 
@@ -307,8 +311,8 @@ void ConsoleRouter::println(const char *s)
     }
     Serial.println(s);
     _publishBytes(reinterpret_cast<const uint8_t *>(s), strlen(s));
-    const char nl = '\n';
-    _publishBytes(reinterpret_cast<const uint8_t *>(&nl), 1);
+    // const char nl = '\n';
+    // _publishBytes(reinterpret_cast<const uint8_t *>(&nl), 1);
 }
 
 // --- String ---
@@ -324,8 +328,8 @@ void ConsoleRouter::print(char c)
 void ConsoleRouter::println()
 {
     Serial.println();
-    const char nl = '\n';
-    _publishBytes(reinterpret_cast<const uint8_t *>(&nl), 1);
+    // const char nl = '\n';
+    // _publishBytes(reinterpret_cast<const uint8_t *>(&nl), 1);
 }
 
 void ConsoleRouter::print(const __FlashStringHelper *fs)

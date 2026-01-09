@@ -6,6 +6,8 @@
 volatile bool RadioModule::interruptReceived = false;
 volatile bool RadioModule::enableInterrupt = true;
 
+// === Setup ===
+
 RadioModule::RadioModule()
     : radio(new Module(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN))
 {
@@ -28,19 +30,46 @@ RadioModule::RadioModule()
                         TCXO_VOLTAGE, USE_ONLY_LDO);
     }
     verifyRadioState("Intializing radio module...");
-    radio.setPacketReceivedAction(isr);
+    radio.setPacketReceivedAction(radioReceiveISR);
     memset(buffer, 0, sizeof(buffer));
 }
 
+RadioChip *RadioModule::getRadioChipInstance()
+{
+    return &radio;
+}
+
+
+// === MAIN functions ===
+
 bool RadioModule::transmitInterrupt(const uint8_t *data, size_t size)
 {
+    interruptReceived = false;
+
     state = radio.startTransmit(data, size);
     verifyRadioState("Attempting to transmit... ");
-    while (interruptReceived == false)
+
+    const uint32_t timeoutMs = 1000;
+    const uint32_t start = millis();
+    uint32_t lastLog = 0;
+
+    while (!interruptReceived)
     {
-        delay(10);
-        LOGGING(DEBUG,"waiting for data to transmit");
+        if (millis() - start > timeoutMs)
+        {
+            verifyRadioState("ERROR: TX timeout");
+            return false;
+        }
+
+        if (millis() - lastLog > 250)
+        {
+            LOGGING(DEBUG, "waiting for TX done IRQ...");
+            lastLog = millis();
+        }
+
+        delay(2);
     }
+
     interruptReceived = false;
     return true;
 }
@@ -68,10 +97,103 @@ uint8_t *RadioModule::readPacket()
     return buffer;
 }
 
+void RadioModule::radioReceiveISR()
+{
+    if (RadioModule::enableInterrupt)
+    {
+        RadioModule::interruptReceived = true;
+    }
+}
+
+// === Parameters Helpers ===
+
+void RadioModule::checkParams()
+{
+    Console.print("frequency: ");
+    Console.print(frequency);
+
+    Console.print(" bandwidth: ");
+    Console.print(bandwidth);
+
+    Console.print(" spreading factor: ");
+    Console.print(spreadingFactor);
+
+    Console.print(" coding rate: ");
+    Console.print(codingRate);
+
+    Console.print(" power output: ");
+    Console.print(powerOutput);
+}
+
+void RadioModule::pingParams()
+{
+    //ping_ack:8,250.00,903.00,7,20
+    Console.print("ping_ack");
+    Console.print(":");
+    Console.print(spreadingFactor);
+    Console.print(",");
+    Console.print(bandwidth);
+    Console.print(",");
+    Console.print(frequency);
+    Console.print(",");
+    Console.print(codingRate);
+    Console.print(",");
+    Console.println(powerOutput);
+}
+
+
+
+float RadioModule::getFrequencyByBandPin()
+{
+    if (digitalRead(FREQ_PIN) == HIGH)
+    {
+        LOGGING(DEBUG,"FREQ_PIN is HIGH using 903.00 MHz");
+        return FREQUENCY_903;
+    }
+    else
+    {
+        LOGGING(DEBUG,"FREQ_PIN is LOW using 435.00 MHz");
+        return FREQUENCY_435;
+    }
+}
+
+
+// === Packet Getters Setters ===
+
 int RadioModule::getPacketLength()
 {
     return lastPacketLength;
 }
+
+int RadioModule::getRSSI()
+{
+    return radio.getRSSI();
+}
+
+int RadioModule::getSNR()
+{
+    return radio.getSNR();
+}
+
+
+// === General Helper ===
+
+bool RadioModule::verifyRadioState(String message)
+{
+    if (state == RADIOLIB_ERR_NONE)
+    {
+        LOGGING(DEBUG,message + " Success!");
+        return true;
+    }
+    else
+    {
+        LOGGING(CRIT,message + " Failure. Error code: " + String(state));
+        return false;
+    }
+}
+
+// === Radio Chip Getters Setters ===
+
 
 float RadioModule::getFreq()
 {
@@ -140,91 +262,5 @@ void RadioModule::setPowerOutput(int newPowerOutput)
     if (verifyRadioState("Switching to power output of " + String(newPowerOutput)))
     {
         powerOutput = newPowerOutput;
-    }
-}
-
-void RadioModule::checkParams()
-{
-    Console.print("frequency: ");
-    Console.print(frequency);
-
-    Console.print(" bandwidth: ");
-    Console.print(bandwidth);
-
-    Console.print(" spreading factor: ");
-    Console.print(spreadingFactor);
-
-    Console.print(" coding rate: ");
-    Console.print(codingRate);
-
-    Console.print(" power output: ");
-    Console.print(powerOutput);
-}
-
-void RadioModule::pingParams()
-{
-    //ping_ack:8,250.00,903.00,7,20
-    Console.print("ping_ack");
-    Console.print(":");
-    Console.print(spreadingFactor);
-    Console.print(",");
-    Console.print(bandwidth);
-    Console.print(",");
-    Console.print(frequency);
-    Console.print(",");
-    Console.print(codingRate);
-    Console.print(",");
-    Console.println(powerOutput);
-}
-
-RadioChip *RadioModule::getRadioChipInstance()
-{
-    return &radio;
-}
-
-int RadioModule::getRSSI()
-{
-    return radio.getRSSI();
-}
-
-int RadioModule::getSNR()
-{
-    return radio.getSNR();
-}
-
-float RadioModule::getFrequencyByBandPin()
-{
-    if (digitalRead(FREQ_PIN) == HIGH)
-    {
-        LOGGING(DEBUG,"FREQ_PIN is HIGH using 903.00 MHz");
-        return FREQUENCY_903;
-    }
-    else
-    {
-        LOGGING(DEBUG,"FREQ_PIN is LOW using 435.00 MHz");
-        return FREQUENCY_435;
-    }
-}
-
-
-bool RadioModule::verifyRadioState(String message)
-{
-    if (state == RADIOLIB_ERR_NONE)
-    {
-        LOGGING(DEBUG,message + " Success!");
-        return true;
-    }
-    else
-    {
-        LOGGING(DEBUG,message + " Failure. Error code: " + String(state));
-        return false;
-    }
-}
-
-void RadioModule::isr()
-{
-    if (RadioModule::enableInterrupt)
-    {
-        RadioModule::interruptReceived = true;
     }
 }

@@ -16,7 +16,7 @@ private:
     
     
 
-    static void isr(); 
+    static void radioReceiveISR(); 
 
     int state = RADIOLIB_ERR_NONE;
     RadioChip radio;
@@ -31,14 +31,15 @@ private:
     uint8_t buffer[RADIO_BUFFER_SIZE];
     int lastPacketLength = 0;
     
-    void debugPrint(String message);
+    // Checks that the current state of the chip is good
+    // If its bad then we will output the critical messsage
     bool verifyRadioState(String message);
     float getFrequencyByBandPin();
 
 public:
     RadioModule();
 
-    // Transmit data array of bytes and stay in transmit mode
+    // BLOCKING Transmit data array of bytes and stay in transmit mode
     bool transmitInterrupt(const uint8_t* data, size_t size);
 
     bool receiveMode();
@@ -62,7 +63,10 @@ public:
     void pingParams();
 
     RadioChip* getRadioChipInstance();
+
+    // Get the RSSI of the last packet received
     int getRSSI();
+    // Get the SNR of the last packet received
     int getSNR();
 };
 

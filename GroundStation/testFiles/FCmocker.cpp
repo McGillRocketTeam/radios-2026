@@ -2,7 +2,6 @@
 #include <cstring>
 
 #include "Config.h"
-#include "ConsoleRouter.h"
 #include "RadioModule.h"
 
 #include "command_packet.h"
@@ -60,22 +59,12 @@ void setup()
     {
     }
 
-    Console.begin();
-    Console.handleConsoleReconnect();
-
     Serial.println("Flight Computer Simulator");
     radioModule = new RadioModule();
 }
 
 void loop()
 {
-    static uint32_t lastReconnect = 0;
-    if (millis() - lastReconnect > 5000)
-    {
-        Console.handleConsoleReconnect();
-        Console.mqttLoop();
-        lastReconnect = millis();
-    }
 
     uint8_t frameBuf[512] = {0};
     size_t frameLen = 0;
@@ -108,9 +97,6 @@ void loop()
         return;
     }
 
-    Serial.println("Sending telemetry via Console");
-    Console.sendTelemetry(frameBuf, frameLen);
-
     // Send telemetry over radio
     Serial.print("Sending telemetry over radio CTS =");
     Serial.print((flags & FLAG_CTS) ? "YES" : "NO");
@@ -132,7 +118,10 @@ void loop()
         Serial.println("Radio transmission failed!");
     }
 
-    if (txSuccess && (flags & FLAG_CTS) != 0)
+    // Finite State Machine Block
+
+    // Success sending a CTS tx
+    if (txSuccess && currentState == FCState::Transmit_CTS)
     {
         Serial.println("We are now waiting for a response");
         currentState = FCState::Waiting_For_Response;
@@ -151,15 +140,25 @@ void loop()
             }
         }
     }
+    else if (txSuccess && currentState == FCState::Transmit_NoCTS)
+    {
+        Serial.println("Successful tx of no CTS packet now swapping to with CTS");
+        currentState = FCState::Transmit_CTS;
+    }
+    else if (txSuccess && currentState == FCState::Transmit_ACK){
+        currentState = FCState::Transmit_NoCTS;
+    }
 
     // waiting for response means we txed a CTS and failed
     // so need to go into CTS again
     if (currentState == FCState::Waiting_For_Response)
     {
+        Serial.println("We failed to get a response from our CTS, will send a new packet with the CTS");
+        delay(500);
         currentState = FCState::Transmit_CTS;
     }
 
-    delay(1000);
+    delay(100);
 }
 
 // === Telemetry Construction Impl ===
@@ -319,12 +318,12 @@ static bool setFlagsFromState(FCState state,
     }
     return true;
 }
-
-static void handleCommandPacket(const uint8_t *buffer, size_t packetLength, uint8_t &ack_number)
+static void handleCommandPacket(const uint8_t* buffer,
+                                size_t packetLength,
+                                uint8_t& ack_number)
 {
-    // Safety check
-    if (packetLength < sizeof(command_packet_data))
-    {
+    // Must contain the full struct
+    if (packetLength < sizeof(command_packet_data)) {
         Serial.println("ERROR: Packet too short");
         return;
     }
@@ -332,17 +331,20 @@ static void handleCommandPacket(const uint8_t *buffer, size_t packetLength, uint
     command_packet_data pkt;
     memcpy(&pkt, buffer, sizeof(pkt));
 
-    Serial.print("Command: ");
-    Serial.write(pkt.command_string, 3);
-    Serial.println();
+    pkt.command_string[4] = '\0';
 
-    if (memcmp(pkt.command_string, "nop", 3) == 0)
-    {
+    Serial.print("Command: ");
+    Serial.println(pkt.command_string);
+
+    // Case-insensitive compare for up to 4-char commands
+    // "nop" is 3 chars; this matches "nop" regardless of case
+    if (strncasecmp(pkt.command_string, "nop", 3) == 0) {
         currentState = FCState::Transmit_NoCTS;
         return;
     }
-
     Serial.print("Setting CMD ID: ");
     Serial.println(pkt.command_id);
+    delay(1000);
+
     ack_number = pkt.command_id;
 }

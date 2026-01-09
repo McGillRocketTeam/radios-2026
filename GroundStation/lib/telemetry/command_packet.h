@@ -1,10 +1,13 @@
+#pragma once
+
 #include <cstdint>
 
-// Command string the char array is null terminated so we can send 2 letter commands
-// e.g po\0 p1\0 p2\0
+// Command string supports up to 4 characters
+// It must be null terminated
+
 typedef struct __attribute__((__packed__)) command_packet_data {
     uint8_t command_id;
-    char command_string[3];
+    char command_string[5];
 } command_packet_data;
 
 typedef union command_packet {

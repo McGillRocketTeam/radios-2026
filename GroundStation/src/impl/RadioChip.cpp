@@ -84,7 +84,6 @@ int32_t RadioChip::getSNR() {
     return (int32_t) _radio->getSNR();
 }
 
-
 float RadioChip::getFrequencyByBandPin(){
     pinMode(FREQ_PIN,INPUT);
     LOGGING(DEBUG,"Checking freq pin: ");

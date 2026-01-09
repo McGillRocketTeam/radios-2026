@@ -1,17 +1,11 @@
 #pragma once
 
-/**
- * @file CommandParser.h
- * @brief Serial-based command parser for ground station interface.
- *
- * Captures and parses user-typed commands character by character asynchronously,
- * differentiates "radio" vs "rocket" commands using keywords, and queues the commands
- * into separate queues.
- */
 
 #include <Arduino.h>
 #include <ArduinoQueue.h>
+
 #include "Config.h"
+#include "command_packet.h"
 
 /// Maximum length (in chars) for any single command line.
 #define MAX_COMMAND_LENGTH 100
@@ -52,22 +46,29 @@ public:
     bool getNextRadioCommand(String &outCommand);
 
     /**
-     * @brief Retrieves the next rocket command, if available.
-     * @param[out] outCommand String object populated with the dequeued command.
-     * @return true if a command was available and dequeued.
-     * @return false if the rocket command queue was empty.
+     * @brief Puts the next rocket command into the stuct, if available.
      */
-    bool getNextRocketCommand(String &outCommand);
+    bool getNextRocketCommand(command_packet& outCommand);
 
     /**
-     * @brief Prints the number of pending radio commands to Serial.
+     * @brief Prints the number of pending radio commands to the Console.
      */
     void printRadioQueueStatus();
 
     /**
-     * @brief Prints the number of pending rocket commands to Serial.
+     * @brief Prints the number of pending rocket commands to the Console.
      */
     void printRocketQueueStatus();
+
+
+    // Converts human inputed commands into nice format 33,po for the rocket queue
+    // handles "," "-" " " ":" seperators
+    bool normalizeRocketCommand(const String& in, String& out);
+
+    enum class QueueType : uint8_t {
+        Radio,
+        Rocket
+    };
 
 private:
     ArduinoQueue<String> radioCommandQueue;   ///< Queue for radio commands.
@@ -95,11 +96,12 @@ private:
      * @brief Inserts a command into a specified queue and logs overflow if necessary.
      * @param queue The target queue.
      * @param command The command string to insert.
-     * @param queueType A string identifier (e.g., "radio" or "rocket") used for logging/debug.
+     * @param kind which queue we want to put it in
      */
-    void handleQueueInsertion(ArduinoQueue<String> &queue,
-                              const String &command,
-                              const char *queueType);
+    void handleQueueInsertion(
+        ArduinoQueue<String> &queue,
+        QueueType kind,                      
+        const String &command);
 
     /**
      * @brief Handles backspace character by removing the last character from the buffer.

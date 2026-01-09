@@ -1,35 +1,32 @@
 #include <Arduino.h>
-#include <RadioLib.h>
-#include <Config.h>
+
 #include <cassert>
-#include <RadioModule.h>
-#include "GroundStation.h"
-#include "frame_builder.h"
-#include "frame_header.h"
-#include "telemetry_packets.h"
-#include "frame_view.h"
-#include "frame_printer.h"
+
+#include "Config.h"
 #include "ConsoleRouter.h"
+#include "GroundStation.h"
 
 
-GroundStation* groundStation;
 
 void setup() {
     Console.begin();
-    groundStation = GroundStation::getInstance();
-    groundStation->initialise();
-    groundStation->setCanTXFromCTS(false);
+
+    auto& gs = GroundStation::getInstance();
+    gs.initialise();
+    gs.setCanTXFromCTS(false);
 
 }
 
 void loop() {
-    // Delay for stability
     delay(20);
 
     Console.handleConsoleReconnect();
     Console.mqttLoop();
+
+    auto& gs = GroundStation::getInstance();
+
     // Handle received commands and packets from the ground station
-    groundStation->handleCommandParserUpdate();
-    groundStation->handleRadioCommand();
-    groundStation->handleReceivedPacket();
+    gs.handleCommandParserUpdate();
+    gs.handleRadioCommand();
+    gs.handleReceivedPacket();
 }
