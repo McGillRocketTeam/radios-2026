@@ -1,14 +1,19 @@
 #include <Arduino.h>
+
 #include <cstring>
+
+#include "ConsoleRouter.h"
 #include "frame_builder.h"
 #include "frame_header.h"
-#include "telemetry_packets.h"
 #include "frame_view.h"
 #include "frame_printer.h"
-#include "ConsoleRouter.h"
 #include "RadioModule.h"
+#include "telemetry_packets.h"
 
-// Flight Computer Simulator
+// ======================================================== 
+// Variant of main.cpp that just generates telemetry values
+// and sends it to the GUI
+// The telemetry generation is hardcoded to Dec 2025
 
 static uint16_t sequenceNumber = 1;
 static RadioModule *radioModule = nullptr;

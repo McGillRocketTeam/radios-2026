@@ -6,7 +6,9 @@
 #include "ConsoleRouter.h"
 #include "GroundStation.h"
 
-
+// ======================================================== 
+// Variant of main.cpp that runs the main GS radio code
+// 
 
 void setup() {
     Console.begin();

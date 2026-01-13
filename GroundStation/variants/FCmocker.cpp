@@ -11,6 +11,12 @@
 #include "frame_view.h"
 #include "telemetry_packets.h"
 
+// ======================================================== 
+// Variant of main.cpp that makes the GS radio mock the FC,
+// ASTRA telemetry has to match between GS and mockFC.
+// The telemetry generation is hardcoded to Jan 2026
+
+
 // === Telemetry contruction declerations ===
 static void fillStates(states_atomic_data &states);
 static void fillProp(prop_atomic_data &prop);
