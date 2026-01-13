@@ -6,8 +6,8 @@ IPAddress STATIC_IP(192, 168, 0, 50);
 
 // ====== Your PC running the server ========
 
-IPAddress SERVER_IP(192, 168, 0, 142); 
-// IPAddress SERVER_IP(192, 168, 0, 105); 
+// IPAddress SERVER_IP(192, 168, 0, 150); 
+IPAddress SERVER_IP(192, 168, 0, 105); 
 
 // Ethernet and MQTT Reconnect check timer in micro seconds 
 // ( 1,000,000 micro == 1 second)

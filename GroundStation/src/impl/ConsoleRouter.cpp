@@ -23,11 +23,16 @@ const char *TOPIC_RADIO_CS_B_TELEMETRY = "radio-controlstation-b/telemetry";
 const char *TOPIC_RADIO_CS_B_METADATA = "radio-controlstation-b/metadata";
 const char *TOPIC_RADIO_CS_B_DEBUG = "radio-controlstation-b/debug";
 
+// === Static global function forward decleration ===
+
 static bool ethernetUp();
 static bool mqttUp();
 static bool mqttReconnect(const char *topic);
 
 volatile bool ethernetReconnectNeeded = false;
+
+
+// === Setup ===
 
 ConsoleRouter::ConsoleRouter() {}
 
