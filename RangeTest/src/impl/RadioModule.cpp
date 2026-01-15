@@ -20,14 +20,15 @@ RadioModule::RadioModule()
         Console.print("frequency is");
         Console.println(frequency);
         Console.print("if error persists try power cycling by disconnecting and reconnecting/ usb");
-        if (frequency == FREQUENCY_435){
+        if (frequency == FREQUENCY_435)
+        {
             Console.println("Check the battery?");
             Console.println("Checking the freq pin again");
         }
         delay(250);
         frequency = getFrequencyByBandPin();
         state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
-                        TCXO_VOLTAGE, USE_ONLY_LDO);
+                            TCXO_VOLTAGE, USE_ONLY_LDO);
     }
     verifyRadioState("Intializing radio module...");
     radio.setPacketReceivedAction(radioReceiveISR);
@@ -38,7 +39,6 @@ RadioChip *RadioModule::getRadioChipInstance()
 {
     return &radio;
 }
-
 
 // === MAIN functions ===
 
@@ -89,11 +89,31 @@ uint8_t *RadioModule::readPacket()
 {
     size_t packetLength = radio.getPacketLength();
     lastPacketLength = packetLength;
-    // Intialise the buffer to be zero
     memset(buffer, 0, sizeof(buffer));
     state = radio.readData(buffer, packetLength);
-    verifyRadioState("Attempting to read data...");
     interruptReceived = false;
+    
+    if (state == RADIOLIB_ERR_NONE)
+    {
+    }
+    else if (state == RADIOLIB_ERR_CRC_MISMATCH)
+    {
+        // If its a crc error we can log the SNR and RSSI
+        // of the packet received even though its data is cooked
+        char buf[64];
+        // RSSI in dBm SNR in db
+        snprintf(buf, sizeof(buf),
+                 " ,CRC error, RSSI: %.2f, SNR: %.2f",
+                 getRSSI(), getSNR());
+        LOGGING(SPED, buf);
+        return nullptr;
+    }
+    else
+    {
+        LOGGING(SPED, "Read Failure. Error code: " + String(state));
+        return nullptr;
+    }
+
     return buffer;
 }
 
@@ -127,7 +147,7 @@ void RadioModule::checkParams()
 
 void RadioModule::pingParams()
 {
-    //ping_ack:8,250.00,903.00,7,20
+    // ping_ack:8,250.00,903.00,7,20
     Console.print("ping_ack");
     Console.print(":");
     Console.print(spreadingFactor);
@@ -141,22 +161,19 @@ void RadioModule::pingParams()
     Console.println(powerOutput);
 }
 
-
-
 float RadioModule::getFrequencyByBandPin()
 {
     if (digitalRead(FREQ_PIN) == HIGH)
     {
-        LOGGING(DEBUG,"FREQ_PIN is HIGH using 903.00 MHz");
+        LOGGING(DEBUG, "FREQ_PIN is HIGH using 903.00 MHz");
         return FREQUENCY_903;
     }
     else
     {
-        LOGGING(DEBUG,"FREQ_PIN is LOW using 435.00 MHz");
+        LOGGING(DEBUG, "FREQ_PIN is LOW using 435.00 MHz");
         return FREQUENCY_435;
     }
 }
-
 
 // === Packet Getters Setters ===
 
@@ -165,16 +182,15 @@ int RadioModule::getPacketLength()
     return lastPacketLength;
 }
 
-int RadioModule::getRSSI()
+float RadioModule::getRSSI()
 {
     return radio.getRSSI();
 }
 
-int RadioModule::getSNR()
+float RadioModule::getSNR()
 {
     return radio.getSNR();
 }
-
 
 // === General Helper ===
 
@@ -182,29 +198,30 @@ bool RadioModule::verifyRadioState(String message)
 {
     if (state == RADIOLIB_ERR_NONE)
     {
-        LOGGING(DEBUG,message + " Success!");
+        LOGGING(DEBUG, message + " Success!");
         return true;
     }
-    else if ( state == RADIOLIB_ERR_CRC_MISMATCH )
+    else if (state == RADIOLIB_ERR_CRC_MISMATCH)
     {
         // If its a crc error we can log the SNR and RSSI
         // of the packet received even though its data is cooked
+        // special pipe for testing
         char buf[64];
         // RSSI in dBm SNR in db
         snprintf(buf, sizeof(buf),
-                "CRC error, RSSI: %.2f, SNR: %.2f",
-                getRSSI(), getSNR());
-        LOGGING(CRIT, buf);
+                 " ,CRC error, RSSI: %.2f, SNR: %.2f",
+                 getRSSI(), getSNR());
+        LOGGING(SPED, buf);
+        return false;
     }
     else
     {
-        LOGGING(CRIT,message + " Failure. Error code: " + String(state));
+        LOGGING(CRIT, message + " Failure. Error code: " + String(state));
         return false;
     }
 }
 
 // === Radio Chip Getters Setters ===
-
 
 float RadioModule::getFreq()
 {

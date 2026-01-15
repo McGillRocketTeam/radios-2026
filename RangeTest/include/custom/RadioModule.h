@@ -46,6 +46,7 @@ public:
     bool transmitInterrupt(const uint8_t* data, size_t size);
 
     bool receiveMode();
+    //MUST check for nullptr to indicate that data is no good
     uint8_t* readPacket();
     bool checkInterruptReceived();
     int getPacketLength();
@@ -68,9 +69,9 @@ public:
     RadioChip* getRadioChipInstance();
 
     // Get the RSSI of the last packet received
-    int getRSSI();
+    float getRSSI();
     // Get the SNR of the last packet received
-    int getSNR();
+    float getSNR();
 };
 
 #endif // RADIOMODULE_H
