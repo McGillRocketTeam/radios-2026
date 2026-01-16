@@ -2,8 +2,8 @@ import subprocess
 import sys
 import time
 from datetime import datetime
-
 import serial
+import serial.tools.list_ports
 
 # ==========================================================
 # HARD-CODE HERE
@@ -46,9 +46,22 @@ def pio_upload() -> int:
         return 127
 
 
+
+def wait_for_port(port: str, timeout=15.0):
+    start = time.time()
+    while time.time() - start < timeout:
+        ports = [p.device for p in serial.tools.list_ports.comports()]
+        if port in ports:
+            return True
+        time.sleep(0.25)
+    return False
+
 def log_serial():
-    print(f"[INFO] Waiting {WAIT_SECS}s for Teensy reboot...")
-    time.sleep(WAIT_SECS)
+    print(f"[INFO] Waiting for serial port {UPLOAD_PORT} to appear...")
+
+    if not wait_for_port(UPLOAD_PORT):
+        print(f"[ERROR] {UPLOAD_PORT} did not appear.")
+        return
 
     print(f"[INFO] Opening serial port {UPLOAD_PORT} @ {BAUD}")
     print(f"[INFO] Logging to {LOG_FILE}")
@@ -57,6 +70,10 @@ def log_serial():
     with serial.Serial(UPLOAD_PORT, BAUD, timeout=0.5) as ser, \
          open(LOG_FILE, "a", buffering=1) as f:
 
+        time.sleep(0.2)
+        ser.write(b"ping\n")
+        ser.flush()
+
         f.write(f"\n=== Session start {datetime.now().isoformat()} ===\n")
 
         try:
@@ -64,15 +81,12 @@ def log_serial():
                 line = ser.readline()
                 if not line:
                     continue
-                
-                text = line.decode(errors="replace").rstrip("\r\n")
+                text = line.decode(errors="replace").rstrip()
                 f.write(text + "\n")
                 print("[LOG] " + text)
 
         except KeyboardInterrupt:
-            print("\n[INFO] Logging stopped.")
             f.write(f"=== Session end {datetime.now().isoformat()} ===\n")
-
 
 def main() -> int:
     rc = pio_upload()
