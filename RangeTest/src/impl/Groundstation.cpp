@@ -105,7 +105,7 @@ void GroundStation::handleReceivedPacket()
     // Populate the current Frame View with the new packet
     if (!readReceivedPacket())
     {
-        LOGGING(SPED, "Something went wrong when reading the packet for the test");
+        LOGGING(CRIT, "Something went wrong when reading the packet for the test");
         return;
     }
     printPacketToGui();
@@ -329,6 +329,8 @@ bool GroundStation::readReceivedPacket()
 
     if (p && currentFrameView.hasAtomic(AT_FLIGHT_ATOMIC))
     {
+        lastRSSI = radioModule->getRSSI();
+        lastSNR = radioModule->getSNR();
         memcpy(&flight, p, sizeof(flight_atomic_data));
 
         FC_RSSI = ((int32_t)flight.fc_rssi - 400) * 0.5f;
@@ -349,20 +351,23 @@ void GroundStation::printVerboseTelemetryPacket()
 {
     // For the test this will not be gated
     // It will print the needed data
+    char buf[128] = {0};
     if (currentFrameView.cts())
     {
-        char buf[128];
         // RSSI in dBm SNR in db
         snprintf(buf, sizeof(buf),
                  "%d ,CTS, GS_T: %.3f ,GS RSSI: %.2f, GS SNR: %.2f, FC_T: %.3f FC RSSI: %.2f, FC SNR: %.2f, ",
                  currentFrameView.header()->seq, millis() *0.001f, lastRSSI, lastSNR, FC_LastTime, FC_RSSI, FC_SNR);
+        LOGGING(SPED,buf);
     }
-    else if (currentFrameView.ack()) {
-        char buf[128];
+    // Serial.println("printing verbose");
+    // Serial.println(currentFrameView.ack());
+    if (currentFrameView.ack()) {
         // RSSI in dBm SNR in db
         snprintf(buf, sizeof(buf),
-                 "%d ,CTS, GS_T: %.3f ,GS RSSI: %.2f, GS SNR: %.2f, FC_T: %.3f FC RSSI: %.2f, FC SNR: %.2f, ",
+                 "%d ,ACK, GS_T: %.3f ,GS RSSI: %.2f, GS SNR: %.2f, FC_T: %.3f FC RSSI: %.2f, FC SNR: %.2f, ",
                  currentFrameView.header()->seq, millis() *0.001f, lastRSSI, lastSNR, FC_LastTime, FC_RSSI, FC_SNR);
+        LOGGING(SPED,buf);
     }
     return;
 }

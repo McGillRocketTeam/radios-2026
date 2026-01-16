@@ -83,7 +83,6 @@ void loop()
     if (!buildTelemetryFrame(frameBuf, sizeof(frameBuf), frameLen, sequenceNumber, flags, ack_id))
     {
         Serial.println("Error: atomic size mismatch or buffer too small.");
-        delay(1000);
         return;
     }
 
@@ -160,8 +159,10 @@ void loop()
         Serial.println("We failed to get a response from our CTS, will send a new packet with the CTS");
         currentState = previousState;
     }
-
-    sequenceNumber += 1;
+    Serial.print("RSSI:");
+    Serial.print(radioModule->getRSSI());
+    Serial.print("SNR:");
+    Serial.println(radioModule->getSNR());
     delay(10);
 }
 

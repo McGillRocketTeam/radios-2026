@@ -9,7 +9,7 @@ import serial
 # HARD-CODE HERE
 # ==========================================================
 PROJECT_DIR = r"C:\Jeff_Documents\Programming\MRT\radios-2026\RangeTest"
-UPLOAD_PORT = "COM6"
+UPLOAD_PORT = "COM3"
 
 # =========================================================
 
@@ -17,7 +17,8 @@ BAUD        = 115200
 WAIT_SECS   = 5
 PIO_ENV     = "teensy41"
 
-LOG_FILE    = r"C:\Jeff_Documents\Programming\MRT\radios-2026\RangeTest\logs"
+FILE_NAME = "test" + datetime.now().strftime("%d_%H_%M")
+LOG_FILE    = r"C:\Jeff_Documents\Programming\MRT\radios-2026\RangeTest\logs\\" + FILE_NAME + ".txt"
 # ==========================================================
 
 
@@ -63,9 +64,10 @@ def log_serial():
                 line = ser.readline()
                 if not line:
                     continue
-
-                text = line.decode(errors="replace")
-                f.write(text)
+                
+                text = line.decode(errors="replace").rstrip("\r\n")
+                f.write(text + "\n")
+                print("[LOG] " + text)
 
         except KeyboardInterrupt:
             print("\n[INFO] Logging stopped.")
