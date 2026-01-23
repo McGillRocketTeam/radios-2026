@@ -9,13 +9,13 @@ import serial.tools.list_ports
 # HARD-CODE HERE
 # ==========================================================
 PROJECT_DIR = r"C:\Jeff_Documents\Programming\MRT\radios-2026\RangeTest"
-UPLOAD_PORT = "COM3"
+UPLOAD_PORT = "COM4"
 
 # =========================================================
 
 BAUD        = 115200
 WAIT_SECS   = 5
-PIO_ENV     = "teensy41"
+PIO_ENV     = "teensy41" 
 
 FILE_NAME = "test" + datetime.now().strftime("%d_%H_%M")
 LOG_FILE    = r"C:\Jeff_Documents\Programming\MRT\radios-2026\RangeTest\logs\\" + FILE_NAME + ".txt"
