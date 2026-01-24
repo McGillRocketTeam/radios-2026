@@ -1,10 +1,16 @@
 #pragma once
 #include <Arduino.h>
 #include <IntervalTimer.h>
+#include <PubSubClient.h>
+#include <Ethernet.h>
 
 #define Console ConsoleRouter::getInstance()
 
 class ConsoleRouter {
+    EthernetClient ethernetClient;
+    PubSubClient mqttClient;
+    bool mqttConnected = false;
+
 public:
     // Singleton accessor
     static ConsoleRouter &getInstance();
@@ -49,6 +55,10 @@ public:
     void print(const __FlashStringHelper* fs);
     void println(const __FlashStringHelper* fs);
 
+    // Ethernet and MQTT setup
+    void ethernetInit();
+    void _connectMQTT();
+
 private:
 
     size_t  write(uint8_t c);
@@ -61,10 +71,6 @@ private:
     // Checks the pins and sets the topics based on the frequency
     void setTopicsFromPins();
 
-    // Ethernet bring-up and periodic check ISR
-    void        ethernetInit();
-    static void ethernetCheckISR();
-
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
     
@@ -76,7 +82,6 @@ private:
     // Internal helpers for printing/publishing
     void _printString(const String& s, bool newline);
     void _publishBytes(const uint8_t* data, size_t len);
-
 };
 
 // Global flag used by ISR (defined in .cpp)

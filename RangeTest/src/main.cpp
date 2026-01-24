@@ -27,6 +27,10 @@ void loop() {
 
     auto& gs = GroundStation::getInstance();
 
+    // Handle MQTT connections and keep-alive
+    Console.handleConsoleReconnect();
+    Console.mqttLoop();
+
     // Handle received commands and packets from the ground station
     gs.handleCommandParserUpdate();
     gs.handleRadioCommand();

@@ -18,5 +18,12 @@ constexpr bool ENABLE_VERBOSE_TELMETRY_PACKET = false;
 constexpr const char *RADIO_CALL_SIGN = "VA2 JWL";
 constexpr const char *RADIO_COMMAND_KEYWORD = "radio";
 
+// MQTT Configuration
+constexpr const char* MQTT_BROKER_IP = "PLACEHOLDER"; // is the computer's IP on the router
+constexpr int MQTT_BROKER_PORT = 1883;
+constexpr const char* MQTT_CLIENT_ID = "GroundStationClient";
+constexpr const char* MQTT_LOGS_TOPIC = "groundstation/logs";
+constexpr const char* MQTT_STATUS_TOPIC = "groundstation/status";
+constexpr const char* MQTT_TELEMETRY_TOPIC = "groundstation/telemetry";
 
 

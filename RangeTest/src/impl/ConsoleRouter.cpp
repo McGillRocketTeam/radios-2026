@@ -4,17 +4,73 @@
 
 // === Setup ===
 
-ConsoleRouter::ConsoleRouter() {}
+ConsoleRouter::ConsoleRouter() : mqttClient(ethernetClient) {}
 
 void ConsoleRouter::begin()
 {
     Serial.begin(GS_SERIAL_BAUD_RATE);
+    ethernetInit();
+    _connectMQTT();
 }
 
 ConsoleRouter &ConsoleRouter::getInstance()
 {
     static ConsoleRouter instance;
     return instance;
+}
+
+void ConsoleRouter::ethernetInit()
+{
+    // Initialize Ethernet with DHCP
+    byte mac[] = {0x04, 0xE9, 0xE5, 0x12, 0x34, 0x56};
+    Ethernet.begin(mac);
+    
+    Serial.println("[ETH] Ethernet initialized with DHCP");
+}
+
+void ConsoleRouter::_connectMQTT()
+{
+    mqttClient.setServer(MQTT_BROKER_IP, MQTT_BROKER_PORT);
+    
+    if (mqttClient.connect(MQTT_CLIENT_ID))
+    {
+        mqttConnected = true;
+        Serial.print("[MQTT] Connected to broker at ");
+        Serial.println(MQTT_BROKER_IP);
+    }
+    else
+    {
+        Serial.print("[MQTT] Failed to connect, rc=");
+        Serial.println(mqttClient.state());
+    }
+}
+
+void ConsoleRouter::handleConsoleReconnect()
+{
+    // Check Ethernet connection
+    if (Ethernet.linkStatus() == LinkOFF)
+    {
+        Serial.println("[ETH] Link down, attempting to reconnect...");
+        Ethernet.maintain();
+    }
+    
+    // Reconnect MQTT if disconnected
+    if (!mqttClient.connected())
+    {
+        if (Ethernet.linkStatus() == LinkON)
+        {
+            Serial.println("[MQTT] Attempting to reconnect...");
+            _connectMQTT();
+        }
+    }
+}
+
+void ConsoleRouter::mqttLoop()
+{
+    if (mqttClient.connected())
+    {
+        mqttClient.loop();
+    }
 }
 
 int ConsoleRouter::available()
@@ -39,14 +95,20 @@ int ConsoleRouter::peek()
 
 void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size)
 {
-    // Need to modify to fit testing case
-    Serial.println("This should be some sort of log");
+    // Publish binary telemetry data to MQTT
+    if (mqttClient.connected())
+    {
+        mqttClient.publish(MQTT_TELEMETRY_TOPIC, (const byte*)buffer, size);
+    }
 }
 
 void ConsoleRouter::sendStatus()
 {
-    // Stub this function for test
-    return;
+    // Publish status message to MQTT
+    if (mqttClient.connected())
+    {
+        mqttClient.publish(MQTT_STATUS_TOPIC, "OK");
+    }
 }
 
 size_t ConsoleRouter::write(uint8_t c)
@@ -63,6 +125,7 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
 
 void ConsoleRouter::_printString(const String &s, bool newline)
 {
+    // Always print to Serial
     if (!newline)
     {
         Serial.print(s);
@@ -70,6 +133,17 @@ void ConsoleRouter::_printString(const String &s, bool newline)
     else
     {
         Serial.println(s);
+    }
+    
+    // Publish to MQTT if connected
+    if (mqttClient.connected())
+    {
+        String message = s;
+        if (newline)
+        {
+            message += "\n";
+        }
+        mqttClient.publish(MQTT_LOGS_TOPIC, message.c_str());
     }
 }
 
