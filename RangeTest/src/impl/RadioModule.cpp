@@ -32,6 +32,7 @@ RadioModule::RadioModule()
     }
     verifyRadioState("Intializing radio module...");
     radio.setPacketReceivedAction(radioReceiveISR);
+    radio.setCurrentLimit(140.0);
     memset(buffer, 0, sizeof(buffer));
 }
 

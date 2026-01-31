@@ -114,6 +114,8 @@ public:
      */
     int setOutputPower(int8_t power);
 
+    int setCurrentLimit(float mA);
+
     /**
      * @brief Get the RSSI (Received Signal Strength Indicator) of the last packet.
      * @return RSSI in dBm.

@@ -9,7 +9,7 @@ import serial.tools.list_ports
 # HARD-CODE HERE
 # ==========================================================
 PROJECT_DIR = r"C:\Jeff_Documents\Programming\MRT\radios-2026\RangeTest"
-UPLOAD_PORT = "COM4"
+UPLOAD_PORT = "COM7"
 
 # =========================================================
 

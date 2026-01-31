@@ -14,12 +14,17 @@ static PubSubClient mqttClient(ethClient);
 // Topics radio-<location>-<a or b for freq>/...
 const char *TOPIC_RADIO_PD_A_TELEMETRY = "radio-pad-a/telemetry";
 const char *TOPIC_RADIO_PD_A_METADATA = "radio-pad-a/metadata";
+
 const char *TOPIC_RADIO_PD_B_TELEMETRY = "radio-pad-b/telemetry";
 const char *TOPIC_RADIO_PD_B_METADATA = "radio-pad-b/metadata";
+
 const char *TOPIC_RADIO_CS_A_TELEMETRY = "radio-controlstation-a/telemetry";
 const char *TOPIC_RADIO_CS_A_METADATA = "radio-controlstation-a/metadata";
+const char *TOPIC_RADIO_CS_A_COMMANDS = "radio-controlstation-a/commands";
+
 const char *TOPIC_RADIO_CS_A_DEBUG = "radio-controlstation-a/debug";
 const char *TOPIC_RADIO_CS_B_TELEMETRY = "radio-controlstation-b/telemetry";
+
 const char *TOPIC_RADIO_CS_B_METADATA = "radio-controlstation-b/metadata";
 const char *TOPIC_RADIO_CS_B_DEBUG = "radio-controlstation-b/debug";
 
@@ -31,6 +36,21 @@ static bool mqttReconnect(const char *topic);
 
 volatile bool ethernetReconnectNeeded = false;
 
+namespace
+{
+    static void onMqttMessage(char *topic, uint8_t *payload, unsigned int length)
+    {
+        Serial.print("[MQTT] ");
+        Serial.print(topic);
+        Serial.print(" : ");
+
+        for (unsigned int i = 0; i < length; i++)
+        {
+            Serial.write(payload[i]);
+        }
+        Serial.println();
+    }
+}
 
 // === Setup ===
 
@@ -39,17 +59,18 @@ ConsoleRouter::ConsoleRouter() {}
 void ConsoleRouter::begin()
 {
     Serial.begin(GS_SERIAL_BAUD_RATE);
-    
-    if (!ENABLE_ETHERNET_CONNECTION) return;
+
+    if (!ENABLE_ETHERNET_CONNECTION)
+        return;
 
     setTopicsFromPins();
     delay(100);
 
     ethernetInit();
-    sendStatus();
     // This ISR will work with the reconnect function
     // to reconnect the ethernet connection if it fails
     ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
+    mqttClient.setCallback(onMqttMessage);
 }
 
 void ConsoleRouter::setTopicsFromPins()
@@ -100,7 +121,8 @@ void ConsoleRouter::ethernetInit()
 
 void ConsoleRouter::handleConsoleReconnect()
 {
-    if (!ENABLE_ETHERNET_CONNECTION) return;
+    if (!ENABLE_ETHERNET_CONNECTION)
+        return;
 
     if (ethernetReconnectNeeded)
     {
@@ -122,8 +144,9 @@ void ConsoleRouter::handleConsoleReconnect()
 
 void ConsoleRouter::mqttLoop()
 {
-    if (!ENABLE_ETHERNET_CONNECTION) return;
-    
+    if (!ENABLE_ETHERNET_CONNECTION)
+        return;
+
     if (ethernetUp())
     {
         if (!mqttUp())
@@ -264,9 +287,13 @@ static bool mqttReconnect(const char *topic)
         return false;
 
     const char *clientId = "teensy41-console";
-    if (mqttClient.connect(clientId, "", "", topic, 0, true, ""))
+    // Last will s
+    const char *willPayload = "{\"status\":\"FAILED\"}";
+    if (mqttClient.connect(clientId, "", "", topic, 0, true, willPayload))
     {
         Serial.println("MQTT connected.");
+        ConsoleRouter::getInstance().sendStatus();
+        mqttClient.subscribe(TOPIC_RADIO_CS_A_COMMANDS);
         return true;
     }
     else

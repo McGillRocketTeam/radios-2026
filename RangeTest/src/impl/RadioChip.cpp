@@ -102,6 +102,15 @@ int RadioChip::setOutputPower(int8_t power)
     }
 }
 
+int RadioChip::setCurrentLimit(float mA)
+{
+    if (_freq == FREQUENCY_903) {
+        return static_cast<SX1262*>(_radio)->setCurrentLimit(mA);
+    } else {
+        return static_cast<SX1268*>(_radio)->setCurrentLimit(mA);
+    }
+}
+
 float RadioChip::getRSSI()
 {
     return _radio->getRSSI();

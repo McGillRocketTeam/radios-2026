@@ -22,3 +22,4 @@ typedef union {
 
 static inline bool header_has_cts(const FrameHeader* h) { return (h->flags & FLAG_CTS) != 0; }
 static inline bool header_has_ack(const FrameHeader* h) { return (h->flags & FLAG_ACK) != 0; }
+static inline uint8_t header_get_ack_id(const FrameHeader* h) { return h->ack_id; }

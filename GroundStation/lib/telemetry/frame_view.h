@@ -6,8 +6,7 @@
 
 enum class ParseError : uint8_t { Ok=0, TooShort, PayloadTooShort, UnknownAtomicSize };
 
-class FrameView {
-public:
+struct FrameView {
     FrameView();
     FrameView(const uint8_t* bytes, size_t len);
     void reset(const uint8_t* bytes, size_t len);
@@ -20,6 +19,7 @@ public:
 
     bool cts() const;
     bool ack() const;
+    int ack_id() const;
 
     bool hasAtomic(int idx) const;
     const uint8_t* atomicPtr(int idx) const;

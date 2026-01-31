@@ -1,5 +1,4 @@
 #include "frame_view.h"
-#include "Arduino.h"
 
 FrameView::FrameView() : _base(nullptr), _len(0) {}
 FrameView::FrameView(const uint8_t* bytes, size_t len) : _base(bytes), _len(len) {}
@@ -12,9 +11,7 @@ ParseError FrameView::validate() const {
     if (sizeof(FrameHeader) + need > _len) return ParseError::PayloadTooShort;
     for (int i = 0; i < AT_TOTAL; ++i)
         if ((h->atomics_bitmap & (1u << i)) && AT_SIZE[i] == 0)
-        {
             return ParseError::UnknownAtomicSize;
-        }
     return ParseError::Ok;
 }
 
@@ -33,6 +30,10 @@ bool FrameView::cts() const {
 }
 bool FrameView::ack() const {
     return (_len >= sizeof(FrameHeader)) && header_has_ack(header());
+}
+
+int FrameView::ack_id() const {
+    return header_get_ack_id(header());
 }
 
 bool FrameView::hasAtomic(int idx) const {

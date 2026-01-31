@@ -13,7 +13,7 @@ void setup() {
 
     auto& gs = GroundStation::getInstance();
     gs.initialise();
-    gs.setCanTXFromCTS(false);
+    gs.setCanTXFromCTS(true);
 
 }
 

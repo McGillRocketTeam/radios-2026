@@ -323,12 +323,28 @@ void GroundStation::printPacketToGui()
 void GroundStation::printVerboseTelemetryPacket()
 {
     if (!canPrintTelemetryVerbose) return;
+    Console.print(radioModule->getPacketLength());
+    Console.print("CTS: ");
+    Console.print(currentFrameView.cts());
+    Console.print(" ACK: ");
+    Console.print(currentFrameView.ack());
+    Console.print(" ACK_ID: ");
+    Console.println(currentFrameView.ack_id());
 
-    printAtomics( currentFrameView );
-    Console.print("Last received RSSI = ");
-    Console.print(lastRSSI);
-    Console.print(" SNR = ");
-    Console.println(lastSNR);
+    const uint8_t* p = (const uint8_t*)(currentFrameView.header());
+
+    for (size_t i = 0; i < sizeof(FrameHeader); i++) {
+    if (p[i] < 16) Serial.print('0');
+    Serial.print(p[i], HEX);
+    if (i + 1 < sizeof(FrameHeader)) Serial.print(' ');
+    }
+    Serial.println();
+
+    // printAtomics( currentFrameView );
+    // Console.print("Last received RSSI = ");
+    // Console.print(lastRSSI);
+    // Console.print(" SNR = ");
+    // Console.println(lastSNR);
 }
 
 // === Sending command helpers ===

@@ -9,7 +9,7 @@ constexpr float FREQUENCY_903 = 903.00f;
 // Refer to LoRa Datasheet for allowed bandwidths, in kHz for RadioLib
 constexpr float BANDWIDTH_USED = 250.00f;
 
-// Spreading factor (range from 7-12)
+// Spreading factor (range from 7-12) 
 constexpr int SPREADING_FACTOR_USED = 8;
 
 // LoRa Coding Rate Denominator
