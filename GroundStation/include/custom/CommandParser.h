@@ -23,10 +23,8 @@
  */
 class CommandParser {
 public:
-    /**
-     * @brief Construct a new CommandParser object.
-     */
-    CommandParser();
+
+    static CommandParser& getInstance();
 
     /**
      * @brief Reads Serial input and updates the parser state.
@@ -70,16 +68,22 @@ public:
         Rocket
     };
 
+    /**
+     * @brief Enqueues the given command into the appropriate queue.
+     * @param command The command string to enqueue.
+     */
+    void enqueueCommand(const String &command);
+
 private:
     ArduinoQueue<String> radioCommandQueue;   ///< Queue for radio commands.
     ArduinoQueue<String> rocketCommandQueue;  ///< Queue for rocket (non-radio) commands.
     String currentCommand;                    ///< Buffer for building the current command.
 
     /**
-     * @brief Enqueues the given command into the appropriate queue.
-     * @param command The command string to enqueue.
+     * @brief Construct a new CommandParser object.
      */
-    void enqueueCommand(String &command);
+    CommandParser();
+
 
     /**
      * @brief Determines whether the given command is a radio command.

@@ -14,14 +14,12 @@ private:
     static volatile bool interruptReceived;
     static volatile bool enableInterrupt;
     
-    
-
     static void radioReceiveISR(); 
 
     int state = RADIOLIB_ERR_NONE;
     RadioChip radio;
 
-    float frequency = getFrequencyByBandPin();
+    float frequency;
     float bandwidth = BANDWIDTH_USED;
     int spreadingFactor = SPREADING_FACTOR_USED;
     int codingRate = CODING_RATE_USED;
@@ -34,10 +32,6 @@ private:
     // Checks that the current state of the chip is good
     // If its bad then we will output the critical messsage
     bool verifyRadioState(String message);
-
-    //Special error check only to be used after read data is called
-    bool verifyCRCError();
-    float getFrequencyByBandPin();
 
 public:
     RadioModule();
@@ -68,9 +62,10 @@ public:
     RadioChip* getRadioChipInstance();
 
     // Get the RSSI of the last packet received
-    int getRSSI();
+    float getRSSI();
+    
     // Get the SNR of the last packet received
-    int getSNR();
+    float getSNR();
 };
 
 #endif // RADIOMODULE_H

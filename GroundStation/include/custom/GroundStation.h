@@ -27,7 +27,7 @@ public:
     /**
      * @brief Initialize the ground station subsystems.
      */
-    void initialise();
+    void initialise(CommandParser& parser);
 
     /**
      * @brief Starts the command parser interrupt which raises a flag every 10ms.
@@ -35,7 +35,7 @@ public:
      * This sets up the timer to periodically set a flag. The actual parsing
      * must be handled by calling handleCommandParserUpdate() inside the loop.
      */
-    void startCommandParser();
+    void startCommandParserSerial();
 
     /**
      * @brief Starts listening for radio packets asynchronously.
@@ -142,7 +142,7 @@ private:
     std::unique_ptr<RadioModule> radioModule;
 
     /// Pointer to the command parser
-    std::unique_ptr<CommandParser> commandParser;
+    CommandParser* commandParser;
 
     //Frame view setup 
     // Buffer that persists for the life of Ground Station

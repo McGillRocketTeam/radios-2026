@@ -7,6 +7,11 @@
 
 // === Setup ===
 
+CommandParser& CommandParser::getInstance(){
+    static CommandParser inst;
+    return inst;
+}
+
 CommandParser::CommandParser()
     : radioCommandQueue(QUEUE_SIZE),
       rocketCommandQueue(QUEUE_SIZE),
@@ -202,7 +207,7 @@ void CommandParser::handleQueueInsertion(
     queue.enqueue(command);
 }
 
-void CommandParser::enqueueCommand(String &command)
+void CommandParser::enqueueCommand(const String &command)
 {
     LOGGING(DEBUG, "Enqueue command triggered");
     if (isRadioCommand(command))

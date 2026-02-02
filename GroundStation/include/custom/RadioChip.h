@@ -114,17 +114,19 @@ public:
      */
     int setOutputPower(int8_t power);
 
+    int setCurrentLimit(float mA);
+
     /**
      * @brief Get the RSSI (Received Signal Strength Indicator) of the last packet.
      * @return RSSI in dBm.
      */
-    int32_t getRSSI();
+    float getRSSI();
 
     /**
      * @brief Get the SNR (Signal-to-Noise Ratio) of the last packet.
      * @return SNR in dB.
      */
-    int32_t getSNR();
+    float getSNR();
 
     /**
      * @brief Derives the radio frequency based on BAND_PIN hardware config.

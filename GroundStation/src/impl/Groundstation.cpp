@@ -16,7 +16,6 @@ volatile bool GroundStation::commandParserFlag = false;
 
 GroundStation::GroundStation()
     : radioModule(std::make_unique<RadioModule>()),
-      commandParser(std::make_unique<CommandParser>()),
       currentFrameView(),
       awaitingAck(false),
       canTXFromCTS(ENABLE_RADIO_TX),
@@ -35,9 +34,10 @@ GroundStation& GroundStation::getInstance()
     return instance;
 }
 
-void GroundStation::initialise()
+void GroundStation::initialise(CommandParser& parser)
 {
-    startCommandParser();
+    commandParser = &parser;
+    startCommandParserSerial();
     startAsyncReceive();
     LOGGING(DEBUG, "Ground station initialised, ready to receive commands via radio and console");
 }
@@ -45,7 +45,7 @@ void GroundStation::initialise()
 
 // === Private setup helpers ===
 
-void GroundStation::startCommandParser()
+void GroundStation::startCommandParserSerial()
 {
     commandParserTimer.begin(raiseCommandParserFlag, 10000);
 }
@@ -82,6 +82,9 @@ void GroundStation::getQueueStatus()
 
 void GroundStation::handleCommandParserUpdate()
 {
+    if (!commandParser) {
+        LOGGING(CRIT,"Command parser not initialised in the GS!");
+    }
     if (commandParserFlag)
     {
         commandParserFlag = false;
@@ -373,6 +376,8 @@ void GroundStation::sendRocketCommand(command_packet& command)
     LOGGING(DEBUG, String(length));
 
     radioModule->transmitInterrupt((uint8_t*)command.bytes, length);
+    Console.sendCmdAckTx(command.data.command_id);
+
     radioModule->receiveMode();
 }
 

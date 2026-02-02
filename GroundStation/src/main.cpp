@@ -3,16 +3,20 @@
 #include <cassert>
 
 #include "Config.h"
+#include "CommandParser.h"
 #include "ConsoleRouter.h"
+#include "MqttTopics.h"
 #include "GroundStation.h"
 
 
 
 void setup() {
-    Console.begin();
+    auto& cmd = CommandParser::getInstance();
+
+    Console.begin(MqttTopic::Role::CS,cmd);
 
     auto& gs = GroundStation::getInstance();
-    gs.initialise();
+    gs.initialise(cmd);
     gs.setCanTXFromCTS(true);
 
 }

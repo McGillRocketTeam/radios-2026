@@ -1,40 +1,29 @@
 #include "ConsoleRouter.h"
-#include <NativeEthernet.h>
-#include <EthernetConfig.h>
-#include <Config.h>
-#include <PubSubClient.h>
-#include <PinLayout.h>
+
+#include "BandSelect.h"
+#include "Config.h"
+#include "MqttTopics.h"
+#include "PinLayout.h"
+
 #include <ArduinoJson.h>
+#include <EthernetConfig.h>
+#include <NativeEthernet.h>
+#include <PubSubClient.h>
 
 static EthernetClient ethClient;
 static PubSubClient mqttClient(ethClient);
-
-// MQTT Topics
-
-// Topics radio-<location>-<a or b for freq>/...
-const char *TOPIC_RADIO_PD_A_TELEMETRY = "radio-pad-a/telemetry";
-const char *TOPIC_RADIO_PD_A_METADATA = "radio-pad-a/metadata";
-
-const char *TOPIC_RADIO_PD_B_TELEMETRY = "radio-pad-b/telemetry";
-const char *TOPIC_RADIO_PD_B_METADATA = "radio-pad-b/metadata";
-
-const char *TOPIC_RADIO_CS_A_TELEMETRY = "radio-controlstation-a/telemetry";
-const char *TOPIC_RADIO_CS_A_METADATA = "radio-controlstation-a/metadata";
-const char *TOPIC_RADIO_CS_A_COMMANDS = "radio-controlstation-a/commands";
-
-const char *TOPIC_RADIO_CS_A_DEBUG = "radio-controlstation-a/debug";
-const char *TOPIC_RADIO_CS_B_TELEMETRY = "radio-controlstation-b/telemetry";
-
-const char *TOPIC_RADIO_CS_B_METADATA = "radio-controlstation-b/metadata";
-const char *TOPIC_RADIO_CS_B_DEBUG = "radio-controlstation-b/debug";
+static ConsoleRouter *s_router = nullptr;
 
 // === Static global function forward decleration ===
 
 static bool ethernetUp();
 static bool mqttUp();
-static bool mqttReconnect(const char *topic);
 
 volatile bool ethernetReconnectNeeded = false;
+
+static constexpr size_t MAX_MQTT_CMD = 256;
+volatile bool mqttCmdReady = false;
+char mqttCmdBuf[MAX_MQTT_CMD];
 
 namespace
 {
@@ -49,6 +38,11 @@ namespace
             Serial.write(payload[i]);
         }
         Serial.println();
+
+        size_t n = (length < (MAX_MQTT_CMD - 1)) ? length : (MAX_MQTT_CMD - 1);
+        memcpy(mqttCmdBuf, payload, n);
+        mqttCmdBuf[n] = '\0';
+        mqttCmdReady = true;
     }
 }
 
@@ -56,39 +50,43 @@ namespace
 
 ConsoleRouter::ConsoleRouter() {}
 
-void ConsoleRouter::begin()
+void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 {
     Serial.begin(GS_SERIAL_BAUD_RATE);
-
+    commandParser = &parser;
     if (!ENABLE_ETHERNET_CONNECTION)
         return;
 
-    setTopicsFromPins();
+    setTopics(role);
     delay(100);
 
     ethernetInit();
     // This ISR will work with the reconnect function
     // to reconnect the ethernet connection if it fails
     ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
+
+    // This is a local anonymous variable that helps the ethernet CB access this object
+    s_router = this;
+
     mqttClient.setCallback(onMqttMessage);
 }
 
-void ConsoleRouter::setTopicsFromPins()
+void ConsoleRouter::setTopics(MqttTopic::Role role)
 {
-    pinMode(FREQ_PIN, INPUT);
-    if (digitalRead(FREQ_PIN) == HIGH)
+    if (BandSelect::is903)
     {
-        // High on freq pin means 915 band so radio B
-        metadataTopic = TOPIC_RADIO_CS_B_METADATA;
-        telemetryTopic = TOPIC_RADIO_CS_B_TELEMETRY;
-        debugTopic = TOPIC_RADIO_CS_B_DEBUG;
+        band = MqttTopic::Band::B;
     }
     else
     {
-        metadataTopic = TOPIC_RADIO_CS_A_METADATA;
-        telemetryTopic = TOPIC_RADIO_CS_A_TELEMETRY;
-        debugTopic = TOPIC_RADIO_CS_A_DEBUG;
+        band = MqttTopic::Band::A;
     }
+
+    telemetryTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::TELEMETRY);
+    metadataTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::METADATA);
+    ackTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::ACKS);
+    commandTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::COMMANDS);
+    debugTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::DEBUG);
 }
 
 void ConsoleRouter::ethernetInit()
@@ -116,7 +114,7 @@ void ConsoleRouter::ethernetInit()
     Serial.println(SERVER_IP);
 
     mqttClient.setServer(SERVER_IP, SERVER_PORT);
-    mqttReconnect(metadataTopic);
+    mqttReconnect();
 }
 
 void ConsoleRouter::handleConsoleReconnect()
@@ -137,7 +135,7 @@ void ConsoleRouter::handleConsoleReconnect()
         if (ethernetUp() && !mqttUp())
         {
             Serial.println("MQTT disconnected. Reconnecting...");
-            mqttReconnect(metadataTopic);
+            mqttReconnect();
         }
     }
 }
@@ -146,18 +144,46 @@ void ConsoleRouter::mqttLoop()
 {
     if (!ENABLE_ETHERNET_CONNECTION)
         return;
+    if (!ethernetUp())
+        return;
 
-    if (ethernetUp())
+    if (!mqttUp())
     {
-        if (!mqttUp())
+        if (mqttReconnect())
         {
-            if (mqttReconnect(metadataTopic))
-            {
-                sendStatus();
-            }
+            sendStatus();
         }
-        mqttClient.loop();
+        else
+        {
+            return;
+        }
     }
+    mqttClient.loop();
+
+    if (mqttCmdReady && commandParser)
+    {
+        mqttCmdReady = false;
+        String s(mqttCmdBuf);
+        commandParser->enqueueCommand(s);
+        // We need to send the ack to the GSC here
+    }
+}
+
+void ConsoleRouter::handleMqttMessage(char *topic, uint8_t *payload, unsigned int length)
+{
+    if (!commandParser)
+        return;
+    if (strcmp(topic, commandTopic) != 0)
+        return;
+
+    String s;
+    s.reserve(length + 1);
+    for (unsigned int i = 0; i < length; i++)
+    {
+        s += (char)payload[i];
+    }
+    commandParser->enqueueCommand(s);
+    sendCmdAckRx(s);
 }
 
 void ConsoleRouter::ethernetCheckISR()
@@ -196,7 +222,7 @@ void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size)
     if (ethernetUp())
     {
         if (!mqttUp())
-            mqttReconnect(metadataTopic);
+            mqttReconnect();
 
         if (mqttUp())
         {
@@ -215,15 +241,22 @@ void ConsoleRouter::sendStatus()
     {
         Serial.println("send status call");
         if (!mqttUp())
-            mqttReconnect(metadataTopic);
+            mqttReconnect();
         Serial.println("mqtt up");
         if (mqttUp())
         {
             JsonDocument doc;
 
             doc["status"] = "OK";
-            doc["frequency"] = "435.00";
-            doc["long_status"] = "this is the long status";
+            if (BandSelect::is435())
+            {
+                doc["frequency"] = FREQUENCY_435_STR;
+            }
+            else
+            {
+                doc["frequency"] = FREQUENCY_903_STR;
+            }
+            doc["long_status"] = "Online and ready";
 
             uint8_t jsonBuffer[512];
             size_t jsonSize = serializeJson(doc, jsonBuffer);
@@ -236,6 +269,78 @@ void ConsoleRouter::sendStatus()
         }
     }
 }
+
+void ConsoleRouter::sendCmdAckRx(const String& s)
+{
+    uint8_t ackId = 0;
+    const char* status = "RX_BAD";
+
+    int commaIdx = s.indexOf(',');
+    if (commaIdx <= 0 || commaIdx >= (int)s.length() - 1) {
+        Serial.println("missing comma from cmd");
+        publishAck(status, ackId);
+        return;
+    }
+
+    String idStr = s.substring(0, commaIdx);
+    idStr.trim();
+    if (idStr.length() == 0) {
+        Serial.println("missing id from cmd");
+        publishAck(status, ackId);
+        return;
+    }
+
+    bool looksNumeric = true;
+    for (int i = 0; i < (int)idStr.length(); i++) {
+        char c = idStr[i];
+        if (i == 0 && (c == '+' || c == '-')) continue;
+        if (c < '0' || c > '9') { looksNumeric = false; break; }
+    }
+    if (!looksNumeric) {
+        Serial.println("cmd id not numeric");
+        publishAck(status, ackId);
+        return;
+    }
+
+    long idLong = idStr.toInt();
+    if (idLong < 0 || idLong > 255) {
+        Serial.println("cmd id out of range");
+        publishAck(status, ackId);
+        return;
+    }
+    ackId = (uint8_t)idLong;
+
+    String cmd_string = s.substring(commaIdx + 1);
+    cmd_string.trim();
+    if (cmd_string.length() == 0) {
+        Serial.println("cmd has no string part");
+        publishAck(status, ackId);
+        return;
+    }
+
+    status = "RX_OK";
+    if (!publishAck(status, ackId)) {
+        Serial.println("publish ack failed");
+        return;
+    }
+}
+
+void ConsoleRouter::sendCmdAckTx(int ack_id)
+{
+    if (ack_id < 0 || ack_id > 255) {
+        Serial.println("tx ack id out of range");
+        publishAck("TX_BAD", 0);
+        return;
+    }
+
+    if (!publishAck("TX_OK", (uint8_t)ack_id)) {
+        Serial.println("publish tx ack failed");
+        return;
+    }
+}
+
+
+
 
 size_t ConsoleRouter::write(uint8_t c)
 {
@@ -256,7 +361,7 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
     if (ethernetUp())
     {
         if (!mqttUp())
-            mqttReconnect(metadataTopic);
+            mqttReconnect();
 
         if (mqttUp())
         {
@@ -270,7 +375,7 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
     return size;
 }
 
-// === Internal helper functions ===
+// === Generally accesable helper functions ===
 static bool ethernetUp()
 {
     return Ethernet.linkStatus() == LinkON;
@@ -281,7 +386,33 @@ static bool mqttUp()
     return mqttClient.connected();
 }
 
-static bool mqttReconnect(const char *topic)
+// === Internal helper functions ===
+
+bool ConsoleRouter::publishAck(const char* status, uint8_t ackId)
+{
+    if (!ethernetUp())
+        return false;
+
+    if (!mqttUp())
+        mqttReconnect();
+
+    if (!mqttUp())
+        return false;
+
+    JsonDocument doc;
+    doc["ack_id"] = ackId;
+    doc["status"] = status;
+
+    uint8_t jsonBuffer[512];
+    size_t jsonSize = serializeJson(doc, jsonBuffer);
+    if (jsonSize == 0 || jsonSize >= sizeof(jsonBuffer))
+        return false;
+
+    return mqttClient.publish(ackTopic, jsonBuffer, jsonSize, true);
+}
+
+
+bool ConsoleRouter::mqttReconnect()
 {
     if (!ethernetUp())
         return false;
@@ -289,11 +420,11 @@ static bool mqttReconnect(const char *topic)
     const char *clientId = "teensy41-console";
     // Last will s
     const char *willPayload = "{\"status\":\"FAILED\"}";
-    if (mqttClient.connect(clientId, "", "", topic, 0, true, willPayload))
+    if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
     {
         Serial.println("MQTT connected.");
         ConsoleRouter::getInstance().sendStatus();
-        mqttClient.subscribe(TOPIC_RADIO_CS_A_COMMANDS);
+        mqttClient.subscribe(commandTopic, 1);
         return true;
     }
     else

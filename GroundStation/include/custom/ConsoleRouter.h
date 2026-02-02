@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
+#include "CommandParser.h"
 #include <IntervalTimer.h>
+#include <MqttTopics.h>
 
 #define Console ConsoleRouter::getInstance()
 
@@ -10,13 +12,17 @@ public:
     static ConsoleRouter &getInstance();
 
     // Init Serial, Ethernet Physical Link, MQTT Digital Link
-    void begin();
+    void begin(MqttTopic::Role role,CommandParser& parser);
 
     // Call in loop() to (re)connect Ethernet/MQTT
     void handleConsoleReconnect();
 
     // Call in loop() to keep connection MQTT alive
     void mqttLoop();
+
+    // Mqtt command handling
+    void handleMqttMessage(char* topic, uint8_t* payload, unsigned int length);
+
 
     // Stream API methods linked to serial debuging
 
@@ -35,6 +41,12 @@ public:
     // Sending status of radio over MQTT
     void sendStatus();
 
+    // Sending ack for rx of cmd from GSC
+    void sendCmdAckRx( const String& s);
+
+    // Sending ack after tx of cmd from CTS to GSC
+    void sendCmdAckTx( int id);
+
     template <typename T> void print(const T& v)   { _printString(String(v), false); }
     template <typename T> void println(const T& v) { _printString(String(v), true ); }
     
@@ -45,7 +57,6 @@ public:
     void print(char c);
     void println();
 
-    // PROGMEM strings like F("text")
     void print(const __FlashStringHelper* fs);
     void println(const __FlashStringHelper* fs);
 
@@ -59,18 +70,30 @@ private:
     ConsoleRouter& operator=(const ConsoleRouter&) = delete;
 
     // Checks the pins and sets the topics based on the frequency
-    void setTopicsFromPins();
+    void setTopics(MqttTopic::Role role);
 
     // Ethernet bring-up and periodic check ISR
     void        ethernetInit();
     static void ethernetCheckISR();
+
+    // Internal helper to handle reconnecting
+    bool mqttReconnect();
+
+    // Internal helper for cmd acks
+    bool publishAck(const char* status, uint8_t ackId);
+
+    // Command parser injection
+    CommandParser* commandParser = nullptr;
 
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
     
     const char* metadataTopic;
     const char* telemetryTopic;
+    const char* ackTopic;
+    const char* commandTopic;
     const char* debugTopic;
+    MqttTopic::Band band; 
 
 
     // Internal helpers for printing/publishing

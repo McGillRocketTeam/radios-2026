@@ -10,4 +10,4 @@ enum LogLevel : uint8_t {
     CRIT    = 3    // Critical logs
 };
 
-constexpr LogLevel GS_LOG_LEVEL = LogLevel::DEBUG;
+constexpr LogLevel GS_LOG_LEVEL = LogLevel::PIPE;

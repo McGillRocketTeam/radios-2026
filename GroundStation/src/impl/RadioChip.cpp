@@ -76,12 +76,21 @@ int RadioChip::setOutputPower(int8_t power) {
     return _radio->setOutputPower(power);
 }
 
-int32_t RadioChip::getRSSI() {
+int RadioChip::setCurrentLimit(float mA)
+{
+    if (_freq == FREQUENCY_903) {
+        return static_cast<SX1262*>(_radio)->setCurrentLimit(mA);
+    } else {
+        return static_cast<SX1268*>(_radio)->setCurrentLimit(mA);
+    }
+}
+
+float RadioChip::getRSSI() {
     return (int32_t) _radio->getRSSI();
 }
 
-int32_t RadioChip::getSNR() {
-    return (int32_t) _radio->getSNR();
+float RadioChip::getSNR() {
+    return _radio->getSNR();
 }
 
 float RadioChip::getFrequencyByBandPin(){
