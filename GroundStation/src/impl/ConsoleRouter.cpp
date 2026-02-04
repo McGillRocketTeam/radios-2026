@@ -29,19 +29,18 @@ namespace
 {
     static void onMqttMessage(char *topic, uint8_t *payload, unsigned int length)
     {
-        Serial.print("[MQTT] ");
-        Serial.print(topic);
-        Serial.print(" : ");
+        // Trampoline must exist
+        ConsoleRouter *r = s_router;
+        if (!r)
+            return;
 
-        for (unsigned int i = 0; i < length; i++)
-        {
-            Serial.write(payload[i]);
-        }
-        Serial.println();
+        if (mqttCmdReady)
+            return;
 
         size_t n = (length < (MAX_MQTT_CMD - 1)) ? length : (MAX_MQTT_CMD - 1);
         memcpy(mqttCmdBuf, payload, n);
         mqttCmdBuf[n] = '\0';
+
         mqttCmdReady = true;
     }
 }
@@ -53,7 +52,10 @@ ConsoleRouter::ConsoleRouter() {}
 void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 {
     Serial.begin(GS_SERIAL_BAUD_RATE);
+    // This is a local anonymous variable that helps the ethernet CB access this object
+    s_router = this;
     commandParser = &parser;
+
     if (!ENABLE_ETHERNET_CONNECTION)
         return;
 
@@ -65,15 +67,12 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
     // to reconnect the ethernet connection if it fails
     ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
 
-    // This is a local anonymous variable that helps the ethernet CB access this object
-    s_router = this;
-
     mqttClient.setCallback(onMqttMessage);
 }
 
 void ConsoleRouter::setTopics(MqttTopic::Role role)
 {
-    if (BandSelect::is903)
+    if (BandSelect::is903())
     {
         band = MqttTopic::Band::B;
     }
@@ -160,30 +159,20 @@ void ConsoleRouter::mqttLoop()
     }
     mqttClient.loop();
 
-    if (mqttCmdReady && commandParser)
+    if (mqttCmdReady)
     {
+        // Take a local snapshot first to minimize races
         mqttCmdReady = false;
-        String s(mqttCmdBuf);
-        commandParser->enqueueCommand(s);
-        // We need to send the ack to the GSC here
-    }
-}
 
-void ConsoleRouter::handleMqttMessage(char *topic, uint8_t *payload, unsigned int length)
-{
-    if (!commandParser)
-        return;
-    if (strcmp(topic, commandTopic) != 0)
-        return;
+        if (commandParser)
+        {
+            String s(mqttCmdBuf);
+            commandParser->enqueueCommand(s);
 
-    String s;
-    s.reserve(length + 1);
-    for (unsigned int i = 0; i < length; i++)
-    {
-        s += (char)payload[i];
+            // RX ack belongs here (not in the callback)
+            sendCmdAckRx(s);
+        }
     }
-    commandParser->enqueueCommand(s);
-    sendCmdAckRx(s);
 }
 
 void ConsoleRouter::ethernetCheckISR()
@@ -270,13 +259,14 @@ void ConsoleRouter::sendStatus()
     }
 }
 
-void ConsoleRouter::sendCmdAckRx(const String& s)
+void ConsoleRouter::sendCmdAckRx(const String &s)
 {
     uint8_t ackId = 0;
-    const char* status = "RX_BAD";
+    const char *status = "RX_BAD";
 
     int commaIdx = s.indexOf(',');
-    if (commaIdx <= 0 || commaIdx >= (int)s.length() - 1) {
+    if (commaIdx <= 0 || commaIdx >= (int)s.length() - 1)
+    {
         Serial.println("missing comma from cmd");
         publishAck(status, ackId);
         return;
@@ -284,26 +274,35 @@ void ConsoleRouter::sendCmdAckRx(const String& s)
 
     String idStr = s.substring(0, commaIdx);
     idStr.trim();
-    if (idStr.length() == 0) {
+    if (idStr.length() == 0)
+    {
         Serial.println("missing id from cmd");
         publishAck(status, ackId);
         return;
     }
 
     bool looksNumeric = true;
-    for (int i = 0; i < (int)idStr.length(); i++) {
+    for (int i = 0; i < (int)idStr.length(); i++)
+    {
         char c = idStr[i];
-        if (i == 0 && (c == '+' || c == '-')) continue;
-        if (c < '0' || c > '9') { looksNumeric = false; break; }
+        if (i == 0 && (c == '+' || c == '-'))
+            continue;
+        if (c < '0' || c > '9')
+        {
+            looksNumeric = false;
+            break;
+        }
     }
-    if (!looksNumeric) {
+    if (!looksNumeric)
+    {
         Serial.println("cmd id not numeric");
         publishAck(status, ackId);
         return;
     }
 
     long idLong = idStr.toInt();
-    if (idLong < 0 || idLong > 255) {
+    if (idLong < 0 || idLong > 255)
+    {
         Serial.println("cmd id out of range");
         publishAck(status, ackId);
         return;
@@ -312,14 +311,16 @@ void ConsoleRouter::sendCmdAckRx(const String& s)
 
     String cmd_string = s.substring(commaIdx + 1);
     cmd_string.trim();
-    if (cmd_string.length() == 0) {
+    if (cmd_string.length() == 0)
+    {
         Serial.println("cmd has no string part");
         publishAck(status, ackId);
         return;
     }
 
     status = "RX_OK";
-    if (!publishAck(status, ackId)) {
+    if (!publishAck(status, ackId))
+    {
         Serial.println("publish ack failed");
         return;
     }
@@ -327,20 +328,19 @@ void ConsoleRouter::sendCmdAckRx(const String& s)
 
 void ConsoleRouter::sendCmdAckTx(int ack_id)
 {
-    if (ack_id < 0 || ack_id > 255) {
+    if (ack_id < 0 || ack_id > 255)
+    {
         Serial.println("tx ack id out of range");
         publishAck("TX_BAD", 0);
         return;
     }
 
-    if (!publishAck("TX_OK", (uint8_t)ack_id)) {
+    if (!publishAck("TX_OK", (uint8_t)ack_id))
+    {
         Serial.println("publish tx ack failed");
         return;
     }
 }
-
-
-
 
 size_t ConsoleRouter::write(uint8_t c)
 {
@@ -388,7 +388,7 @@ static bool mqttUp()
 
 // === Internal helper functions ===
 
-bool ConsoleRouter::publishAck(const char* status, uint8_t ackId)
+bool ConsoleRouter::publishAck(const char *status, uint8_t cmdId)
 {
     if (!ethernetUp())
         return false;
@@ -400,7 +400,7 @@ bool ConsoleRouter::publishAck(const char* status, uint8_t ackId)
         return false;
 
     JsonDocument doc;
-    doc["ack_id"] = ackId;
+    doc["cmd_id"] = cmdId;
     doc["status"] = status;
 
     uint8_t jsonBuffer[512];
@@ -408,9 +408,8 @@ bool ConsoleRouter::publishAck(const char* status, uint8_t ackId)
     if (jsonSize == 0 || jsonSize >= sizeof(jsonBuffer))
         return false;
 
-    return mqttClient.publish(ackTopic, jsonBuffer, jsonSize, true);
+    return mqttClient.publish(ackTopic, jsonBuffer, jsonSize, false);
 }
-
 
 bool ConsoleRouter::mqttReconnect()
 {
@@ -418,8 +417,9 @@ bool ConsoleRouter::mqttReconnect()
         return false;
 
     const char *clientId = "teensy41-console";
-    // Last will s
-    const char *willPayload = "{\"status\":\"FAILED\"}";
+    // Last will payload should be empty string to eliminate retained 
+    // metadata message 
+    const char *willPayload = "";
     if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
     {
         Serial.println("MQTT connected.");

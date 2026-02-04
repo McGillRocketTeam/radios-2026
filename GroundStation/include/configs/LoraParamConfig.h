@@ -29,7 +29,7 @@ constexpr int POWER_OUTPUT = 22;
 constexpr int PREAMBLE_LENGTH = 12;
 
 // SW current limit of radio
-constexpr float RADIO_CURRENT_LIMIT = 140.0;
+constexpr float RADIO_CURRENT_LIMIT = 60.0;
 
 // Board-specific constants
 constexpr float TCXO_VOLTAGE = 3.0f;

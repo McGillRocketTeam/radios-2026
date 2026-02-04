@@ -3,19 +3,21 @@
 #include <cassert>
 
 #include "Config.h"
+#include "CommandParser.h"
 #include "ConsoleRouter.h"
+#include "MqttTopics.h"
 #include "GroundStation.h"
 
-// ======================================================== 
-// Variant of main.cpp that runs the main GS radio code
-// 
+// Variant for full ground station radio operation
 
 void setup() {
-    Console.begin();
+    auto& cmd = CommandParser::getInstance();
+
+    Console.begin(MqttTopic::Role::CS,cmd);
 
     auto& gs = GroundStation::getInstance();
-    gs.initialise();
-    gs.setCanTXFromCTS(false);
+    gs.initialise(cmd);
+    gs.setCanTXFromCTS(true);
 
 }
 

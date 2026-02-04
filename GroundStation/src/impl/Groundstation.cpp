@@ -376,7 +376,10 @@ void GroundStation::sendRocketCommand(command_packet& command)
     LOGGING(DEBUG, String(length));
 
     radioModule->transmitInterrupt((uint8_t*)command.bytes, length);
-    Console.sendCmdAckTx(command.data.command_id);
+
+    if (strcasecmp(command.data.command_string,"nop") != 0){
+        Console.sendCmdAckTx(command.data.command_id);
+    }
 
     radioModule->receiveMode();
 }
