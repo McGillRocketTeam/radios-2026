@@ -12,10 +12,17 @@ constexpr int GS_SERIAL_BAUD_RATE = 115200;
 constexpr bool ENABLE_RADIO_TX = true;
 
 // Controls whether ethernet stuff will be allowed
-constexpr bool ENABLE_ETHERNET_CONNECTION = true;
+#if TEENSY == 41
+constexpr bool ENABLE_ETHERNET_CONNECTION = false;
+#else
+
+
+// Always false if not on 4.1
+constexpr bool ENABLE_ETHERNET_CONNECTION = false;
+#endif
 
 // Controls whether human readable telemetry is spit out to serial
-constexpr bool ENABLE_VERBOSE_TELMETRY_PACKET = false;
+constexpr bool ENABLE_VERBOSE_TELMETRY_PACKET = true;
 
 // Radio identity and keywording
 constexpr const char *RADIO_CALL_SIGN = "VA2 JWL";

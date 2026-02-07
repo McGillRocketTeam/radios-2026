@@ -1,13 +1,13 @@
-#ifndef RADIOMODULE_H
-#define RADIOMODULE_H
+#pragma once
 
-#include <RadioLib.h>
 #include <ArduinoQueue.h>
-#include <RadioParams.h>
-#include <PinLayout.h>
-#include <RadioChip.h>
-#include <LoggerGS.h>
-#include <ConsoleRouter.h>
+#include <RadioLib.h>
+
+#include "ConsoleRouter.h"
+#include "LoggerGS.h"
+#include "PinLayout.h"
+#include "RadioChip.h"
+#include "RadioParams.h"
 
 class RadioModule {
 private:
@@ -68,4 +68,3 @@ public:
     float getSNR();
 };
 
-#endif // RADIOMODULE_H

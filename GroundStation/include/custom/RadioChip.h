@@ -1,9 +1,9 @@
-#ifndef RADIOCHIP_H
-#define RADIOCHIP_H
+#pragma once 
 
 #include <RadioLib.h>
-#include "Config.h"
 #include <stdexcept>
+
+#include "Config.h"
 #include "PinLayout.h"
 
 /**
@@ -145,4 +145,3 @@ private:
     float _freq;           
 };
 
-#endif // RADIOCHIP_H

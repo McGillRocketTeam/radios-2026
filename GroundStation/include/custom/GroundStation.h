@@ -1,12 +1,13 @@
 #pragma once
 
+#include <IntervalTimer.h>
 #include <memory>
 
-#include "RadioParams.h"
-#include "RadioModule.h"
 #include "CommandParser.h"
 #include "frame_view.h"
-#include "IntervalTimer.h"
+#include "RadioParams.h"
+#include "RadioModule.h"
+
 
 /**
  * @class GroundStation

@@ -6,7 +6,6 @@
 #include "ConsoleRouter.h"
 #include "GroundStation.h"
 #include "LoggerGS.h"
-#include "RadioPrinter.h"
 
 // Boolean for command parser ISR
 // Tells us if there are things to be processsed in serial
@@ -326,8 +325,9 @@ void GroundStation::printPacketToGui()
 void GroundStation::printVerboseTelemetryPacket()
 {
     if (!canPrintTelemetryVerbose) return;
+    Console.print("SIZE: ");
     Console.print(radioModule->getPacketLength());
-    Console.print("CTS: ");
+    Console.print(" CTS: ");
     Console.print(currentFrameView.cts());
     Console.print(" ACK: ");
     Console.print(currentFrameView.ack());

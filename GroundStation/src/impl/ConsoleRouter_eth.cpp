@@ -5,8 +5,10 @@
 #include "MqttTopics.h"
 #include "PinLayout.h"
 
+
+#if TEENSY == 41
 #include <ArduinoJson.h>
-#include <EthernetConfig.h>
+#include <MQTTConfig.h>
 #include <NativeEthernet.h>
 #include <PubSubClient.h>
 
@@ -20,6 +22,7 @@ static bool ethernetUp();
 static bool mqttUp();
 
 volatile bool ethernetReconnectNeeded = false;
+
 
 static constexpr size_t MAX_MQTT_CMD = 256;
 volatile bool mqttCmdReady = false;
@@ -527,3 +530,4 @@ void ConsoleRouter::println(const __FlashStringHelper *fs)
     print(fs);
     println();
 }
+#endif

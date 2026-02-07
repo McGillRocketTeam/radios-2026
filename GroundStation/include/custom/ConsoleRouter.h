@@ -1,8 +1,10 @@
 #pragma once
+
 #include <Arduino.h>
-#include "CommandParser.h"
 #include <IntervalTimer.h>
-#include <MqttTopics.h>
+
+#include "CommandParser.h"
+#include "MqttTopics.h"
 
 #define Console ConsoleRouter::getInstance()
 
@@ -19,10 +21,6 @@ public:
 
     // Call in loop() to keep connection MQTT alive
     void mqttLoop();
-
-    // Mqtt command handling
-    void handleMqttMessage(char* topic, uint8_t* payload, unsigned int length);
-
 
     // Stream API methods linked to serial debuging
 

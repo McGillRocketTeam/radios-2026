@@ -1,9 +1,10 @@
-// src/CommandParser.cpp
 #include "CommandParser.h"
+
 #include <Arduino.h>
-#include "Config.h"
 #include <LoggerGS.h>
-#include <ConsoleRouter.h>
+
+#include "Config.h"
+#include "ConsoleRouter.h"
 
 // === Setup ===
 
@@ -22,9 +23,9 @@ CommandParser::CommandParser()
 
 void CommandParser::update()
 {
-    while (Console.available())
+    while (Serial.available())
     {
-        char receivedChar = Console.read();
+        char receivedChar = Serial.read();
 
         if (receivedChar == '\n')
         {
@@ -105,7 +106,6 @@ void CommandParser::printQueueStatus(const char *queueType,
 bool CommandParser::isPingCommand(const String &command)
 {
     String trimmed = command;
-    // Remove the leading and trailing white space for ping
     trimmed.trim();
     return trimmed == "ping";
 }
@@ -247,7 +247,7 @@ void CommandParser::handleBackspace()
     if (currentCommand.length() > 0)
     {
         currentCommand.remove(currentCommand.length() - 1);
-        Console.print("\b \b");
+        Serial.print("\b \b");
     }
 }
 
@@ -263,7 +263,7 @@ void CommandParser::handleCharacterAppend(char c)
         currentCommand += c;
         if (LoggerGS::getInstance().getLogLevel() == PIPE)
         {
-            Console.print(c);
+            Serial.print(c);
         }
     }
     else
