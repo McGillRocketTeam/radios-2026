@@ -8,7 +8,6 @@
 #include "RadioParams.h"
 #include "RadioModule.h"
 
-
 /**
  * @class GroundStation
  * @brief Singleton class representing the central logic for the ground station.
@@ -16,19 +15,19 @@
  * Manages radio communication, command parsing, packet processing, and parameter handling.
  * Provides methods for asynchronous input handling and packet reception.
  */
-class GroundStation {
+class GroundStation
+{
 public:
-
     /**
      * @brief Get the singleton instance of the GroundStation.
      * @return Pointer to the GroundStation instance.
      */
-    static GroundStation& getInstance();
+    static GroundStation &getInstance();
 
     /**
      * @brief Initialize the ground station subsystems.
      */
-    void initialise(CommandParser& parser);
+    void initialise(CommandParser &parser);
 
     /**
      * @brief Starts the command parser interrupt which raises a flag every 10ms.
@@ -74,7 +73,7 @@ public:
      * @brief Accessor for the radio module.
      * @return Pointer to the radio module.
      */
-    RadioModule* getRadioModule();
+    RadioModule *getRadioModule();
 
     void printVerboseTelemetryPacket();
 
@@ -84,16 +83,37 @@ public:
      */
     void setCanTXFromCTS(bool enable);
 
+    enum class RadioCmd : uint8_t
+    {
+        Freq,
+        Bw,
+        Cr,
+        Sf,
+        Pow,
+        Param,
+        Ground,
+        Ping,
+        Init,
+        Bypass,
+        SetTx,
+        Verbose,
+        Unknown
+    };
+
+    RadioCmd parseRadioCmd(const String &p);
+
+    bool parseBoolTF(const String &v, bool &out);
+
     /**
      * @brief Destructor for GroundStation.
      */
     ~GroundStation() = default;
 
     // Delete copy and move constructors and assignment operators to enforce singleton pattern
-    GroundStation(const GroundStation&) = delete;
-    GroundStation& operator=(const GroundStation&) = delete;
-    GroundStation(GroundStation&&) = delete;
-    GroundStation& operator=(GroundStation&&) = delete;
+    GroundStation(const GroundStation &) = delete;
+    GroundStation &operator=(const GroundStation &) = delete;
+    GroundStation(GroundStation &&) = delete;
+    GroundStation &operator=(GroundStation &&) = delete;
 
 private:
     /**
@@ -101,20 +121,20 @@ private:
      */
     GroundStation();
 
-    //Check whether the params are matched and if not match them
+    // Check whether the params are matched and if not match them
     void syncCurrentParamsWithRadioModule();
 
-    //Checks current params with whats inside of the radio chip retuns true if its all good
+    // Checks current params with whats inside of the radio chip retuns true if its all good
     bool verifyRadioStates();
 
-    //Just like print packet to GUI instead prints the Radio Params held in current Radio Params of GS
+    // Just like print packet to GUI instead prints the Radio Params held in current Radio Params of GS
     void printRadioParamsToGui();
 
     /**
      * @brief Serialises string and sendes the serialised rocket command
      * @param command The command to send.
      */
-    void sendRocketCommand(command_packet& command);
+    void sendRocketCommand(command_packet &command);
 
     void printPacketToGui();
 
@@ -138,18 +158,17 @@ private:
      */
     void setVerbosePacket(bool state);
 
-
     /// Pointer to the radio module
     std::unique_ptr<RadioModule> radioModule;
 
     /// Pointer to the command parser
-    CommandParser* commandParser;
+    CommandParser *commandParser;
 
-    //Frame view setup 
-    // Buffer that persists for the life of Ground Station
-    // It will hold the actual bytes for the frame view
+    // Frame view setup
+    //  Buffer that persists for the life of Ground Station
+    //  It will hold the actual bytes for the frame view
     uint8_t rxBuf[512];
-    size_t  rxLen = 0;   
+    size_t rxLen = 0;
     FrameView currentFrameView;
     ParseError currentFrameState = ParseError::Ok;
 
@@ -178,4 +197,3 @@ private:
     /// Controls if we print the human readble telmetry
     bool canPrintTelemetryVerbose = false;
 };
-

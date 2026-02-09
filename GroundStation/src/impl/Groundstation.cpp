@@ -11,7 +11,6 @@
 // Tells us if there are things to be processsed in serial
 volatile bool GroundStation::commandParserFlag = false;
 
-
 // === Public Setup of Groundstation ===
 
 GroundStation::GroundStation()
@@ -131,8 +130,7 @@ void GroundStation::raiseCommandParserFlag()
 
 void GroundStation::implementRadioParamCommand(String radioCommand)
 {
-    String param;
-    String value;
+    String param, value;
 
     int firstSpace = radioCommand.indexOf(' ');
     int secondSpace = radioCommand.indexOf(' ', firstSpace + 1);
@@ -143,106 +141,170 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         return;
     }
 
-    // Extract param and value (if exists)
     if (secondSpace == -1)
     {
-        param = radioCommand.substring(firstSpace + 1);
+        param = radioCommand.substring(firstSpace + 1).toLowerCase();
         value = "";
     }
     else
     {
-        param = radioCommand.substring(firstSpace + 1, secondSpace);
+        param = radioCommand.substring(firstSpace + 1, secondSpace).toLowerCase();
         value = radioCommand.substring(secondSpace + 1);
     }
 
-    // Now handle all supported commands
-    if (param == "freq")
+    const RadioCmd cmd = parseRadioCmd(param);
+
+    switch (cmd)
     {
-        radioModule->setFreq(value.toFloat());
-        currentParams.freq = value.toInt();
+    case RadioCmd::Freq:
+    {
+        const float f = value.toFloat();
+        radioModule->setFreq(f);
+        currentParams.freq = f;
         syncCurrentParamsWithRadioModule();
+        break;
     }
-    else if (param == "bw")
+
+    case RadioCmd::Bw:
     {
-        radioModule->setBandwidth(value.toFloat());
-        currentParams.bw = value.toFloat();
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
-    }
-    else if (param == "cr")
-    {
-        radioModule->setCodingRate(value.toInt());
-        currentParams.cr = value.toInt();
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
-    }
-    else if (param == "sf")
-    {
-        radioModule->setSpreadingFactor(value.toInt());
-        currentParams.sf = value.toInt();
+        const float bw = value.toFloat();
+        radioModule->setBandwidth(bw);
+        currentParams.bw = bw;
         syncCurrentParamsWithRadioModule();
         printRadioParamsToGui();
+        break;
     }
-    else if (param == "pow")
+
+    case RadioCmd::Cr:
     {
-        radioModule->setPowerOutput(value.toInt());
-        currentParams.pow = value.toInt();
+        const int cr = value.toInt();
+        radioModule->setCodingRate(cr);
+        currentParams.cr = cr;
         syncCurrentParamsWithRadioModule();
         printRadioParamsToGui();
+        break;
     }
-    else if (param == "param")
+
+    case RadioCmd::Sf:
     {
+        const int sf = value.toInt();
+        radioModule->setSpreadingFactor(sf);
+        currentParams.sf = sf;
+        syncCurrentParamsWithRadioModule();
+        printRadioParamsToGui();
+        break;
+    }
+
+    case RadioCmd::Pow:
+    {
+        const int pow = value.toInt();
+        radioModule->setPowerOutput(pow);
+        currentParams.pow = pow;
+        syncCurrentParamsWithRadioModule();
+        printRadioParamsToGui();
+        break;
+    }
+
+    case RadioCmd::Param:
         radioModule->checkParams();
-    }
-    else if (param == "ground")
-    {
+        break;
+
+    case RadioCmd::Ground:
         radioModule->checkParams();
         Console.print("gsc_verbose_packet: ");
         Console.print(canPrintTelemetryVerbose);
         Console.print(" TxFromCTS ");
         Console.print(canTXFromCTS);
-    }
-    else if (param == "ping")
-    {
+        break;
+
+    case RadioCmd::Ping:
         radioModule->pingParams();
-    }
-    else if (param == "init")
-    {
+        break;
+
+    case RadioCmd::Init:
         syncCurrentParamsWithRadioModule();
         printRadioParamsToGui();
-    }
-    else if (param == "bypass")
-    {
+        break;
+
+    case RadioCmd::Bypass:
         LOGGING(CAT_GS, CRIT, "bypass has not been implemented");
-    }
-    else if (param == "setTx")
+        break;
+
+    case RadioCmd::SetTx:
     {
-        if (value == "t" || value == "f")
-        {
-            setCanTXFromCTS(value == "t");
-            LOGGING(CAT_GS, DEBUG, "setting tx from cts");
-            LOGGING(CAT_GS, DEBUG, value);
-        }
-        else
+        bool b;
+        if (!parseBoolTF(value, b))
         {
             Console.println("setTx accepts only 't' or 'f' as values");
+            break;
         }
+        setCanTXFromCTS(b);
+        LOGGING(CAT_GS, DEBUG, "setting tx from cts");
+        LOGGING(CAT_GS, DEBUG, value);
+        break;
     }
-    else if (param == "verbose")
+
+    case RadioCmd::Verbose:
     {
-        if (value == "t" || value == "f")
-        {
-            setVerbosePacket(value == "t");
-        }
-        else
+        bool b;
+        if (!parseBoolTF(value, b))
         {
             Console.println("verbose accepts only 't' or 'f' as values");
+            break;
         }
+        setVerbosePacket(b);
+        break;
     }
-    else
-    {
+
+    case RadioCmd::Unknown:
+    default:
         Console.println("command not recognised, please check spelling");
+        break;
     }
+}
+
+GroundStation::RadioCmd GroundStation::parseRadioCmd(const String &p)
+{
+    if (p == "freq")
+        return RadioCmd::Freq;
+    if (p == "bw")
+        return RadioCmd::Bw;
+    if (p == "cr")
+        return RadioCmd::Cr;
+    if (p == "sf")
+        return RadioCmd::Sf;
+    if (p == "pow")
+        return RadioCmd::Pow;
+    if (p == "param")
+        return RadioCmd::Param;
+    if (p == "ground")
+        return RadioCmd::Ground;
+    if (p == "ping")
+        return RadioCmd::Ping;
+    if (p == "init")
+        return RadioCmd::Init;
+    if (p == "bypass")
+        return RadioCmd::Bypass;
+    if (p == "settx")
+        return RadioCmd::SetTx;
+    if (p == "verbose")
+        return RadioCmd::Verbose;
+    return RadioCmd::Unknown;
+}
+
+bool GroundStation::parseBoolTF(const String &v, bool &out)
+{
+    if (v == "t")
+    {
+        out = true;
+        return true;
+    }
+    if (v == "f")
+    {
+        out = false;
+        return true;
+    }
+    return false;
 }
 
 void GroundStation::printRadioParamsToGui()
