@@ -1,15 +1,23 @@
 #pragma once
 #include <Arduino.h>
 
-namespace BandSelect {
-    
+// Band select singleton util grabs the band configured by the frequency pin
+// The frequency pin is the pins soldered on the MRT radio hat.
+// 435 Band means a sx1262 chip, 900 means a sx1268 chip
+// They function extremely similarily but differ on the freq range they handle
+namespace BandSelect
+{
+
     // Read cached frequency (auto-inits on first call)
     float get();
 
-    // Optional: force refresh (also auto-inits)
-    void update();
-
     bool is903();
     bool is435();
-}
 
+    // Check if freq input matches the amateur ISED frequencies of that band
+    bool freqAllowedFromBand(float f);
+
+    // Band select should be global and inited only once
+    // FORCE UPDATE only when reinitialising global state
+    void forceUpdate();
+}

@@ -12,11 +12,11 @@
 class RadioModule {
 private:
     static volatile bool interruptReceived;
-    static volatile bool enableInterrupt;
-    
-    static void radioReceiveISR(); 
+    static volatile bool radioBusy;
+    static void radioDio1ISR(); 
 
-    int state = RADIOLIB_ERR_NONE;
+    RadioChipStatus state = RADIOLIB_ERR_NONE;
+    Module mod;
     RadioChip radio;
 
     float frequency;
@@ -36,12 +36,17 @@ private:
 public:
     RadioModule();
 
-    // BLOCKING Transmit data array of bytes and stay in transmit mode
-    bool transmitInterrupt(const uint8_t* data, size_t size);
+    bool retryRadioInit();
+
+    // Blocking transmit a block and switch into receive mode
+    bool transmitBlocking(const uint8_t* data, size_t size);
 
     bool receiveMode();
-    uint8_t* readPacket();
-    bool checkInterruptReceived();
+    // Poll for a perfect rx, 
+    // if success will set the local buffer, fail will log why
+    bool pollValidPacketRx();
+
+    uint8_t* getPacketData();
     int getPacketLength();
 
     float getFreq();

@@ -1,51 +1,58 @@
 #pragma once
-
 #include <Arduino.h>
-
 #include "ConsoleRouter.h"
 #include "LoggerConfig.h"
 
-// For logging to work above PIPE level, the console router must be initialized
-#define LOGGING(level, msg) LoggerGS::getInstance().log(level, msg)
+#define LOGGING(cat, level, msg) LoggerGS::getInstance().log((cat), (level), (msg))
 
 class LoggerGS
 {
 public:
     static LoggerGS &getInstance();
 
-    // Configure the log level for the system
-    void configure(LogLevel level);
-
-    // Set the global log level
     void setLogLevel(LogLevel level);
-
-    // Get the global log level
     LogLevel getLogLevel() const;
 
-    // Log method to handle messages at different log levels
+    void setCategoryMask(uint32_t mask);
+    uint32_t getCategoryMask() const;
+
     template <typename T>
-    void log(LogLevel level, const T &msg);
+    void log(uint32_t cat, LogLevel level, const T &msg);
 
 private:
     LoggerGS();
 
     LogLevel globalLogLevel = GS_LOG_LEVEL;
+    uint32_t enabledCats = GS_LOG_CATS;
+
+    inline bool enabled(uint32_t cat, LogLevel level) const
+    {
+        if (level < globalLogLevel)
+            return false;
+        return (enabledCats & cat) != 0;
+    }
+
+    inline bool serialOnly(uint32_t cat) const
+    {
+        return (cat & CAT_SERIAL) != 0;
+    }
 };
 
 template <typename T>
-void LoggerGS::log(LogLevel level, const T &msg)
+void LoggerGS::log(uint32_t cat, LogLevel level, const T &msg)
 {
-    // Only log if level >= global log level
-    if (level >= getLogLevel())
+    if (!enabled(cat, level))
+        return;
+
+    if (serialOnly(cat))
     {
-        if (level == PIPE)
-        {
-            // PIPE level is for serial only logs
-            Serial.println(msg);
-        }
-        else
-        {
-            Console.println(msg);
-        }
+        Serial.println(msg);
+        return;
     }
+    if (!ConsoleRouter::isReady())
+    {
+        Serial.println(msg);
+        return;
+    }
+    Console.println(msg);
 }

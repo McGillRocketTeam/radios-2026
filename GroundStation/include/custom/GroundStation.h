@@ -151,6 +151,7 @@ private:
     uint8_t rxBuf[512];
     size_t  rxLen = 0;   
     FrameView currentFrameView;
+    ParseError currentFrameState = ParseError::Ok;
 
     /// Currently active radio parameters
     RadioParams currentParams;

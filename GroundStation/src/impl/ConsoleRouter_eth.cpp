@@ -73,22 +73,29 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
     mqttClient.setCallback(onMqttMessage);
 }
 
+bool ConsoleRouter::isReady()
+{
+    return s_router != nullptr;
+}
+
 void ConsoleRouter::setTopics(MqttTopic::Role role)
 {
     if (BandSelect::is903())
     {
-        band = MqttTopic::Band::B;
+        _band = MqttTopic::Band::B;
+        _role = role;
     }
     else
     {
-        band = MqttTopic::Band::A;
+        _band = MqttTopic::Band::A;
+        _role = role;
     }
 
-    telemetryTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::TELEMETRY);
-    metadataTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::METADATA);
-    ackTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::ACKS);
-    commandTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::COMMANDS);
-    debugTopic = MqttTopic::topic(role, band, MqttTopic::TopicKind::DEBUG);
+    telemetryTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::TELEMETRY);
+    metadataTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::METADATA);
+    ackTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::ACKS);
+    commandTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::COMMANDS);
+    debugTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::DEBUG);
 }
 
 void ConsoleRouter::ethernetInit()
@@ -419,7 +426,7 @@ bool ConsoleRouter::mqttReconnect()
     if (!ethernetUp())
         return false;
 
-    const char *clientId = "teensy41-console";
+    const char *clientId = MqttTopic::topic(_role,_band,MqttTopic::TopicKind::NAME);
     // Last will payload should be empty string to eliminate retained 
     // metadata message 
     const char *willPayload = "";

@@ -25,8 +25,8 @@ void setup()
     while (!Serial && (millis() - start < 300))
     { /* wait */
     }
-
-    Console.begin();
+    auto& cmd = CommandParser::getInstance();
+    Console.begin(MqttTopic::Role::CS,cmd);
     Console.handleConsoleReconnect();
 
     Serial.println(F("Flight Computer Simulator"));
@@ -160,7 +160,7 @@ void loop()
     Serial.println(F("Sending telemetry over radio (CTS=1)..."));
     if (radioModule)
     {
-        bool txSuccess = radioModule->transmitInterrupt(frameBuf, frameLen);
+        bool txSuccess = radioModule->transmitBlocking(frameBuf, frameLen);
         if (txSuccess)
         {
             Serial.println(F("Radio transmission successful!"));

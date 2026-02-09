@@ -4,40 +4,59 @@
 #include "PinLayout.h"
 #include "LoggerGS.h"
 
-namespace BandSelect {
+namespace BandSelect
+{
     static bool g_inited = false;
-    static int g_pin = FREQ_PIN;
     static float g_freq = FREQUENCY_903;
 
-    static void ensureInit() {
-        if (g_inited) return;
+    static void ensureInit()
+    {
+        if (g_inited)
+            return;
 
-        pinMode(g_pin, INPUT);
+        pinMode(FREQ_PIN, INPUT);
 
-        int v = digitalRead(g_pin);
+        int v = digitalRead(FREQ_PIN);
         g_freq = (v == HIGH) ? FREQUENCY_903 : FREQUENCY_435;
 
-        if (v == HIGH) {
-            LOGGING(PIPE, "FREQ_PIN is HIGH using 900 MHz band");
+        if (v == HIGH)
+        {
+            LOGGING(CAT_RADIO ,DEBUG, "FREQ_PIN is HIGH using 900 MHz band");
         }
-        else{
-            LOGGING(PIPE, "FREQ_PIN is LOW using 430 MHz band");
+        else
+        {
+            LOGGING(CAT_RADIO ,DEBUG, "FREQ_PIN is LOW using 430 MHz band");
         }
 
         g_inited = true;
     }
 
-    void update() {
-        ensureInit();
-        int v = digitalRead(g_pin);
-        g_freq = (v == HIGH) ? FREQUENCY_903 : FREQUENCY_435;
-    }
-
-    float get() {
+    float get()
+    {
         ensureInit();
         return g_freq;
     }
 
     bool is903() { return get() == FREQUENCY_903; }
     bool is435() { return get() == FREQUENCY_435; }
+
+    bool freqAllowedFromBand(float f)
+    {
+        ensureInit();
+        // Allowed from canada ISED amateur HAM bands
+        // Be aware that above 438 we start clashing with satelite associated stuff
+        if (g_freq == FREQUENCY_903)
+            return (f > 902.0f && f < 928.0f);
+        if (g_freq == FREQUENCY_435)
+            return (f > 430.0f && f < 450.0f);
+        return false;
+    }
+
+    void forceUpdate()
+    {
+        ensureInit();
+        int v = digitalRead(FREQ_PIN);
+        g_freq = (v == HIGH) ? FREQUENCY_903 : FREQUENCY_435;
+    }
+
 }

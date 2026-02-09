@@ -11,6 +11,7 @@
 // Tells us if there are things to be processsed in serial
 volatile bool GroundStation::commandParserFlag = false;
 
+
 // === Public Setup of Groundstation ===
 
 GroundStation::GroundStation()
@@ -27,20 +28,19 @@ GroundStation::GroundStation()
     currentParams.pow = radioModule->getPowerOutput();
 }
 
-GroundStation& GroundStation::getInstance()
+GroundStation &GroundStation::getInstance()
 {
     static GroundStation instance;
     return instance;
 }
 
-void GroundStation::initialise(CommandParser& parser)
+void GroundStation::initialise(CommandParser &parser)
 {
     commandParser = &parser;
     startCommandParserSerial();
     startAsyncReceive();
-    LOGGING(DEBUG, "Ground station initialised, ready to receive commands via radio and console");
+    LOGGING(CAT_GS, DEBUG, "Ground station initialised, ready to receive commands via radio and console");
 }
-
 
 // === Private setup helpers ===
 
@@ -53,7 +53,6 @@ void GroundStation::startAsyncReceive()
 {
     radioModule->receiveMode();
 }
-
 
 // === Getters and Setters ===
 RadioModule *GroundStation::getRadioModule()
@@ -81,8 +80,10 @@ void GroundStation::getQueueStatus()
 
 void GroundStation::handleCommandParserUpdate()
 {
-    if (!commandParser) {
-        LOGGING(CRIT,"Command parser not initialised in the GS!");
+    if (!commandParser)
+    {
+        LOGGING(CAT_GS, CRIT, "Command parser not initialised in the GS!");
+        return;
     }
     if (commandParserFlag)
     {
@@ -102,22 +103,21 @@ void GroundStation::handleRadioCommand()
 
 void GroundStation::handleReceivedPacket()
 {
-    // Assuming that we are already in receive mode check if we have an interupt raised
-    if (!radioModule->checkInterruptReceived()) return;
+    // Check if we got an interupt and if it has led to a valid packet
+    if (!radioModule->pollValidPacketRx())
+        return;
 
-    
     // Populate the current Frame View with the new packet
     readReceivedPacket();
     printPacketToGui();
     printVerboseTelemetryPacket();
 
     // Check the CTS flag and if we want to be able to transmit
-    if ( currentFrameView.cts() && canTXFromCTS)
+    if (currentFrameView.cts() && canTXFromCTS)
     {
         // With the CTS flag we know to send another command to the rocket,
         handleRocketCommand();
     }
-    
 }
 
 // === Command Parsing from Serial ===
@@ -158,8 +158,7 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     // Now handle all supported commands
     if (param == "freq")
     {
-        //"VERIFY THE HW WHEN SETTING THE FREQUENCY"
-        radioModule->setFreq(value.toInt());
+        radioModule->setFreq(value.toFloat());
         currentParams.freq = value.toInt();
         syncCurrentParamsWithRadioModule();
     }
@@ -214,15 +213,15 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     }
     else if (param == "bypass")
     {
-        LOGGING(CRIT, "bypass has not been implemented");
+        LOGGING(CAT_GS, CRIT, "bypass has not been implemented");
     }
     else if (param == "setTx")
     {
         if (value == "t" || value == "f")
         {
             setCanTXFromCTS(value == "t");
-            LOGGING(DEBUG, "setting tx from cts");
-            LOGGING(DEBUG, value);
+            LOGGING(CAT_GS, DEBUG, "setting tx from cts");
+            LOGGING(CAT_GS, DEBUG, value);
         }
         else
         {
@@ -269,27 +268,27 @@ bool GroundStation::verifyRadioStates()
 {
     if (radioModule->getFreq() != currentParams.freq)
     {
-        LOGGING(CRIT, "Frequency setting failed");
+        LOGGING(CAT_GS, CRIT, "Frequency setting failed");
         return false;
     }
     if (radioModule->getBandwidth() != currentParams.bw)
     {
-        LOGGING(CRIT, "Bandwdith setting failed");
+        LOGGING(CAT_GS, CRIT, "Bandwdith setting failed");
         return false;
     }
     if (radioModule->getCodingRate() != currentParams.cr)
     {
-        LOGGING(CRIT, "Coding Rate setting failed");
+        LOGGING(CAT_GS, CRIT, "Coding Rate setting failed");
         return false;
     }
     if (radioModule->getSpreadingFactor() != currentParams.sf)
     {
-        LOGGING(CRIT, "SF setting failed");
+        LOGGING(CAT_GS, CRIT, "SF setting failed");
         return false;
     }
     if (radioModule->getPowerOutput() != currentParams.pow)
     {
-        LOGGING(CRIT, "Power setting failed");
+        LOGGING(CAT_GS, CRIT, "Power setting failed");
         return false;
     }
     return true;
@@ -299,18 +298,20 @@ bool GroundStation::verifyRadioStates()
 
 void GroundStation::readReceivedPacket()
 {
-    uint8_t *receivedData = radioModule->readPacket();
+    uint8_t *receivedData = radioModule->getPacketData();
     int packetLength = radioModule->getPacketLength();
-    LOGGING(DEBUG, "Received something time to read it");
+    LOGGING(CAT_GS, DEBUG, "Received something time to read it");
 
     rxLen = min(packetLength, sizeof(rxBuf));
     memcpy(rxBuf, receivedData, rxLen);
 
     currentFrameView.reset(rxBuf, rxLen);
+    currentFrameState = currentFrameView.validate();
 
-    if (currentFrameView.validate() != ParseError::Ok) {
-
-        LOGGING( CRIT, "PROBLEMS with frame");
+    if (currentFrameState != ParseError::Ok)
+    {
+        LOGGING(CAT_GS, CRIT, "PROBLEMS with frame");
+        return;
     }
     lastRSSI = radioModule->getRSSI();
     lastSNR = radioModule->getSNR();
@@ -318,36 +319,89 @@ void GroundStation::readReceivedPacket()
 
 void GroundStation::printPacketToGui()
 {
-    Console.sendTelemetry(currentFrameView._base,currentFrameView._len);
+    if (currentFrameState != ParseError::Ok)
+    {
+        Console.println("Cannot print to gui with bad ASTRA frame");
+        return;
+    }
+    Console.sendTelemetry(currentFrameView._base, currentFrameView._len);
     return;
 }
 
 void GroundStation::printVerboseTelemetryPacket()
 {
-    if (!canPrintTelemetryVerbose) return;
-    Console.print("SIZE: ");
-    Console.print(radioModule->getPacketLength());
-    Console.print(" CTS: ");
-    Console.print(currentFrameView.cts());
-    Console.print(" ACK: ");
-    Console.print(currentFrameView.ack());
-    Console.print(" ACK_ID: ");
-    Console.println(currentFrameView.ack_id());
 
-    const uint8_t* p = (const uint8_t*)(currentFrameView.header());
+    char buf[128] = {0};
 
-    for (size_t i = 0; i < sizeof(FrameHeader); i++) {
-    if (p[i] < 16) Serial.print('0');
-    Serial.print(p[i], HEX);
-    if (i + 1 < sizeof(FrameHeader)) Serial.print(' ');
+    snprintf(buf, sizeof(buf),
+             "RX size=%u seq=%u cts=%u ack=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
+             (unsigned)radioModule->getPacketLength(),
+             (unsigned)currentFrameView.header()->seq,
+             (unsigned)currentFrameView.cts(),
+             (unsigned)currentFrameView.ack(),
+             (unsigned)currentFrameView.ack_id(),
+             millis() * 0.001f,
+             lastRSSI, lastSNR);
+    LOGGING(CAT_GS, CRIT, buf);
+
+    snprintf(buf, sizeof(buf),
+             "ASTRA hdr: seq=%u flags(cts=%u,ack=%u) ack_id=%u",
+             (unsigned)currentFrameView.header()->seq,
+             (unsigned)currentFrameView.cts(),
+             (unsigned)currentFrameView.ack(),
+             (unsigned)currentFrameView.ack_id());
+    LOGGING(CAT_ASTRA_DEBUG, CRIT, buf);
+
+    if (LoggerGS::getInstance().getCategoryMask() & CAT_RANGETEST)
+    {
+        flight_atomic_data flight{};
+        const uint8_t *p = currentFrameView.atomicPtr(AT_FLIGHT_ATOMIC);
+
+        if (p && currentFrameView.hasAtomic(AT_FLIGHT_ATOMIC))
+        {
+            lastRSSI = radioModule->getRSSI();
+            lastSNR = radioModule->getSNR();
+            memcpy(&flight, p, sizeof(flight_atomic_data));
+
+            float FC_RSSI = ((int32_t)flight.fc_rssi - 400) * 0.5f;
+            float FC_SNR = flight.fc_snr * 0.25f;
+            float FC_LastTime = flight.gps_time_last_update;
+            if (currentFrameView.cts() || currentFrameView.ack())
+            {
+                const char *kind = currentFrameView.cts() ? "CTS" : "ACK";
+                snprintf(buf, sizeof(buf),
+                         "%u,%s,GS_T:%.3f,GS_RSSI:%.2f,GS_SNR:%.2f,FC_T:%.3f,FC_RSSI:%.2f,FC_SNR:%.2f",
+                         (unsigned)currentFrameView.header()->seq,
+                         kind,
+                         millis() * 0.001f, lastRSSI, lastSNR,
+                         FC_LastTime, FC_RSSI, FC_SNR);
+                LOGGING(CAT_RANGETEST, CRIT, buf);
+            }
+        }
     }
-    Serial.println();
 
-    // printAtomics( currentFrameView );
-    // Console.print("Last received RSSI = ");
-    // Console.print(lastRSSI);
-    // Console.print(" SNR = ");
-    // Console.println(lastSNR);
+    if (!canPrintTelemetryVerbose)
+        return;
+
+    // Console.print("SIZE: ");
+    // Console.print(radioModule->getPacketLength());
+    // Console.print(" CTS: ");
+    // Console.print(currentFrameView.cts());
+    // Console.print(" ACK: ");
+    // Console.print(currentFrameView.ack());
+    // Console.print(" ACK_ID: ");
+    // Console.println(currentFrameView.ack_id());
+
+    // {
+    //     const uint8_t* p = (const uint8_t*)(currentFrameView.header());
+    //     for (size_t i = 0; i < sizeof(FrameHeader); i++)
+    //     {
+    //         if (p[i] < 16) Serial.print('0');
+    //         Serial.print(p[i], HEX);
+    //         if (i + 1 < sizeof(FrameHeader)) Serial.print(' ');
+    //     }
+    //     Serial.println();
+    // }
 }
 
 // === Sending command helpers ===
@@ -357,14 +411,14 @@ void GroundStation::handleRocketCommand()
     command_packet rocketCommand;
     rocketCommand.data.command_id = 1;
     std::strncpy(rocketCommand.data.command_string, "nop",
-                sizeof(rocketCommand.data.command_string) - 1);
+                 sizeof(rocketCommand.data.command_string) - 1);
 
     commandParser->getNextRocketCommand(rocketCommand);
 
     sendRocketCommand(rocketCommand);
 }
 
-void GroundStation::sendRocketCommand(command_packet& command)
+void GroundStation::sendRocketCommand(command_packet &command)
 {
     if (!radioModule)
     {
@@ -372,15 +426,13 @@ void GroundStation::sendRocketCommand(command_packet& command)
         return;
     }
     const size_t length = sizeof(command.data);
-    LOGGING(DEBUG, "Sending rocket command serialised length:");
-    LOGGING(DEBUG, String(length));
+    LOGGING(CAT_GS, DEBUG, "Sending rocket command serialised length:");
+    LOGGING(CAT_GS, DEBUG, String(length));
 
-    radioModule->transmitInterrupt((uint8_t*)command.bytes, length);
+    radioModule->transmitBlocking((uint8_t *)command.bytes, length);
 
-    if (strcasecmp(command.data.command_string,"nop") != 0){
+    if (strcasecmp(command.data.command_string, "nop") != 0)
+    {
         Console.sendCmdAckTx(command.data.command_id);
     }
-
-    radioModule->receiveMode();
 }
-

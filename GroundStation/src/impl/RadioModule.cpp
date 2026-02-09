@@ -6,34 +6,22 @@
 
 // Static member declarations for volatile variable used in isr
 volatile bool RadioModule::interruptReceived = false;
-volatile bool RadioModule::enableInterrupt = true;
+volatile bool RadioModule::radioBusy = false;
 
 // === Setup ===
 
 RadioModule::RadioModule()
-    : radio(new Module(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN)),
-    frequency(BandSelect::get())
+    : mod(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN),
+      radio(&mod),
+      frequency(BandSelect::get())
 {
     state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
                         TCXO_VOLTAGE, USE_ONLY_LDO);
-    while (state != RADIOLIB_ERR_NONE)
+    while (!retryRadioInit())
     {
-        Console.print("FATAL ERROR RADIO MODULE FAILED TO INTIALISE RADIOLIB ERROR CODE: ");
-        Console.println(state);
-        Console.print("frequency is");
-        Console.println(frequency);
-        Console.print("if error persists try power cycling by disconnecting and reconnecting/ usb");
-        if (frequency == FREQUENCY_435){
-            Console.println("Check the battery?");
-            Console.println("Checking the freq pin again");
-        }
-        delay(250);
-        frequency = BandSelect::get();
-        state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
-                        TCXO_VOLTAGE, USE_ONLY_LDO);
     }
     verifyRadioState("Intializing radio module...");
-    radio.setPacketReceivedAction(radioReceiveISR);
+    radio.setDio1Action(radioDio1ISR);
     radio.setCurrentLimit(RADIO_CURRENT_LIMIT);
     memset(buffer, 0, sizeof(buffer));
 }
@@ -43,37 +31,135 @@ RadioChip *RadioModule::getRadioChipInstance()
     return &radio;
 }
 
+bool RadioModule::retryRadioInit()
+{
+    if (RadioStatus::ok(state))
+        return true;
+    Console.print("FATAL ERROR RADIO MODULE FAILED TO INTIALISE RADIOLIB ERROR CODE: ");
+    Console.println(state);
+    Console.print("frequency is");
+    Console.println(frequency);
+    Console.print("if error persists try power cycling by disconnecting and reconnecting/ usb");
+    if (frequency == FREQUENCY_435)
+    {
+        Console.println("Check the battery?");
+        Console.println("Checking the freq pin again");
+    }
+    delay(250);
+    BandSelect::forceUpdate();
+    frequency = BandSelect::get();
+    state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
+                        TCXO_VOLTAGE, USE_ONLY_LDO);
+    return false;
+}
+
 // === MAIN functions ===
 
-bool RadioModule::transmitInterrupt(const uint8_t *data, size_t size)
+bool RadioModule::transmitBlocking(const uint8_t* data, size_t size)
 {
+    radioBusy = true;
+
+    noInterrupts();
     interruptReceived = false;
+    interrupts();
+    radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
 
-    state = radio.startTransmit(data, size);
-    verifyRadioState("Attempting to transmit... ");
+    state = radio.transmit(data, size);
+    bool ok = RadioStatus::ok(state);
 
-    const uint32_t timeoutMs = 1000;
-    const uint32_t start = millis();
-    uint32_t lastLog = 0;
+    radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    radio.startReceive();
 
-    while (!interruptReceived)
+    radioBusy = false;
+
+    return ok;
+}
+
+
+bool RadioModule::pollValidPacketRx()
+{
+    if (radioBusy) {
+        Serial.println("aslkfnafd");
+        delay(1000);
+        return false;
+    }
+    // Atomically consume ISR latch
+    noInterrupts();
+    bool hadIrq = interruptReceived;
+    interruptReceived = false;
+    interrupts();
+
+    if (!hadIrq)
+        return false;
+
+    const uint32_t flags = radio.getIrqFlags();
+
+    const uint32_t RX_DONE = (1UL << RADIOLIB_IRQ_RX_DONE);
+    const uint32_t CRC_ERR = (1UL << RADIOLIB_IRQ_CRC_ERR);
+    const uint32_t HDR_ERR = (1UL << RADIOLIB_IRQ_HEADER_ERR);
+    const uint32_t TIMEOUT = (1UL << RADIOLIB_IRQ_TIMEOUT);
+
+    // Not a RX_DONE
+    if ((flags & RX_DONE) == 0)
     {
-        if (millis() - start > timeoutMs)
-        {
-            verifyRadioState("ERROR: TX timeout");
-            return false;
-        }
-
-        if (millis() - lastLog > 250)
-        {
-            LOGGING(DEBUG, "waiting for TX done IRQ...");
-            lastLog = millis();
-        }
-
-        delay(2);
+        radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        radio.startReceive();
+        return false;
     }
 
-    interruptReceived = false;
+    // Not a vlid payload check
+    if (flags & (CRC_ERR | HDR_ERR | TIMEOUT))
+    {
+        if (flags & CRC_ERR)
+        {
+            LOGGING(CAT_RADIO,CRIT, String("RX CRC error, RSSI: ") + String(getRSSI(), 2) +
+                              ", SNR: " + String(getSNR(), 2));
+        }
+        else if (flags & HDR_ERR)
+        {
+            LOGGING(CAT_RADIO,CRIT, "RX header error");
+        }
+        else
+        {
+            LOGGING(CAT_RADIO,DEBUG, "RX timeout");
+        }
+
+        radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        radio.startReceive();
+        return false;
+    }
+
+    // Valid packet read it now and set the buffer
+    const size_t n = radio.getPacketLength();
+    if (n == 0 || n > sizeof(buffer))
+    {
+        LOGGING(CAT_RADIO,CRIT, String("RX length invalid: ") + String((int)n));
+        state = radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        state = radio.startReceive();
+        return false;
+    }
+
+    lastPacketLength = (int)n;
+    memset(buffer, 0, sizeof(buffer));
+
+    state = radio.readData(buffer, n);
+
+    // If RadioLib still reports CRC mismatch here, treat as invalid.
+    if (!RadioStatus::ok(state))
+    {
+        verifyRadioState("readData");
+        radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        radio.startReceive();
+        return false;
+    }
+
+    state = radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    verifyRadioState("clearIrqFlags");
+
+    state = radio.startReceive();
+    verifyRadioState("startReceive");
+
+    // buffer now contains a valid packet
     return true;
 }
 
@@ -83,29 +169,9 @@ bool RadioModule::receiveMode()
     return verifyRadioState("Switching into receive mode... ");
 }
 
-bool RadioModule::checkInterruptReceived()
+void RadioModule::radioDio1ISR()
 {
-    return interruptReceived;
-}
-
-uint8_t *RadioModule::readPacket()
-{
-    size_t packetLength = radio.getPacketLength();
-    lastPacketLength = packetLength;
-    // Intialise the buffer to be zero
-    memset(buffer, 0, sizeof(buffer));
-    state = radio.readData(buffer, packetLength);
-    verifyRadioState("Attempting to read data...");
-    interruptReceived = false;
-    return buffer;
-}
-
-void RadioModule::radioReceiveISR()
-{
-    if (RadioModule::enableInterrupt)
-    {
-        RadioModule::interruptReceived = true;
-    }
+    RadioModule::interruptReceived = true;
 }
 
 // === Parameters Helpers ===
@@ -130,7 +196,7 @@ void RadioModule::checkParams()
 
 void RadioModule::pingParams()
 {
-    //ping_ack:8,250.00,903.00,7,20
+    // ping_ack:8,250.00,903.00,7,20
     Console.print("ping_ack");
     Console.print(":");
     Console.print(spreadingFactor);
@@ -144,13 +210,16 @@ void RadioModule::pingParams()
     Console.println(powerOutput);
 }
 
-
-
 // === Packet Getters Setters ===
 
 int RadioModule::getPacketLength()
 {
     return lastPacketLength;
+}
+
+uint8_t *RadioModule::getPacketData()
+{
+    return buffer;
 }
 
 float RadioModule::getRSSI()
@@ -167,32 +236,29 @@ float RadioModule::getSNR()
 
 bool RadioModule::verifyRadioState(String message)
 {
-    if (state == RADIOLIB_ERR_NONE)
+    if (RadioStatus::ok(state))
     {
-        LOGGING(DEBUG,message + " Success!");
+        LOGGING(CAT_RADIO,DEBUG, message + " Success!");
         return true;
     }
-    else if ( state == RADIOLIB_ERR_CRC_MISMATCH )
+    else if (RadioStatus::crcErr(state))
     {
         // If its a crc error we can log the SNR and RSSI
         // of the packet received even though its data is cooked
         char buf[64];
         // RSSI in dBm SNR in db
         snprintf(buf, sizeof(buf),
-                "CRC error, RSSI: %.2f, SNR: %.2f",
-                getRSSI(), getSNR());
-        LOGGING(CRIT, buf);
+                 "CRC error, RSSI: %.2f, SNR: %.2f",
+                 getRSSI(), getSNR());
+        LOGGING(CAT_RADIO,CRIT, buf);
         return false;
     }
-    else
-    {
-        LOGGING(CRIT,message + " Failure. Error code: " + String(state));
-        return false;
-    }
+
+    LOGGING(CAT_RADIO,CRIT, message + " Failure. Error code: " + String(state));
+    return false;
 }
 
 // === Radio Chip Getters Setters ===
-
 
 float RadioModule::getFreq()
 {

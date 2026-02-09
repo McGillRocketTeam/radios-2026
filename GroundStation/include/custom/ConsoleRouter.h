@@ -13,6 +13,10 @@ public:
     // Singleton accessor
     static ConsoleRouter &getInstance();
 
+    // 
+    static bool isReady();
+
+
     // Init Serial, Ethernet Physical Link, MQTT Digital Link
     void begin(MqttTopic::Role role,CommandParser& parser);
 
@@ -91,7 +95,8 @@ private:
     const char* ackTopic;
     const char* commandTopic;
     const char* debugTopic;
-    MqttTopic::Band band; 
+    MqttTopic::Band _band; 
+    MqttTopic::Role _role; 
 
 
     // Internal helpers for printing/publishing

@@ -193,14 +193,14 @@ void CommandParser::handleQueueInsertion(
 {
     if (queue.isFull())
     {
-        LOGGING(CRIT, "Queue for commands is full discarding old");
+        LOGGING(CAT_PARSER,CRIT, "Queue for commands is full discarding old");
         if (kind == QueueType::Radio)
         {
-            LOGGING(CRIT, "RADIO queue is full");
+            LOGGING(CAT_PARSER,CRIT, "RADIO queue is full");
         }
         else
         {
-            LOGGING(CRIT, "RADIO queue is full");
+            LOGGING(CAT_PARSER,CRIT, "RADIO queue is full");
         }
         queue.dequeue();
     }
@@ -209,33 +209,33 @@ void CommandParser::handleQueueInsertion(
 
 void CommandParser::enqueueCommand(const String &command)
 {
-    LOGGING(DEBUG, "Enqueue command triggered");
+    LOGGING(CAT_PARSER,DEBUG, "Enqueue command triggered");
     if (isRadioCommand(command))
     {
-        LOGGING(DEBUG, "Inserting radio command into the radio queue");
-        LOGGING(DEBUG, command);
+        LOGGING(CAT_PARSER,DEBUG, "Inserting radio command into the radio queue");
+        LOGGING(CAT_PARSER,DEBUG, command);
         handleQueueInsertion(radioCommandQueue, QueueType::Radio,command);
     }
     else if (isPingCommand(command))
     {
         // This is only for debugging via serial to send ping to check alive
-        LOGGING(DEBUG, "Inserting ping command into the radio queue");
-        LOGGING(DEBUG, command);
+        LOGGING(CAT_PARSER,DEBUG, "Inserting ping command into the radio queue");
+        LOGGING(CAT_PARSER,DEBUG, command);
         handleQueueInsertion(radioCommandQueue, QueueType::Radio, "radio ping");
     }
     else
     {
-        LOGGING(DEBUG, "Inserting rocket command into the rocket queue");
-        LOGGING(DEBUG, command);
+        LOGGING(CAT_PARSER,DEBUG, "Inserting rocket command into the rocket queue");
+        LOGGING(CAT_PARSER,DEBUG, command);
 
         String normalized;
         if (!normalizeRocketCommand(command, normalized))
         {
-            LOGGING(DEBUG, "Rejected rocket command (bad format): " + command);
+            LOGGING(CAT_PARSER,DEBUG, "Rejected rocket command (bad format): " + command);
             return;
         }
 
-        LOGGING(DEBUG, "Normalized rocket command: " + normalized);
+        LOGGING(CAT_PARSER,DEBUG, "Normalized rocket command: " + normalized);
         handleQueueInsertion(rocketCommandQueue,QueueType::Rocket,normalized);
     }
 }
@@ -268,6 +268,6 @@ void CommandParser::handleCharacterAppend(char c)
     }
     else
     {
-        LOGGING(PIPE, F("Warning: Command too long, ignoring extra characters."));
+        LOGGING(CAT_PARSER, PIPE, F("Warning: Command too long, ignoring extra characters."));
     }
 }

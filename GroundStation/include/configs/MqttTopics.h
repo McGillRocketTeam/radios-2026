@@ -23,6 +23,7 @@ namespace MqttTopic {
         ACKS,
         COMMANDS,
         DEBUG,
+        NAME,
         COUNT
     };
 
@@ -38,7 +39,8 @@ namespace MqttTopic {
                 "radio-controlstation-a/metadata",
                 "radio-controlstation-a/acks",
                 "radio-controlstation-a/commands",
-                "radio-controlstation-a/debug"
+                "radio-controlstation-a/debug",
+                "radio-controlstation-a"
             },
             // Band::B
             {
@@ -46,7 +48,8 @@ namespace MqttTopic {
                 "radio-controlstation-b/metadata",
                 "radio-controlstation-b/acks",
                 "radio-controlstation-b/commands",
-                "radio-controlstation-b/debug"
+                "radio-controlstation-b/debug",
+                "radio-controlstation-b",
             }
         },
 
@@ -58,7 +61,8 @@ namespace MqttTopic {
                 "radio-pad-a/metadata",
                 "radio-pad-a/acks",
                 "radio-pad-a/commands",
-                "radio-pad-a/debug"
+                "radio-pad-a/debug",
+                "radio-pad-a"
             },
             // Band::B
             {
@@ -66,7 +70,8 @@ namespace MqttTopic {
                 "radio-pad-b/metadata",
                 "radio-pad-b/acks",
                 "radio-pad-b/commands",
-                "radio-pad-b/debug"
+                "radio-pad-b/debug",
+                "radio-pad-b",
             }
         }
     };

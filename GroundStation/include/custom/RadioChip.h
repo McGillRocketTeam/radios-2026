@@ -1,10 +1,10 @@
 #pragma once 
 
 #include <RadioLib.h>
-#include <stdexcept>
 
 #include "Config.h"
 #include "PinLayout.h"
+#include "RadioChipStatus.h"
 
 /**
  * @class RadioChip
@@ -35,7 +35,7 @@ public:
      * @param ldo Use LDO only (true) or allow TCXO use (false).
      * @return RadioLib status code (0 = success).
      */
-    int begin(float freq,
+    RadioChipStatus begin(float freq,
               float bw,
               int sf,
               int cr,
@@ -46,24 +46,31 @@ public:
               bool ldo);
 
     /**
-     * @brief Assign a callback function to be called when a packet is received.
+     * @brief Assign a callback function to be called when a DIO1 is raised.
      * @param func Pointer to a no-argument ISR-style function.
      */
-    void setPacketReceivedAction(void (*func)());
+    void setDio1Action(void (*func)());
+
+    // Interupt request register needs to be read and cleared
+    // To get the chip's status after the dio1 interupt is fired
+    uint32_t getIrqFlags();
+
+    // Clear irq returns a radio lib status
+    RadioChipStatus clearIrqFlags(uint32_t mask);
 
     /**
-     * @brief Begin asynchronous transmission of a byte buffer.
+     * @brief Begin blocking transmission of a byte buffer.
      * @param data Pointer to the data buffer to send.
      * @param len Length of the buffer in bytes.
      * @return RadioLib status code.
      */
-    int startTransmit(const uint8_t *data, size_t len);
+    RadioChipStatus transmit(const uint8_t *data, size_t len);
 
     /**
      * @brief Start receiving packets asynchronously.
      * @return RadioLib status code.
      */
-    int startReceive();
+    RadioChipStatus startReceive();
 
     /**
      * @brief Get the length of the last received packet.
@@ -77,44 +84,44 @@ public:
      * @param len Maximum number of bytes to read.
      * @return RadioLib status code.
      */
-    int readData(uint8_t *data, size_t len);
+    RadioChipStatus readData(uint8_t *data, size_t len);
 
     /**
      * @brief Set the frequency of the radio.
      * @param freq Frequency in MHz.
      * @return RadioLib status code.
      */
-    int setFrequency(float freq);
+    RadioChipStatus setFrequency(float freq);
 
     /**
      * @brief Set the bandwidth of the radio.
      * @param bw Bandwidth in kHz.
      * @return RadioLib status code.
      */
-    int setBandwidth(float bw);
+    RadioChipStatus setBandwidth(float bw);
 
     /**
      * @brief Set the spreading factor.
      * @param sf Spreading factor (e.g., 7–12).
      * @return RadioLib status code.
      */
-    int setSpreadingFactor(uint8_t sf);
+    RadioChipStatus setSpreadingFactor(uint8_t sf);
 
     /**
      * @brief Set the coding rate.
      * @param cr Coding rate (1–4).
      * @return RadioLib status code.
      */
-    int setCodingRate(uint8_t cr);
+    RadioChipStatus setCodingRate(uint8_t cr);
 
     /**
      * @brief Set the radio output power.
      * @param power Output power in dBm.
      * @return RadioLib status code.
      */
-    int setOutputPower(int8_t power);
+    RadioChipStatus setOutputPower(int8_t power);
 
-    int setCurrentLimit(float mA);
+    RadioChipStatus setCurrentLimit(float mA);
 
     /**
      * @brief Get the RSSI (Received Signal Strength Indicator) of the last packet.
@@ -128,12 +135,6 @@ public:
      */
     float getSNR();
 
-    /**
-     * @brief Derives the radio frequency based on BAND_PIN hardware config.
-     * @return Frequency in MHz (e.g., 435.00 or 903.00).
-     */
-    float getFrequencyByBandPin();
-
 private:
     /// RadioLib SX1262 driver instance
     SX1262 _radio1262;
@@ -141,7 +142,5 @@ private:
     SX1268 _radio1268;
     /// Generic pointer to selected SX126x driver     
     SX126x *_radio;
-    /// Currently configured frequency        
-    float _freq;           
 };
 

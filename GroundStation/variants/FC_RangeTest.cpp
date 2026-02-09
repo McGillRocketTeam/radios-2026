@@ -11,11 +11,10 @@
 #include "frame_view.h"
 #include "telemetry_packets.h"
 
-// ======================================================== 
-// Variant of main.cpp that makes the GS radio mock the FC,
-// ASTRA telemetry has to match between GS and mockFC.
+// ========================================================
+// Variant of main.cpp for RANGE TEST
+// that makes the GS mock FC
 // The telemetry generation is hardcoded to Jan 2026
-
 
 // === Telemetry contruction declerations ===
 static void fillStates(states_atomic_data &states);
@@ -34,7 +33,7 @@ static bool buildTelemetryFrame(uint8_t *frameBuf,
 
 enum class FCState : uint8_t
 {
-    Transmit_NoCTS,
+    Transmit_CTS_Handshake,
     Transmit_CTS,
     Waiting_For_Response,
     Transmit_ACK
@@ -45,12 +44,12 @@ static bool setFlagsFromState(FCState state,
                               uint8_t &ack_id);
 
 // === Printing and remembering the ack from a command
-
 static void handleCommandPacket(const uint8_t *buffer, size_t packetLength, uint8_t &ack_number);
 
 // === Globals ===
 
-static FCState currentState = FCState::Transmit_NoCTS;
+static FCState currentState = FCState::Transmit_CTS_Handshake;
+static FCState previousState = FCState::Transmit_CTS_Handshake;
 static uint16_t sequenceNumber = 1;
 static uint8_t ack_id = 0;
 static uint8_t flags = 0;
@@ -65,13 +64,12 @@ void setup()
     {
     }
 
-    Serial.println("Flight Computer Simulator");
     radioModule = new RadioModule();
+    LoggerGS::getInstance().setCategoryMask(CAT_RANGETEST);
 }
 
 void loop()
 {
-
     uint8_t frameBuf[512] = {0};
     size_t frameLen = 0;
 
@@ -84,14 +82,8 @@ void loop()
     if (!buildTelemetryFrame(frameBuf, sizeof(frameBuf), frameLen, sequenceNumber, flags, ack_id))
     {
         Serial.println("Error: atomic size mismatch or buffer too small.");
-        delay(1000);
         return;
     }
-
-    Serial.print("Frame length: ");
-    Serial.println(frameLen);
-    Serial.print("Sequence: ");
-    Serial.println(sequenceNumber);
 
     FrameView view(frameBuf, frameLen);
     auto err = view.validate();
@@ -115,22 +107,16 @@ void loop()
     }
 
     bool txSuccess = radioModule->transmitBlocking(frameBuf, frameLen);
-    if (txSuccess)
-    {
-        Serial.println("Radio transmission successful!");
-    }
-    else
-    {
-        Serial.println("Radio transmission failed!");
-    }
 
     // Finite State Machine Block
 
-    // Success sending a CTS tx
-    if (txSuccess && currentState == FCState::Transmit_CTS)
+    if ((txSuccess && currentState == FCState::Transmit_CTS) ||
+        (txSuccess && currentState == FCState::Transmit_CTS_Handshake))
     {
+        previousState = currentState;
         Serial.println("We are now waiting for a response");
         currentState = FCState::Waiting_For_Response;
+
         radioModule->receiveMode();
 
         // We need to wait for the response
@@ -139,32 +125,42 @@ void loop()
         {
             if (radioModule->pollValidPacketRx())
             {
+                // If we get a response that is valid
                 currentState = FCState::Transmit_ACK;
+                delay(30);
+
+                if (previousState == FCState::Transmit_CTS_Handshake)
+                {
+                    previousState = FCState::Transmit_CTS;
+                }
+
                 uint8_t *buf = radioModule->getPacketData();
                 handleCommandPacket(buf, radioModule->getPacketLength(), ack_id);
                 break;
             }
+
+            delay(5);
         }
     }
-    else if (txSuccess && currentState == FCState::Transmit_NoCTS)
+    else if (txSuccess && currentState == FCState::Transmit_ACK)
     {
-        Serial.println("Successful tx of no CTS packet now swapping to with CTS");
         currentState = FCState::Transmit_CTS;
-    }
-    else if (txSuccess && currentState == FCState::Transmit_ACK){
-        currentState = FCState::Transmit_NoCTS;
     }
 
     // waiting for response means we txed a CTS and failed
     // so need to go into CTS again
+    // use the previous state to see if we should go back into handshake or nah
     if (currentState == FCState::Waiting_For_Response)
     {
         Serial.println("We failed to get a response from our CTS, will send a new packet with the CTS");
-        delay(500);
-        currentState = FCState::Transmit_CTS;
+        currentState = previousState;
     }
 
-    delay(100);
+    Serial.print("RSSI:");
+    Serial.print(radioModule->getRSSI());
+    Serial.print("SNR:");
+    Serial.println(radioModule->getSNR());
+    delay(10);
 }
 
 // === Telemetry Construction Impl ===
@@ -202,37 +198,39 @@ static bool buildTelemetryFrame(uint8_t *frameBuf,
 
 static void fillStates(states_atomic_data &states)
 {
-    static bool toggle = false;
-    toggle = !toggle;
-
     states = {};
 
-    states.mov_hall_state = toggle;
+    states.mov_hall_state = true;
     states.fdov_armed_SW = true;
     states.fdov_armed_HW = true;
-    states.fdov_energized_SW = toggle;
-    states.fdov_energizedGate_HW = toggle;
+    states.fdov_energized_SW = true;
+    states.fdov_energizedGate_HW = true;
     states.fdov_energizedCurrent_HW = true;
     states.fdov_continuity_HW = true;
+
     states.mov_armed_SW = true;
     states.mov_armed_HW = false;
-    states.mov_energized_SW = toggle;
-    states.mov_energizedGate_HW = toggle;
+    states.mov_energized_SW = true;
+    states.mov_energizedGate_HW = true;
     states.mov_energizedCurrent_HW = true;
     states.mov_continuity_HW = true;
+
     states.pilot_armed_SW = true;
     states.pilot_armed_HW = false;
     states.pilot_energized_SW = false;
     states.pilot_energizedGate_HW = false;
     states.pilot_energizedCurrent_HW = true;
     states.pilot_continuity_HW = true;
+
     states.ring_armed_SW = true;
     states.ring_armed_HW = true;
     states.ring_energized_SW = false;
     states.ring_energizedGate_HW = false;
     states.ring_energizedCurrent_HW = true;
     states.ring_continuity_HW = true;
-    states.prop_energized_electric = toggle;
+
+    states.prop_energized_electric = true;
+
     states.vent_armed_SW = true;
     states.vent_armed_HW = true;
     states.vent_energized_SW = false;
@@ -243,47 +241,46 @@ static void fillStates(states_atomic_data &states)
 
 static void fillProp(prop_atomic_data &prop)
 {
-    static uint16_t pressureCounter = 1000;
-    pressureCounter += 10;
-
     prop = {};
-    prop.cc_pressure = pressureCounter;
-    prop.tank_pressure = pressureCounter + 1000;
-    prop.tank_temp = 800 + (pressureCounter % 100);
-    prop.vent_temp = 200 + (pressureCounter % 50);
+
+    prop.cc_pressure = 100;
+    prop.tank_pressure = 1000;
+    prop.tank_temp = 800;
+    prop.vent_temp = 200;
 }
 
 static void fillFlight(flight_atomic_data &flight)
 {
-    static float altitude = 0.0f;
-    altitude += 5.0f;
-
-    static uint16_t pseudoCounter = 1000;
-    pseudoCounter += 10;
-
     flight = {};
-    flight.flight_stage = (altitude < 100) ? 1 : ((altitude < 500) ? 2 : 3);
-    flight.altimeter_altitude = altitude;
-    flight.altitude_from_sea_level = altitude + 1520.0f;
+
+    flight.flight_stage = 1;
+    flight.altimeter_altitude = 5.0f;
+    flight.altitude_from_sea_level = 1525.0f;
     flight.apogee_from_ground = 2000.0f;
-    flight.atm_pressure = 1013.25f - (altitude / 10.0f);
-    flight.barometer_altitude = altitude;
-    flight.atm_temp = 20.5f - (altitude / 100.0f);
+    flight.atm_pressure = 1012.75f;
+    flight.barometer_altitude = 5.0f;
+    flight.atm_temp = 20.45f;
+
     flight.gps_latitude = 40.7128f;
     flight.gps_longitude = -74.0060f;
-    flight.gps_altitude = altitude + 1525.0f;
-    flight.gps_time_last_update = millis() / 1000.0f;
+    flight.gps_altitude = 1530.0f;
+    // Piggyback extra info inside of gps last time update
+    // This will store the generation time of this packet
+    // For the FC side to report the time
+    flight.gps_time_last_update = millis() * 0.001f;
+
     flight.vertical_speed = 15.5f;
 
-    flight.acceleration_x = 100 + (pseudoCounter % 20);
-    flight.acceleration_y = -50 + (pseudoCounter % 10);
-    flight.acceleration_z = 980 + (pseudoCounter % 30);
-    flight.angle_yaw = 45 + (pseudoCounter % 10);
-    flight.angle_pitch = 10 + (pseudoCounter % 5);
-    flight.angle_roll = 5 + (pseudoCounter % 5);
+    flight.acceleration_x = 110;
+    flight.acceleration_y = -40;
+    flight.acceleration_z = 1000;
 
-    flight.fc_rssi = 85;
-    flight.fc_snr = 12;
+    flight.angle_yaw = 50;
+    flight.angle_pitch = 12;
+    flight.angle_roll = 7;
+
+    flight.fc_rssi = (uint16_t)((radioModule->getRSSI() * 2.0f) + 400.0f);
+    flight.fc_snr = (int8_t)(radioModule->getSNR() * 4.0f);
 }
 
 static void fillRadio(radio_atomic_data &radio)
@@ -300,9 +297,12 @@ static bool setFlagsFromState(FCState state,
 
     switch (state)
     {
-    case FCState::Transmit_NoCTS:
-        // No CTS, no ACK
+    case FCState::Transmit_CTS_Handshake:
+        flags = FLAG_CTS;
+        // we are still waiting for the first response
+        // reset hard the packet_id / sequence = 1
         ack_id = 0;
+        sequenceNumber = 1;
         return true;
 
     case FCState::Transmit_CTS:
@@ -322,12 +322,14 @@ static bool setFlagsFromState(FCState state,
     }
     return true;
 }
-static void handleCommandPacket(const uint8_t* buffer,
+
+static void handleCommandPacket(const uint8_t *buffer,
                                 size_t packetLength,
-                                uint8_t& ack_number)
+                                uint8_t &ack_number)
 {
     // Must contain the full struct
-    if (packetLength < sizeof(command_packet_data)) {
+    if (packetLength < sizeof(command_packet_data))
+    {
         Serial.println("ERROR: Packet too short");
         return;
     }
@@ -337,18 +339,7 @@ static void handleCommandPacket(const uint8_t* buffer,
 
     pkt.command_string[4] = '\0';
 
-    Serial.print("Command: ");
-    Serial.println(pkt.command_string);
-
-    // Case-insensitive compare for up to 4-char commands
-    // "nop" is 3 chars; this matches "nop" regardless of case
-    if (strncasecmp(pkt.command_string, "nop", 3) == 0) {
-        currentState = FCState::Transmit_NoCTS;
-        return;
-    }
-    Serial.print("Setting CMD ID: ");
-    Serial.println(pkt.command_id);
-    delay(1000);
-
-    ack_number = pkt.command_id;
+    // For the test we dont care what the command is
+    // And we will just hardcode the ack number
+    ack_number = 1;
 }
