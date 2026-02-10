@@ -5,10 +5,9 @@
 #include "MqttTopics.h"
 #include "PinLayout.h"
 
-
 #if TEENSY == 41
 #include <ArduinoJson.h>
-#include <MQTTConfig.h>
+#include <EthernetConfig.h>
 #include <NativeEthernet.h>
 #include <PubSubClient.h>
 
@@ -22,7 +21,6 @@ static bool ethernetUp();
 static bool mqttUp();
 
 volatile bool ethernetReconnectNeeded = false;
-
 
 static constexpr size_t MAX_MQTT_CMD = 256;
 volatile bool mqttCmdReady = false;
@@ -100,13 +98,14 @@ void ConsoleRouter::setTopics(MqttTopic::Role role)
 
 void ConsoleRouter::ethernetInit()
 {
-    if (MAC == nullptr)
-        return;
+    // Grab the HW derived mac address of size 6
+    _mac = getTeensyMac();
 
     Serial.println("Ethernet init (Teensy 4.1)...");
     Serial.println("This is a BLOCKING begin");
     Serial.println("if there is no physical link it will halt the code");
-    Ethernet.begin(MAC, STATIC_IP);
+    // Let router assign us the ip, Native Eth will read 6 bytes of mac data
+    Ethernet.begin((uint8_t *)_mac);
 
     ethClient.setConnectionTimeout(TCP_TIMEOUT_SETTING);
 
@@ -256,6 +255,16 @@ void ConsoleRouter::sendStatus()
                 doc["frequency"] = FREQUENCY_903_STR;
             }
             doc["long_status"] = "Online and ready";
+
+            char macStr[18];
+            if (!_mac)
+            {
+                strncpy(macStr, "00:00:00:00:00:00", 18);
+                macStr[17] = '\0';
+            }
+            snprintf(macStr, 18, "%02X:%02X:%02X:%02X:%02X:%02X",
+                     _mac[0], _mac[1], _mac[2], _mac[3], _mac[4], _mac[5]);
+            doc["mac"] = macStr;
 
             uint8_t jsonBuffer[512];
             size_t jsonSize = serializeJson(doc, jsonBuffer);
@@ -426,9 +435,9 @@ bool ConsoleRouter::mqttReconnect()
     if (!ethernetUp())
         return false;
 
-    const char *clientId = MqttTopic::topic(_role,_band,MqttTopic::TopicKind::NAME);
-    // Last will payload should be empty string to eliminate retained 
-    // metadata message 
+    const char *clientId = MqttTopic::topic(_role, _band, MqttTopic::TopicKind::NAME);
+    // Last will payload should be empty string to eliminate retained
+    // metadata message
     const char *willPayload = "";
     if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
     {

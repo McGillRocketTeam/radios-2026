@@ -43,12 +43,12 @@ namespace BandSelect
     bool freqAllowedFromBand(float f)
     {
         ensureInit();
-        // Allowed from canada ISED amateur HAM bands
+        // Allowed from canada ISED amateur HAM bands AND sx1262 limiations
         // Be aware that above 438 we start clashing with satelite associated stuff
         if (g_freq == FREQUENCY_903)
             return (f > 902.0f && f < 928.0f);
         if (g_freq == FREQUENCY_435)
-            return (f > 430.0f && f < 450.0f);
+            return (f > 430.0f && f < 440.0f);
         return false;
     }
 

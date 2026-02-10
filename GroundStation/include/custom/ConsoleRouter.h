@@ -96,7 +96,8 @@ private:
     const char* commandTopic;
     const char* debugTopic;
     MqttTopic::Band _band; 
-    MqttTopic::Role _role; 
+    MqttTopic::Role _role;
+    uint8_t* _mac;
 
 
     // Internal helpers for printing/publishing
