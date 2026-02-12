@@ -5,6 +5,7 @@
 
 #include "ConsoleRouter.h"
 #include "GroundStation.h"
+#include "GSCommand.h"
 #include "LoggerGS.h"
 
 // Boolean for command parser ISR
@@ -152,11 +153,11 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         value = radioCommand.substring(secondSpace + 1);
     }
 
-    const RadioCmd cmd = parseRadioCmd(param);
+    const GSCommand::Command cmd = GSCommand::parseRadioCmd(param);
 
     switch (cmd)
     {
-    case RadioCmd::Freq:
+    case GSCommand::Command::Freq:
     {
         const float f = value.toFloat();
         radioModule->setFreq(f);
@@ -165,7 +166,7 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case RadioCmd::Bw:
+    case GSCommand::Command::Bw:
     {
         const float bw = value.toFloat();
         radioModule->setBandwidth(bw);
@@ -175,7 +176,7 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case RadioCmd::Cr:
+    case GSCommand::Command::Cr:
     {
         const int cr = value.toInt();
         radioModule->setCodingRate(cr);
@@ -185,7 +186,7 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case RadioCmd::Sf:
+    case GSCommand::Command::Sf:
     {
         const int sf = value.toInt();
         radioModule->setSpreadingFactor(sf);
@@ -195,7 +196,7 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case RadioCmd::Pow:
+    case GSCommand::Command::Pow:
     {
         const int pow = value.toInt();
         radioModule->setPowerOutput(pow);
@@ -205,11 +206,11 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case RadioCmd::Param:
+    case GSCommand::Command::Param:
         radioModule->checkParams();
         break;
 
-    case RadioCmd::Ground:
+    case GSCommand::Command::Ground:
         radioModule->checkParams();
         Console.print("gsc_verbose_packet: ");
         Console.print(canPrintTelemetryVerbose);
@@ -217,23 +218,23 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         Console.print(canTXFromCTS);
         break;
 
-    case RadioCmd::Ping:
+    case GSCommand::Command::Ping:
         radioModule->pingParams();
         break;
 
-    case RadioCmd::Init:
+    case GSCommand::Command::Init:
         syncCurrentParamsWithRadioModule();
         printRadioParamsToGui();
         break;
 
-    case RadioCmd::Bypass:
+    case GSCommand::Command::Bypass:
         LOGGING(CAT_GS, CRIT, "bypass has not been implemented");
         break;
 
-    case RadioCmd::SetTx:
+    case GSCommand::Command::SetTx:
     {
         bool b;
-        if (!parseBoolTF(value, b))
+        if (!GSCommand::parseBoolTF(value, b))
         {
             Console.println("setTx accepts only 't' or 'f' as values");
             break;
@@ -244,10 +245,10 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case RadioCmd::Verbose:
+    case GSCommand::Command::Verbose:
     {
         bool b;
-        if (!parseBoolTF(value, b))
+        if (!GSCommand::parseBoolTF(value, b))
         {
             Console.println("verbose accepts only 't' or 'f' as values");
             break;
@@ -256,56 +257,13 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case RadioCmd::Unknown:
+    case GSCommand::Command::Unknown:
     default:
         Console.println("command not recognised, please check spelling");
         break;
     }
 }
 
-GroundStation::RadioCmd GroundStation::parseRadioCmd(const String &p)
-{
-    if (p == "freq")
-        return RadioCmd::Freq;
-    if (p == "bw")
-        return RadioCmd::Bw;
-    if (p == "cr")
-        return RadioCmd::Cr;
-    if (p == "sf")
-        return RadioCmd::Sf;
-    if (p == "pow")
-        return RadioCmd::Pow;
-    if (p == "param")
-        return RadioCmd::Param;
-    if (p == "ground")
-        return RadioCmd::Ground;
-    if (p == "ping")
-        return RadioCmd::Ping;
-    if (p == "init")
-        return RadioCmd::Init;
-    if (p == "bypass")
-        return RadioCmd::Bypass;
-    if (p == "settx")
-        return RadioCmd::SetTx;
-    if (p == "verbose")
-        return RadioCmd::Verbose;
-    return RadioCmd::Unknown;
-}
-
-bool GroundStation::parseBoolTF(const String &v, bool &out)
-{
-    if (v == "t")
-    {
-        out = true;
-        return true;
-    }
-    if (v == "f")
-    {
-        out = false;
-        return true;
-    }
-    return false;
-}
 
 void GroundStation::printRadioParamsToGui()
 {
@@ -372,7 +330,9 @@ void GroundStation::readReceivedPacket()
 
     if (currentFrameState != ParseError::Ok)
     {
-        LOGGING(CAT_GS, CRIT, "PROBLEMS with frame");
+        // There should be an alert sent to the GS here, perhaps just
+        // a malformed telemetry frame?
+        LOGGING(CAT_GS, CRIT, "Could not validate frame");
         return;
     }
     lastRSSI = radioModule->getRSSI();
@@ -392,9 +352,11 @@ void GroundStation::printPacketToGui()
 
 void GroundStation::printVerboseTelemetryPacket()
 {
-
+    if (!canPrintTelemetryVerbose)
+        return;
     char buf[128] = {0};
 
+    // Standard GS data 
     snprintf(buf, sizeof(buf),
              "RX size=%u seq=%u cts=%u ack=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
              (unsigned)radioModule->getPacketLength(),
@@ -405,7 +367,7 @@ void GroundStation::printVerboseTelemetryPacket()
              millis() * 0.001f,
              lastRSSI, lastSNR);
     LOGGING(CAT_GS, CRIT, buf);
-
+    // data for astra debug
     snprintf(buf, sizeof(buf),
              "ASTRA hdr: seq=%u flags(cts=%u,ack=%u) ack_id=%u",
              (unsigned)currentFrameView.header()->seq,
@@ -414,6 +376,7 @@ void GroundStation::printVerboseTelemetryPacket()
              (unsigned)currentFrameView.ack_id());
     LOGGING(CAT_ASTRA_DEBUG, CRIT, buf);
 
+    // Special category for logging range test info in csv form
     if (LoggerGS::getInstance().getCategoryMask() & CAT_RANGETEST)
     {
         flight_atomic_data flight{};
@@ -441,29 +404,6 @@ void GroundStation::printVerboseTelemetryPacket()
             }
         }
     }
-
-    if (!canPrintTelemetryVerbose)
-        return;
-
-    // Console.print("SIZE: ");
-    // Console.print(radioModule->getPacketLength());
-    // Console.print(" CTS: ");
-    // Console.print(currentFrameView.cts());
-    // Console.print(" ACK: ");
-    // Console.print(currentFrameView.ack());
-    // Console.print(" ACK_ID: ");
-    // Console.println(currentFrameView.ack_id());
-
-    // {
-    //     const uint8_t* p = (const uint8_t*)(currentFrameView.header());
-    //     for (size_t i = 0; i < sizeof(FrameHeader); i++)
-    //     {
-    //         if (p[i] < 16) Serial.print('0');
-    //         Serial.print(p[i], HEX);
-    //         if (i + 1 < sizeof(FrameHeader)) Serial.print(' ');
-    //     }
-    //     Serial.println();
-    // }
 }
 
 // === Sending command helpers ===

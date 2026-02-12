@@ -83,27 +83,6 @@ public:
      */
     void setCanTXFromCTS(bool enable);
 
-    enum class RadioCmd : uint8_t
-    {
-        Freq,
-        Bw,
-        Cr,
-        Sf,
-        Pow,
-        Param,
-        Ground,
-        Ping,
-        Init,
-        Bypass,
-        SetTx,
-        Verbose,
-        Unknown
-    };
-
-    RadioCmd parseRadioCmd(const String &p);
-
-    bool parseBoolTF(const String &v, bool &out);
-
     /**
      * @brief Destructor for GroundStation.
      */
