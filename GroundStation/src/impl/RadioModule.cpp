@@ -19,6 +19,7 @@ RadioModule::RadioModule()
                         TCXO_VOLTAGE, USE_ONLY_LDO);
     while (!retryRadioInit())
     {
+        Serial.println("radio init failure");
     }
     verifyRadioState("Intializing radio module...");
     radio.setDio1Action(radioDio1ISR);
@@ -46,7 +47,6 @@ bool RadioModule::retryRadioInit()
         Console.println("Checking the freq pin again");
     }
     delay(250);
-    BandSelect::forceUpdate();
     frequency = BandSelect::get();
     state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
                         TCXO_VOLTAGE, USE_ONLY_LDO);

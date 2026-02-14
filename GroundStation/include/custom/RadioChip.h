@@ -72,6 +72,8 @@ public:
      */
     RadioChipStatus startReceive();
 
+    RadioChipStatus standby();
+
     /**
      * @brief Get the length of the last received packet.
      * @return Size of the received packet in bytes.

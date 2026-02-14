@@ -72,6 +72,10 @@ RadioChipStatus RadioChip::startReceive()
     return _radio->startReceive();
 }
 
+RadioChipStatus RadioChip::standby(){
+    return _radio->standby();
+}
+
 size_t RadioChip::getPacketLength()
 {
     return _radio->getPacketLength();

@@ -52,11 +52,4 @@ namespace BandSelect
         return false;
     }
 
-    void forceUpdate()
-    {
-        ensureInit();
-        int v = digitalRead(FREQ_PIN);
-        g_freq = (v == HIGH) ? FREQUENCY_903 : FREQUENCY_435;
-    }
-
 }

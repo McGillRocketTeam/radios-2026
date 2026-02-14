@@ -16,8 +16,4 @@ namespace BandSelect
 
     // Check if freq input matches the amateur ISED frequencies of that band
     bool freqAllowedFromBand(float f);
-
-    // Band select should be global and inited only once
-    // FORCE UPDATE only when reinitialising global state
-    void forceUpdate();
 }

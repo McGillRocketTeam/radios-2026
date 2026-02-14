@@ -21,7 +21,7 @@ constexpr bool ENABLE_ETHERNET_CONNECTION = false;
 #endif
 
 // Controls whether human readable telemetry is spit out to serial
-constexpr bool ENABLE_VERBOSE_TELMETRY_PACKET = false;
+constexpr bool ENABLE_VERBOSE_TELMETRY_PACKET = true;
 
 // Radio identity and keywording
 constexpr const char *RADIO_CALL_SIGN = "VA2 JWL";

@@ -9,7 +9,7 @@ import serial.tools.list_ports
 # HARD-CODE HERE
 # ==========================================================
 PROJECT_DIR = r"C:\Jeff_Documents\Programming\MRT\radios-2026\GroundStation"
-UPLOAD_PORT = "COM7"
+UPLOAD_PORT = "COM4"
 
 # =========================================================
 
