@@ -281,7 +281,7 @@ void ConsoleRouter::sendStatus()
 void ConsoleRouter::sendCmdAckRx(const String &s)
 {
     uint8_t ackId = 0;
-    const char *status = "RX_BAD";
+    const char *status = "RX_NOK";
 
     int commaIdx = s.indexOf(',');
     if (commaIdx <= 0 || commaIdx >= (int)s.length() - 1)
@@ -350,7 +350,7 @@ void ConsoleRouter::sendCmdAckTx(int ack_id)
     if (ack_id < 0 || ack_id > 255)
     {
         Serial.println("tx ack id out of range");
-        publishAck("TX_BAD", 0);
+        publishAck("TX_NOK", 0);
         return;
     }
 

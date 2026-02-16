@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import io
 
 # Path of the .txt file with the data
-FILE_NAME = "./data/NO_BODGE.txt"
+FILE_NAME = "./data/No_BODGE.txt"
 
 df = pd.DataFrame(columns=["packet_id", "flag", "GS_T", "GS_RSSI", "GS_SNR", "FC_T", "FC_RSSI", "FC_SNR"])
 csv_data = []
@@ -14,6 +14,11 @@ with open(FILE_NAME) as file:
     csv_data = txt[3:-2]   # csv data excludes first 3 lines and last 2
 
 raw_df = pd.read_csv(io.StringIO("".join(csv_data)), sep=',|:', engine='python', header=None)
+
+# rows where the token before the value isn't actually GS_SNR
+bad = raw_df[6].ne("GS_SNR") | raw_df[7].isna()
+print("bad rows:", bad.sum(), "out of", len(raw_df))
+print(raw_df.loc[bad].head(20))
 
 
 # Populate dataframe with parsed values
@@ -37,7 +42,7 @@ color_snr = "tab:blue"
 # Ground station plot
 ax_gs.set_xlabel("Time")
 ax_gs.set_ylabel("Ground Station RSSI")
-ax_gs.set_ylim(-100, -30)
+ax_gs.set_ylim(-100, 10)
 line1, = ax_gs.plot(X, df["GS_RSSI"], color=color_rssi, label="GS_RSSI")
 
 ax_gs_2 = ax_gs.twinx()
@@ -53,7 +58,7 @@ ax_gs.set_title("Ground Station")
 # FC plot
 ax_fc.set_xlabel("Time")
 ax_fc.set_ylabel("FC RSSI")
-ax_fc.set_ylim(-100, -30)
+ax_fc.set_ylim(-100, 10)
 line3, = ax_fc.plot(X, df["FC_RSSI"], color=color_rssi, label="FC_RSSI")
 
 ax_fc_2 = ax_fc.twinx()
