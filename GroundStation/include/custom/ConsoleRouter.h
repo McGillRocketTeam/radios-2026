@@ -78,7 +78,8 @@ private:
     void        ethernetInit();
     static void ethernetCheckISR();
 
-    // Internal helper to handle reconnecting
+    // Try to connect to the server
+    // will search the ip list and send a status if succesful
     bool mqttReconnect();
 
     // Internal helper for cmd acks

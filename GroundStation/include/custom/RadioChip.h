@@ -72,6 +72,10 @@ public:
      */
     RadioChipStatus startReceive();
 
+    /**
+     * @brief Make the sx126x fsm go into standby state 
+     * @return RadioLib status code.
+     */
     RadioChipStatus standby();
 
     /**
@@ -123,6 +127,11 @@ public:
      */
     RadioChipStatus setOutputPower(int8_t power);
 
+    /**
+     * @brief Set the radio max current draw.
+     * @param mA Max current in milli amps
+     * @return RadioLib status code.
+     */
     RadioChipStatus setCurrentLimit(float mA);
 
     /**

@@ -366,7 +366,7 @@ void GroundStation::printVerboseTelemetryPacket()
              (unsigned)currentFrameView.ack_id(),
              millis() * 0.001f,
              lastRSSI, lastSNR);
-    LOGGING(CAT_GS, CRIT, buf);
+    LOGGING(CAT_GS, INFO, buf);
     // data for astra debug
     snprintf(buf, sizeof(buf),
              "ASTRA hdr: seq=%u flags(cts=%u,ack=%u) ack_id=%u",
@@ -374,7 +374,7 @@ void GroundStation::printVerboseTelemetryPacket()
              (unsigned)currentFrameView.cts(),
              (unsigned)currentFrameView.ack(),
              (unsigned)currentFrameView.ack_id());
-    LOGGING(CAT_ASTRA_DEBUG, CRIT, buf);
+    LOGGING(CAT_ASTRA_DEBUG, INFO, buf);
 
     // Special category for logging range test info in csv form
     if (LoggerGS::getInstance().getCategoryMask() & CAT_RANGETEST)
@@ -400,7 +400,7 @@ void GroundStation::printVerboseTelemetryPacket()
                          kind,
                          millis() * 0.001f, lastRSSI, lastSNR,
                          FC_LastTime, FC_RSSI, FC_SNR);
-                LOGGING(CAT_RANGETEST, CRIT, buf);
+                LOGGING(CAT_RANGETEST, INFO, buf);
             }
         }
     }
@@ -428,8 +428,16 @@ void GroundStation::sendRocketCommand(command_packet &command)
         return;
     }
     const size_t length = sizeof(command.data);
-    LOGGING(CAT_GS, DEBUG, "Sending rocket command serialised length:");
-    LOGGING(CAT_GS, DEBUG, String(length));
+
+        char buf[128] = {0};
+
+    snprintf(buf, sizeof(buf),
+             "TX cmd=%s id=%u size=%u ",
+             command.data.command_string,
+             (unsigned)command.data.command_id,
+             (unsigned)length
+            );
+    LOGGING(CAT_GS, INFO, buf);
 
     radioModule->transmitBlocking((uint8_t *)command.bytes, length);
 

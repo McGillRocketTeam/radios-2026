@@ -59,7 +59,7 @@ bool CommandParser::getNextRocketCommand(command_packet& outPkt)
     }
 
     int commaIdx = raw.indexOf(',');
-    if (commaIdx <= 0 || commaIdx == raw.length() - 1) {
+    if (commaIdx <= 0 || (uint64_t)commaIdx == raw.length() - 1) {
         return false;
     }
 

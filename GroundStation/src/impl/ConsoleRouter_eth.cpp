@@ -105,11 +105,8 @@ void ConsoleRouter::ethernetInit()
     Serial.println("This is a BLOCKING begin");
     Serial.println("if there is no physical link it will halt the code");
     // Let router assign us the ip, Native Eth will read 6 bytes of mac data
-    Ethernet.begin((uint8_t *)_mac);
-
-    ethClient.setConnectionTimeout(TCP_TIMEOUT_SETTING);
-
-    delay(1000);
+    Ethernet.begin((uint8_t *)_mac,ETHERNET_TOTAL_TIMEOUT,ETHERNET_RESPONSE_TIMOUT);
+    delay(100);
 
     if (Ethernet.linkStatus() != LinkON)
     {
@@ -118,10 +115,6 @@ void ConsoleRouter::ethernetInit()
     }
 
     Serial.println("Ethernet link UP.");
-    Serial.print("Server: ");
-    Serial.println(SERVER_IP);
-
-    mqttClient.setServer(SERVER_IP, SERVER_PORT);
     mqttReconnect();
 }
 
@@ -139,8 +132,7 @@ void ConsoleRouter::handleConsoleReconnect()
             Serial.println("Ethernet down. Re-initializing...");
             ethernetInit();
         }
-
-        if (ethernetUp() && !mqttUp())
+        else if (ethernetUp() && !mqttUp())
         {
             Serial.println("MQTT disconnected. Reconnecting...");
             mqttReconnect();
@@ -157,20 +149,12 @@ void ConsoleRouter::mqttLoop()
 
     if (!mqttUp())
     {
-        if (mqttReconnect())
-        {
-            sendStatus();
-        }
-        else
-        {
-            return;
-        }
+        return;
     }
     mqttClient.loop();
 
     if (mqttCmdReady)
     {
-        // Take a local snapshot first to minimize races
         mqttCmdReady = false;
 
         if (commandParser)
@@ -178,7 +162,7 @@ void ConsoleRouter::mqttLoop()
             String s(mqttCmdBuf);
             commandParser->enqueueCommand(s);
 
-            // RX ack belongs here (not in the callback)
+            // Confirm the receipt of the command
             sendCmdAckRx(s);
         }
     }
@@ -219,9 +203,6 @@ void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size)
 {
     if (ethernetUp())
     {
-        if (!mqttUp())
-            mqttReconnect();
-
         if (mqttUp())
         {
             bool ok = mqttClient.publish(telemetryTopic, buffer, (unsigned int)size, false);
@@ -237,12 +218,10 @@ void ConsoleRouter::sendStatus()
 {
     if (ethernetUp())
     {
-        Serial.println("send status call");
-        if (!mqttUp())
-            mqttReconnect();
-        Serial.println("mqtt up");
         if (mqttUp())
         {
+            Serial.println("send status call");
+            Serial.println("mqtt up");
             JsonDocument doc;
 
             doc["status"] = "OK";
@@ -349,7 +328,7 @@ void ConsoleRouter::sendCmdAckTx(int ack_id)
 {
     if (ack_id < 0 || ack_id > 255)
     {
-        Serial.println("tx ack id out of range");
+        Serial.println("tx cmd id out of range");
         publishAck("TX_NOK", 0);
         return;
     }
@@ -379,9 +358,6 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
 
     if (ethernetUp())
     {
-        if (!mqttUp())
-            mqttReconnect();
-
         if (mqttUp())
         {
             bool ok = mqttClient.publish(debugTopic, buffer, (unsigned int)size, false);
@@ -413,9 +389,6 @@ bool ConsoleRouter::publishAck(const char *status, uint8_t cmdId)
         return false;
 
     if (!mqttUp())
-        mqttReconnect();
-
-    if (!mqttUp())
         return false;
 
     JsonDocument doc;
@@ -436,21 +409,34 @@ bool ConsoleRouter::mqttReconnect()
         return false;
 
     const char *clientId = MqttTopic::topic(_role, _band, MqttTopic::TopicKind::NAME);
-    // Last will payload should be empty string to eliminate retained
-    // metadata message
     const char *willPayload = "";
-    if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
+
+    for (size_t attempt = 0; attempt < kNumServers; ++attempt)
     {
-        Serial.println("MQTT connected.");
-        ConsoleRouter::getInstance().sendStatus();
-        mqttClient.subscribe(commandTopic, 1);
-        return true;
+        size_t idx = (s_serverIdx + attempt) % kNumServers;
+        const IPAddress &ip = kServers[idx];
+
+        Serial.print("Trying to connect to ");
+        Serial.println(ip);
+
+        mqttClient.setServer(ip, SERVER_PORT);
+
+        if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
+        {
+            s_serverIdx = idx;
+            Serial.print("MQTT connected to ");
+            Serial.println(ip);
+            sendStatus();
+            mqttClient.subscribe(commandTopic, 1);
+            return true;
+        }
+
+        Serial.print("MQTT connect failed to ");
+        Serial.println(ip);
+        delay(50);
     }
-    else
-    {
-        Serial.println("MQTT connect failed.");
-        return false;
-    }
+
+    return false;
 }
 
 void ConsoleRouter::_publishBytes(const uint8_t *data, size_t len)

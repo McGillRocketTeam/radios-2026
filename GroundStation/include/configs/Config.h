@@ -13,7 +13,7 @@ constexpr bool ENABLE_RADIO_TX = true;
 
 // Controls whether ethernet stuff will be allowed
 #if TEENSY == 41
-constexpr bool ENABLE_ETHERNET_CONNECTION = false;
+constexpr bool ENABLE_ETHERNET_CONNECTION = true;
 #else
 
 // Always false if not on 4.1

@@ -9,7 +9,7 @@ enum LogLevel : uint8_t {
   CRIT  = 3
 };
 
-constexpr LogLevel GS_LOG_LEVEL = DEBUG;
+constexpr LogLevel GS_LOG_LEVEL = INFO;
 
 // --- Categories ---
 enum LogCat : uint32_t {
@@ -24,4 +24,4 @@ enum LogCat : uint32_t {
   CAT_ALL    = 0xFFFFFFFFu,
 };
 
-constexpr uint32_t GS_LOG_CATS = CAT_RANGETEST;
+constexpr uint32_t GS_LOG_CATS = CAT_GS;

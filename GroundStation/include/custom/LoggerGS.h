@@ -3,6 +3,7 @@
 #include "ConsoleRouter.h"
 #include "LoggerConfig.h"
 
+// Logging with CRIT level bypasses the category mask
 #define LOGGING(cat, level, msg) LoggerGS::getInstance().log((cat), (level), (msg))
 
 class LoggerGS
@@ -29,6 +30,9 @@ private:
     {
         if (level < globalLogLevel)
             return false;
+        // CRIT logs always make it through
+        if (level == CRIT)
+            return true;
         return (enabledCats & cat) != 0;
     }
 
@@ -38,6 +42,7 @@ private:
     }
 };
 
+// Logging with CRIT level bypasses the category mask
 template <typename T>
 void LoggerGS::log(uint32_t cat, LogLevel level, const T &msg)
 {
