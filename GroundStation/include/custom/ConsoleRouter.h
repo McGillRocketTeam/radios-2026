@@ -85,6 +85,9 @@ private:
     // Internal helper for cmd acks
     bool publishAck(const char* status, uint8_t ackId);
 
+    // Grabbing the mac address of the teensy
+    void getMac(uint8_t mac[6]);
+
     // Command parser injection
     CommandParser* commandParser = nullptr;
 
@@ -98,7 +101,6 @@ private:
     const char* debugTopic;
     MqttTopic::Band _band; 
     MqttTopic::Role _role;
-    uint8_t* _mac;
 
 
     // Internal helpers for printing/publishing

@@ -29,6 +29,10 @@ void ConsoleRouter::sendCmdAckTx(int) { /* no-op */ }
 void ConsoleRouter::ethernetInit() { /* no-op */ }
 bool ConsoleRouter::mqttReconnect() { return false; }
 bool ConsoleRouter::publishAck(const char *, uint8_t) { return false; }
+void ConsoleRouter::getMac(uint8_t mac[6] ){
+    // Can implement the hardware get here since we dont have the Ethernet object
+    for (int i = 0; i < 6; i++) mac[i] = 0;
+}
 
 ConsoleRouter &ConsoleRouter::getInstance()
 {

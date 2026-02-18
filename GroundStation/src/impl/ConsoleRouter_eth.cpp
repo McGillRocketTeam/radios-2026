@@ -8,8 +8,10 @@
 #if TEENSY == 41
 #include <ArduinoJson.h>
 #include <EthernetConfig.h>
-#include <NativeEthernet.h>
 #include <PubSubClient.h>
+
+#include <QNEthernet.h>
+using namespace qindesign::network;
 
 static EthernetClient ethClient;
 static PubSubClient mqttClient(ethClient);
@@ -95,26 +97,39 @@ void ConsoleRouter::setTopics(MqttTopic::Role role)
     commandTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::COMMANDS);
     debugTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::DEBUG);
 }
-
 void ConsoleRouter::ethernetInit()
 {
-    // Grab the HW derived mac address of size 6
-    _mac = getTeensyMac();
+    Serial.println("Ethernet init (Teensy 4.1) via QNEthernet...");
+    Serial.println("Starting Ethernet with DHCP...");
 
-    Serial.println("Ethernet init (Teensy 4.1)...");
-    Serial.println("This is a BLOCKING begin");
-    Serial.println("if there is no physical link it will halt the code");
-    // Let router assign us the ip, Native Eth will read 6 bytes of mac data
-    Ethernet.begin((uint8_t *)_mac,ETHERNET_TOTAL_TIMEOUT,ETHERNET_RESPONSE_TIMOUT);
-    delay(100);
-
-    if (Ethernet.linkStatus() != LinkON)
+    if (!Ethernet.begin())
     {
-        Serial.println("Ethernet link DOWN.");
+        Serial.println("ERROR: Ethernet hardware not found.");
         return;
     }
 
+    uint32_t t0 = millis();
+    while (Ethernet.linkStatus() != LinkON)
+    {
+        if (millis() - t0 > (uint32_t)INITIAL_PHY_LINK_TIMEOUT)
+        {
+            Serial.println("Ethernet link DOWN (timeout).");
+            return;
+        }
+        Ethernet.loop();
+        delay(10);
+    }
     Serial.println("Ethernet link UP.");
+
+    if (!Ethernet.waitForLocalIP(DHCP_IP_ASSIGN_TIMEOUT))
+    {
+        Serial.println("DHCP timed out — no IP assigned.");
+        return;
+    }
+
+    Serial.print("IP: ");
+    Serial.println(Ethernet.localIP());
+
     mqttReconnect();
 }
 
@@ -122,21 +137,29 @@ void ConsoleRouter::handleConsoleReconnect()
 {
     if (!ENABLE_ETHERNET_CONNECTION)
         return;
+    Ethernet.loop();
 
-    if (ethernetReconnectNeeded)
+    if (!ethernetReconnectNeeded)
+        return;
+
+    ethernetReconnectNeeded = false;
+
+    // If the cable is not plugged in do not attempt the blocking dhcp timeout
+    if (Ethernet.linkStatus() != LinkON)
     {
-        ethernetReconnectNeeded = false;
+        Serial.println("Ethernet link still DOWN: waiting for cable");
+        return;
+    }
 
-        if (!ethernetUp())
-        {
-            Serial.println("Ethernet down. Re-initializing...");
-            ethernetInit();
-        }
-        else if (ethernetUp() && !mqttUp())
-        {
-            Serial.println("MQTT disconnected. Reconnecting...");
-            mqttReconnect();
-        }
+    if (!ethernetUp())
+    {
+        Serial.println("Ethernet down. Re-initializing...");
+        ethernetInit();
+    }
+    else if (ethernetUp() && !mqttUp())
+    {
+        Serial.println("MQTT disconnected. Reconnecting...");
+        mqttReconnect();
     }
 }
 
@@ -144,6 +167,7 @@ void ConsoleRouter::mqttLoop()
 {
     if (!ENABLE_ETHERNET_CONNECTION)
         return;
+    Ethernet.loop();
     if (!ethernetUp())
         return;
 
@@ -236,13 +260,14 @@ void ConsoleRouter::sendStatus()
             doc["long_status"] = "Online and ready";
 
             char macStr[18];
-            if (!_mac)
-            {
-                strncpy(macStr, "00:00:00:00:00:00", 18);
-                macStr[17] = '\0';
-            }
-            snprintf(macStr, 18, "%02X:%02X:%02X:%02X:%02X:%02X",
-                     _mac[0], _mac[1], _mac[2], _mac[3], _mac[4], _mac[5]);
+            uint8_t macRaw[6];
+            getMac(macRaw);
+
+            snprintf(macStr, sizeof(macStr),
+                     "%02X:%02X:%02X:%02X:%02X:%02X",
+                     macRaw[0], macRaw[1], macRaw[2],
+                     macRaw[3], macRaw[4], macRaw[5]);
+
             doc["mac"] = macStr;
 
             uint8_t jsonBuffer[512];
@@ -340,6 +365,13 @@ void ConsoleRouter::sendCmdAckTx(int ack_id)
     }
 }
 
+void ConsoleRouter::getMac(uint8_t mac[6])
+{
+    if (!mac)
+        return;
+    Ethernet.macAddress(mac);
+}
+
 size_t ConsoleRouter::write(uint8_t c)
 {
     // Publish single byte to MQTT
@@ -371,11 +403,15 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
 }
 
 // === Generally accesable helper functions ===
+
+// Check if the Wire is connected AND Ip is assigned
 static bool ethernetUp()
 {
-    return Ethernet.linkStatus() == LinkON;
+    if (Ethernet.linkStatus() != LinkON)
+        return false;
+    IPAddress ip = Ethernet.localIP();
+    return !(ip[0] == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] == 0);
 }
-
 static bool mqttUp()
 {
     return mqttClient.connected();
