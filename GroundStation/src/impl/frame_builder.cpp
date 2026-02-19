@@ -1,3 +1,4 @@
+#ifdef __cplusplus
 #include <cstring>
 #include <vector>
 #include <cstdint>
@@ -46,8 +47,11 @@ size_t FrameBuilder::finalize(uint16_t seq, uint8_t flags, uint8_t ack_id) {
         }
     }
     used = current_offset;
-    // we need to clean the atomic pointers
-    // need to clean temp_used
 
     return current_offset;
 }
+
+FrameBuilder::~FrameBuilder(){
+    delete[] temp_buffer;
+}
+#endif

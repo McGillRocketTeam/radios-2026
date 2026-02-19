@@ -1,4 +1,5 @@
 #include "frame_view.h"
+#ifdef __cplusplus
 
 FrameView::FrameView() : _base(nullptr), _len(0) {}
 FrameView::FrameView(const uint8_t* bytes, size_t len) : _base(bytes), _len(len) {}
@@ -47,3 +48,4 @@ const uint8_t* FrameView::atomicPtr(int idx) const {
     if (off + AT_SIZE[idx] > payload_len()) return nullptr;
     return payload() + off;
 }
+#endif
