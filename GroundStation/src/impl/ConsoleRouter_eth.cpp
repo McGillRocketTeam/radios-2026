@@ -447,33 +447,36 @@ bool ConsoleRouter::mqttReconnect()
     const char *clientId = MqttTopic::topic(_role, _band, MqttTopic::TopicKind::NAME);
     const char *willPayload = "";
 
-    for (size_t attempt = 0; attempt < kNumServers; ++attempt)
+    IPAddress brokerIp;
+    Serial.print("Resolving MQTT broker host: ");
+    Serial.println(BROKER_HOST);
+
+    bool ok = Ethernet.hostByName(BROKER_HOST, brokerIp);
+    if (!ok || brokerIp == INADDR_NONE)
     {
-        size_t idx = (s_serverIdx + attempt) % kNumServers;
-        const IPAddress &ip = kServers[idx];
-
-        Serial.print("Trying to connect to ");
-        Serial.println(ip);
-
-        mqttClient.setServer(ip, SERVER_PORT);
-
-        if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
-        {
-            s_serverIdx = idx;
-            Serial.print("MQTT connected to ");
-            Serial.println(ip);
-            sendStatus();
-            mqttClient.subscribe(commandTopic, 1);
-            return true;
-        }
-
-        Serial.print("MQTT connect failed to ");
-        Serial.println(ip);
-        delay(50);
+        Serial.println("DNS lookup failed for broker host");
+        return false;
     }
 
+    Serial.print("MQTT broker resolved to ");
+    Serial.println(brokerIp);
+
+    mqttClient.setServer(brokerIp, SERVER_PORT);
+
+    if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
+    {
+        Serial.print("MQTT connected to ");
+        Serial.println(brokerIp);
+        sendStatus();
+        mqttClient.subscribe(commandTopic, 1);
+        return true;
+    }
+
+    Serial.print("MQTT connect failed to ");
+    Serial.println(brokerIp);
     return false;
 }
+
 
 void ConsoleRouter::_publishBytes(const uint8_t *data, size_t len)
 {
