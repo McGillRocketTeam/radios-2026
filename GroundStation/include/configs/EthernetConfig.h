@@ -6,6 +6,7 @@ using namespace qindesign::network;
 
 // Posible IP addresses of computers running the MQTT server
 static const IPAddress kServers[] = {
+    IPAddress(192, 168, 0, 214),
     IPAddress(192, 168, 0, 142),
     IPAddress(192, 168, 0, 105)
 };
