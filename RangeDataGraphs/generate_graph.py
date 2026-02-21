@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 import io
+from enum import Enum
 
 # Path of the .txt file with the data
 FILE_NAME = "./data/No_BODGE.txt"
@@ -31,48 +32,56 @@ df["FC_T"]      = raw_df[9]
 df["FC_RSSI"]   = raw_df[11]
 df["FC_SNR"]    = raw_df[13]
 
-
-# Plot RSSI and SNR on same plot
-fig, (ax_gs, ax_fc) = plt.subplots(1, 2)
-
 X = np.arange(len(csv_data))
-color_rssi = 'tab:red'
-color_snr = "tab:blue"
 
-# Ground station plot
-ax_gs.set_xlabel("Time")
-ax_gs.set_ylabel("Ground Station RSSI")
-ax_gs.set_ylim(-100, 10)
-line1, = ax_gs.plot(X, df["GS_RSSI"], color=color_rssi, label="GS_RSSI")
+class System(Enum):
+    Ground_Station = "GS"
+    Flight_Computer = "FC"
 
-ax_gs_2 = ax_gs.twinx()
-ax_gs_2.set_ylabel("Ground Station SNR")
-ax_gs_2.set_ylim(-20, 20)
-line2, = ax_gs_2.plot(X, df["GS_SNR"], color=color_snr, label="GS_SNR")
+class Subplot:
+    rssi_range = (-100, 10)
+    snr_range = (-20, 20)
+    color_rssi = 'tab:red'
+    color_snr = "tab:blue"
 
-lines = [line1, line2]
-labels = [l.get_label() for l in lines]
-ax_gs.legend(lines, labels, loc='lower right')
-ax_gs.set_title("Ground Station")
+    def __init__(self, system: System):
+        self.system = system
+        fig, (ax_rssi, ax_snr) = plt.subplots(1, 2)
 
-# FC plot
-ax_fc.set_xlabel("Time")
-ax_fc.set_ylabel("FC RSSI")
-ax_fc.set_ylim(-100, 10)
-line3, = ax_fc.plot(X, df["FC_RSSI"], color=color_rssi, label="FC_RSSI")
+        self.fig = fig 
+        self.ax_rssi = ax_rssi 
+        self.ax_snr = ax_snr 
 
-ax_fc_2 = ax_fc.twinx()
-color_snr = "tab:blue"
-ax_fc_2.set_ylabel("FC SNR")
-ax_fc_2.set_ylim(-20, 20)
-line4, = ax_fc_2.plot(X, df["FC_SNR"], color=color_snr, label="FC_SNR")
+        self.fig.suptitle(system.name, fontweight="bold", fontsize=14)
+        self.title_row = self.fig.add_subplot(211, frameon=False)
+        self.title_row.set_title(FILE_NAME)
+        self.title_row.axis("off")
+    
+    def plot_rssi(self):
+        self.ax_rssi.set_xlabel("Time")
+        self.ax_rssi.set_ylabel("RSSI")
+        self.ax_rssi.set_ylim(*self.rssi_range)
+        self.ax_rssi.plot(X, df[f"{self.system.value}_RSSI"], color=self.color_rssi)
+    
+    def plot_snr(self):
+        self.ax_snr.set_xlabel("Time")
+        self.ax_snr.set_ylabel("SNR")
+        self.ax_snr.set_ylim(*self.snr_range)
+        self.ax_snr.yaxis.set_label_position("right")
+        self.ax_snr.yaxis.tick_right()
+        self.ax_snr.plot(X, df[f"{self.system.value}_SNR"], color=self.color_snr)
 
-lines = [line3, line4]
-labels = [l.get_label() for l in lines]
-ax_fc.legend(lines, labels, loc='lower right')
-ax_fc.set_title("Flight Computer")
+    def show(self):
+        self.fig.tight_layout(w_pad=1.0)
+        self.fig.show()
+    
 
-fig.suptitle(FILE_NAME)
+gs_subplot = Subplot(System.Ground_Station)
+gs_subplot.plot_rssi()
+gs_subplot.plot_snr()
 
-plt.tight_layout(w_pad=1.0)
+fc_subplot = Subplot(System.Flight_Computer)
+fc_subplot.plot_rssi()
+fc_subplot.plot_snr()
+
 plt.show()
