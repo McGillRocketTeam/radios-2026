@@ -89,7 +89,7 @@ class Subplot:
         self.ax_rssi = ax_rssi 
         self.ax_snr = ax_snr 
 
-        self.fig.suptitle(system.name, fontweight="bold", fontsize=14)
+        self.fig.suptitle(system.name.replace("_", " "), fontweight="bold", fontsize=14)
         self.title_row = self.fig.add_subplot(211, frameon=False)
         self.title_row.set_title(FILE_NAME)
         self.title_row.axis("off")
