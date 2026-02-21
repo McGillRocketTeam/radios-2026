@@ -1,5 +1,6 @@
 // AUTO-GENERATED. Do not edit by hand.
 #pragma once
+#ifdef __cplusplus
 #include <cstdint>
 
 // ---------- AtomicType Enum ----------
@@ -27,18 +28,18 @@ typedef struct __attribute__((__packed__)) states_atomic_data
     bool mov_energizedGate_HW : 1;
     bool mov_energizedCurrent_HW : 1;
     bool mov_continuity_HW : 1;
-    bool pilot_armed_SW : 1;
-    bool pilot_armed_HW : 1;
-    bool pilot_energized_SW : 1;
-    bool pilot_energizedGate_HW : 1;
-    bool pilot_energizedCurrent_HW : 1;
-    bool pilot_continuity_HW : 1;
-    bool ring_armed_SW : 1;
-    bool ring_armed_HW : 1;
-    bool ring_energized_SW : 1;
-    bool ring_energizedGate_HW : 1;
-    bool ring_energizedCurrent_HW : 1;
-    bool ring_continuity_HW : 1;
+    bool drogue_armed_SW : 1;
+    bool drogue_armed_HW : 1;
+    bool drogue_energized_SW : 1;
+    bool drogue_energizedGate_HW : 1;
+    bool drogue_energizedCurrent_HW : 1;
+    bool drogue_continuity_HW : 1;
+    bool main_armed_SW : 1;
+    bool main_armed_HW : 1;
+    bool main_energized_SW : 1;
+    bool main_energizedGate_HW : 1;
+    bool main_energizedCurrent_HW : 1;
+    bool main_continuity_HW : 1;
     bool prop_energized_electric : 1;
     bool vent_armed_SW : 1;
     bool vent_armed_HW : 1;
@@ -71,11 +72,10 @@ typedef union prop_atomic_packet {
 typedef struct __attribute__((__packed__)) flight_atomic_data
 {
     uint8_t flight_stage;
-    float altimeter_altitude;
-    float altitude_from_sea_level;
+    float barometer_altitude_from_pad;
+    float barometer_altitude_from_sea_level;
+    float barometer_pressure;
     float apogee_from_ground;
-    float atm_pressure;
-    float barometer_altitude;
     float atm_temp;
     float gps_latitude;
     float gps_longitude;
@@ -88,8 +88,10 @@ typedef struct __attribute__((__packed__)) flight_atomic_data
     uint16_t angle_yaw;
     uint16_t angle_pitch;
     uint16_t angle_roll;
-    uint16_t fc_rssi;
+    uint8_t fc_rssi;
     int8_t fc_snr;
+    int8_t battery_voltage;
+    int16_t battery_current_draw;
 } flight_atomic_data;
 
 typedef union flight_atomic_packet {
@@ -110,3 +112,5 @@ typedef union radio_atomic_packet {
 
 // ---------- Atomic Size Catalog (declaration) ----------
 extern const uint16_t AT_SIZE[AT_TOTAL];
+
+#endif

@@ -7,7 +7,7 @@
 namespace BandSelect
 {
     static bool g_inited = false;
-    static float g_freq = FREQUENCY_903;
+    static float g_freq = FREQUENCY_435;
 
     static void ensureInit()
     {
@@ -15,16 +15,19 @@ namespace BandSelect
             return;
 
         pinMode(FREQ_PIN, INPUT);
+        // Let the voltage stablize
+        delay(100);
+        // Temp fix, since the freq pin line is being bodged to the RF_SW
+        int v = analogRead(FREQ_PIN);
 
-        int v = digitalRead(FREQ_PIN);
-        g_freq = (v == HIGH) ? FREQUENCY_903 : FREQUENCY_435;
-
-        if (v == HIGH)
+        if (v > 100)
         {
+            g_freq = FREQUENCY_903;
             LOGGING(CAT_RADIO ,DEBUG, "FREQ_PIN is HIGH using 900 MHz band");
         }
         else
         {
+            g_freq = FREQUENCY_435;
             LOGGING(CAT_RADIO ,DEBUG, "FREQ_PIN is LOW using 430 MHz band");
         }
 

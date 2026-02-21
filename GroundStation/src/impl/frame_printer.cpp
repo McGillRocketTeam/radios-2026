@@ -39,18 +39,18 @@ void printStates_atomicAtomic(const states_atomic_data* p) {
   PRINT_FIELD(p, mov_energizedGate_HW);
   PRINT_FIELD(p, mov_energizedCurrent_HW);
   PRINT_FIELD(p, mov_continuity_HW);
-  PRINT_FIELD(p, pilot_armed_SW);
-  PRINT_FIELD(p, pilot_armed_HW);
-  PRINT_FIELD(p, pilot_energized_SW);
-  PRINT_FIELD(p, pilot_energizedGate_HW);
-  PRINT_FIELD(p, pilot_energizedCurrent_HW);
-  PRINT_FIELD(p, pilot_continuity_HW);
-  PRINT_FIELD(p, ring_armed_SW);
-  PRINT_FIELD(p, ring_armed_HW);
-  PRINT_FIELD(p, ring_energized_SW);
-  PRINT_FIELD(p, ring_energizedGate_HW);
-  PRINT_FIELD(p, ring_energizedCurrent_HW);
-  PRINT_FIELD(p, ring_continuity_HW);
+  PRINT_FIELD(p, drogue_armed_SW);
+  PRINT_FIELD(p, drogue_armed_HW);
+  PRINT_FIELD(p, drogue_energized_SW);
+  PRINT_FIELD(p, drogue_energizedGate_HW);
+  PRINT_FIELD(p, drogue_energizedCurrent_HW);
+  PRINT_FIELD(p, drogue_continuity_HW);
+  PRINT_FIELD(p, main_armed_SW);
+  PRINT_FIELD(p, main_armed_HW);
+  PRINT_FIELD(p, main_energized_SW);
+  PRINT_FIELD(p, main_energizedGate_HW);
+  PRINT_FIELD(p, main_energizedCurrent_HW);
+  PRINT_FIELD(p, main_continuity_HW);
   PRINT_FIELD(p, prop_energized_electric);
   PRINT_FIELD(p, vent_armed_SW);
   PRINT_FIELD(p, vent_armed_HW);
@@ -77,11 +77,10 @@ void printFlight_atomicAtomic(const flight_atomic_data* p) {
   if (!p) return;
   Serial.println(F("flight_atomic {"));
   PRINT_FIELD(p, flight_stage);
-  PRINT_FIELD(p, altimeter_altitude);
-  PRINT_FIELD(p, altitude_from_sea_level);
+  PRINT_FIELD(p, barometer_altitude_from_pad);
+  PRINT_FIELD(p, barometer_altitude_from_sea_level);
+  PRINT_FIELD(p, barometer_pressure);
   PRINT_FIELD(p, apogee_from_ground);
-  PRINT_FIELD(p, atm_pressure);
-  PRINT_FIELD(p, barometer_altitude);
   PRINT_FIELD(p, atm_temp);
   PRINT_FIELD(p, gps_latitude);
   PRINT_FIELD(p, gps_longitude);
@@ -96,6 +95,8 @@ void printFlight_atomicAtomic(const flight_atomic_data* p) {
   PRINT_FIELD(p, angle_roll);
   PRINT_FIELD(p, fc_rssi);
   PRINT_FIELD(p, fc_snr);
+  PRINT_FIELD(p, battery_voltage);
+  PRINT_FIELD(p, battery_current_draw);
   Serial.println(F("}"));
 }
 

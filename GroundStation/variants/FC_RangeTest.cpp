@@ -215,19 +215,19 @@ static void fillStates(states_atomic_data &states)
     states.mov_energizedCurrent_HW = true;
     states.mov_continuity_HW = true;
 
-    states.pilot_armed_SW = true;
-    states.pilot_armed_HW = false;
-    states.pilot_energized_SW = false;
-    states.pilot_energizedGate_HW = false;
-    states.pilot_energizedCurrent_HW = true;
-    states.pilot_continuity_HW = true;
+    states.drogue_armed_SW = true;
+    states.drogue_armed_HW = false;
+    states.drogue_energized_SW = false;
+    states.drogue_energizedGate_HW = false;
+    states.drogue_energizedCurrent_HW = true;
+    states.drogue_continuity_HW = true;
 
-    states.ring_armed_SW = true;
-    states.ring_armed_HW = true;
-    states.ring_energized_SW = false;
-    states.ring_energizedGate_HW = false;
-    states.ring_energizedCurrent_HW = true;
-    states.ring_continuity_HW = true;
+    states.main_armed_SW = true;
+    states.main_armed_HW = true;
+    states.main_energized_SW = false;
+    states.main_energizedGate_HW = false;
+    states.main_energizedCurrent_HW = true;
+    states.main_continuity_HW = true;
 
     states.prop_energized_electric = true;
 
@@ -254,11 +254,10 @@ static void fillFlight(flight_atomic_data &flight)
     flight = {};
 
     flight.flight_stage = 1;
-    flight.altimeter_altitude = 5.0f;
-    flight.altitude_from_sea_level = 1525.0f;
+    flight.barometer_altitude_from_pad = 5.0f;
+    flight.barometer_altitude_from_sea_level = 1525.0f;
     flight.apogee_from_ground = 2000.0f;
-    flight.atm_pressure = 1012.75f;
-    flight.barometer_altitude = 5.0f;
+    flight.barometer_pressure = 1012.75f;
     flight.atm_temp = 20.45f;
 
     flight.gps_latitude = 40.7128f;
@@ -279,7 +278,7 @@ static void fillFlight(flight_atomic_data &flight)
     flight.angle_pitch = 12;
     flight.angle_roll = 7;
 
-    flight.fc_rssi = (uint16_t)((radioModule->getRSSI() * 2.0f) + 400.0f);
+    flight.fc_rssi = (uint16_t)((radioModule->getRSSI() * 2.0f));
     flight.fc_snr = (int8_t)(radioModule->getSNR() * 4.0f);
 }
 

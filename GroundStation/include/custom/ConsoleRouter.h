@@ -101,6 +101,8 @@ private:
     const char* debugTopic;
     MqttTopic::Band _band; 
     MqttTopic::Role _role;
+    // The Ethernet.begin stack only needs to be succesfully inited once
+    bool _ethernetStackInitialised = false;
 
 
     // Internal helpers for printing/publishing

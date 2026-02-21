@@ -202,37 +202,39 @@ static bool buildTelemetryFrame(uint8_t *frameBuf,
 
 static void fillStates(states_atomic_data &states)
 {
-    static bool toggle = false;
-    toggle = !toggle;
-
     states = {};
 
-    states.mov_hall_state = toggle;
+    states.mov_hall_state = true;
     states.fdov_armed_SW = true;
     states.fdov_armed_HW = true;
-    states.fdov_energized_SW = toggle;
-    states.fdov_energizedGate_HW = toggle;
+    states.fdov_energized_SW = true;
+    states.fdov_energizedGate_HW = true;
     states.fdov_energizedCurrent_HW = true;
     states.fdov_continuity_HW = true;
+
     states.mov_armed_SW = true;
     states.mov_armed_HW = false;
-    states.mov_energized_SW = toggle;
-    states.mov_energizedGate_HW = toggle;
+    states.mov_energized_SW = true;
+    states.mov_energizedGate_HW = true;
     states.mov_energizedCurrent_HW = true;
     states.mov_continuity_HW = true;
-    states.pilot_armed_SW = true;
-    states.pilot_armed_HW = false;
-    states.pilot_energized_SW = false;
-    states.pilot_energizedGate_HW = false;
-    states.pilot_energizedCurrent_HW = true;
-    states.pilot_continuity_HW = true;
-    states.ring_armed_SW = true;
-    states.ring_armed_HW = true;
-    states.ring_energized_SW = false;
-    states.ring_energizedGate_HW = false;
-    states.ring_energizedCurrent_HW = true;
-    states.ring_continuity_HW = true;
-    states.prop_energized_electric = toggle;
+
+    states.drogue_armed_SW = true;
+    states.drogue_armed_HW = false;
+    states.drogue_energized_SW = false;
+    states.drogue_energizedGate_HW = false;
+    states.drogue_energizedCurrent_HW = true;
+    states.drogue_continuity_HW = true;
+
+    states.main_armed_SW = true;
+    states.main_armed_HW = true;
+    states.main_energized_SW = false;
+    states.main_energizedGate_HW = false;
+    states.main_energizedCurrent_HW = true;
+    states.main_continuity_HW = true;
+
+    states.prop_energized_electric = true;
+
     states.vent_armed_SW = true;
     states.vent_armed_HW = true;
     states.vent_energized_SW = false;
@@ -243,48 +245,47 @@ static void fillStates(states_atomic_data &states)
 
 static void fillProp(prop_atomic_data &prop)
 {
-    static uint16_t pressureCounter = 1000;
-    pressureCounter += 10;
-
     prop = {};
-    prop.cc_pressure = pressureCounter;
-    prop.tank_pressure = pressureCounter + 1000;
-    prop.tank_temp = 800 + (pressureCounter % 100);
-    prop.vent_temp = 200 + (pressureCounter % 50);
+
+    prop.cc_pressure = 100;
+    prop.tank_pressure = 1000;
+    prop.tank_temp = 800;
+    prop.vent_temp = 200;
 }
 
 static void fillFlight(flight_atomic_data &flight)
 {
-    static float altitude = 0.0f;
-    altitude += 5.0f;
-
-    static uint16_t pseudoCounter = 1000;
-    pseudoCounter += 10;
-
     flight = {};
-    flight.flight_stage = (altitude < 100) ? 1 : ((altitude < 500) ? 2 : 3);
-    flight.altimeter_altitude = altitude;
-    flight.altitude_from_sea_level = altitude + 1520.0f;
+
+    flight.flight_stage = 1;
+    flight.barometer_altitude_from_pad = 5.0f;
+    flight.barometer_altitude_from_sea_level = 1525.0f;
     flight.apogee_from_ground = 2000.0f;
-    flight.atm_pressure = 1013.25f - (altitude / 10.0f);
-    flight.barometer_altitude = altitude;
-    flight.atm_temp = 20.5f - (altitude / 100.0f);
+    flight.barometer_pressure = 1012.75f;
+    flight.atm_temp = 20.45f;
+
     flight.gps_latitude = 40.7128f;
     flight.gps_longitude = -74.0060f;
-    flight.gps_altitude = altitude + 1525.0f;
-    flight.gps_time_last_update = millis() / 1000.0f;
+    flight.gps_altitude = 1530.0f;
+    // Piggyback extra info inside of gps last time update
+    // This will store the generation time of this packet
+    // For the FC side to report the time
+    flight.gps_time_last_update = millis() * 0.001f;
+
     flight.vertical_speed = 15.5f;
 
-    flight.acceleration_x = 100 + (pseudoCounter % 20);
-    flight.acceleration_y = -50 + (pseudoCounter % 10);
-    flight.acceleration_z = 980 + (pseudoCounter % 30);
-    flight.angle_yaw = 45 + (pseudoCounter % 10);
-    flight.angle_pitch = 10 + (pseudoCounter % 5);
-    flight.angle_roll = 5 + (pseudoCounter % 5);
+    flight.acceleration_x = 110;
+    flight.acceleration_y = -40;
+    flight.acceleration_z = 1000;
 
-    flight.fc_rssi = 85;
-    flight.fc_snr = 12;
+    flight.angle_yaw = 50;
+    flight.angle_pitch = 12;
+    flight.angle_roll = 7;
+
+    flight.fc_rssi = (uint16_t)((radioModule->getRSSI() * 2.0f));
+    flight.fc_snr = (int8_t)(radioModule->getSNR() * 4.0f);
 }
+
 
 static void fillRadio(radio_atomic_data &radio)
 {

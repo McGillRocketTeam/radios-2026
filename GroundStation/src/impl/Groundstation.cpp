@@ -388,7 +388,7 @@ void GroundStation::printVerboseTelemetryPacket()
             lastSNR = radioModule->getSNR();
             memcpy(&flight, p, sizeof(flight_atomic_data));
 
-            float FC_RSSI = ((int32_t)flight.fc_rssi - 400) * 0.5f;
+            float FC_RSSI = -1.0f * ((int32_t)flight.fc_rssi / 2.0f);
             float FC_SNR = flight.fc_snr * 0.25f;
             float FC_LastTime = flight.gps_time_last_update;
             if (currentFrameView.cts() || currentFrameView.ack())

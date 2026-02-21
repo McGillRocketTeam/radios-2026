@@ -64,7 +64,11 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 
     setTopics(role);
     delay(100);
+    
+    Ethernet.setHostname(MqttTopic::topic(role,_band,MqttTopic::TopicKind::NAME));
 
+    // Initialise the ethernet stack only needs to be once as fine we handle reconnecting
+    _ethernetStackInitialised =  Ethernet.begin();
     ethernetInit();
     // This ISR will work with the reconnect function
     // to reconnect the ethernet connection if it fails
@@ -102,9 +106,10 @@ void ConsoleRouter::ethernetInit()
     Serial.println("Ethernet init (Teensy 4.1) via QNEthernet...");
     Serial.println("Starting Ethernet with DHCP...");
 
-    if (!Ethernet.begin())
+    if (!_ethernetStackInitialised)
     {
-        Serial.println("ERROR: Ethernet hardware not found.");
+        Serial.println("MCU ethernet harware error retrying stack init");
+        _ethernetStackInitialised =  Ethernet.begin();
         return;
     }
 
