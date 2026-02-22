@@ -254,21 +254,7 @@ void ConsoleRouter::sendStatus()
     {
         if (mqttUp())
         {
-            Serial.println("send status call");
-            Serial.println("mqtt up");
-            JsonDocument doc;
-
-            doc["status"] = "OK";
-            if (BandSelect::is435())
-            {
-                doc["frequency"] = FREQUENCY_435_STR;
-            }
-            else
-            {
-                doc["frequency"] = FREQUENCY_903_STR;
-            }
-            doc["long_status"] = "Online and ready";
-
+            Serial.println("mqtt status refreshed");
             char macStr[18];
             uint8_t macRaw[6];
             getMac(macRaw);
@@ -278,12 +264,20 @@ void ConsoleRouter::sendStatus()
                      macRaw[0], macRaw[1], macRaw[2],
                      macRaw[3], macRaw[4], macRaw[5]);
 
-            doc["mac"] = macStr;
+            const char *freqStr = BandSelect::is435() ? FREQUENCY_435_STR : FREQUENCY_903_STR;
 
-            uint8_t jsonBuffer[512];
-            size_t jsonSize = serializeJson(doc, jsonBuffer);
+            uint8_t jsonBuffer[256];
+            int n = snprintf((char *)jsonBuffer, sizeof(jsonBuffer),
+                "{\"status\":\"OK\",\"frequency\":\"%s\",\"long_status\":\"Online and ready\",\"mac\":\"%s\"}",
+                freqStr, macStr);
 
-            bool ok = mqttClient.publish(metadataTopic, jsonBuffer, jsonSize, true);
+            if (n <= 0 || (size_t)n >= sizeof(jsonBuffer))
+            {
+                Serial.println("MQTT status JSON too large.");
+                return;
+            }
+
+            bool ok = mqttClient.publish(metadataTopic, jsonBuffer, (size_t)n, true);
             if (!ok)
             {
                 Serial.println("MQTT publish failed (packet too large or socket issue).");
