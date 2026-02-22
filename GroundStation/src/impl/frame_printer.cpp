@@ -79,9 +79,9 @@ void printFlight_atomicAtomic(const flight_atomic_data* p) {
   PRINT_FIELD(p, flight_stage);
   PRINT_FIELD(p, barometer_altitude_from_pad);
   PRINT_FIELD(p, barometer_altitude_from_sea_level);
-  PRINT_FIELD(p, barometer_pressure);
+  PRINT_FIELD(p, fc_pressure);
   PRINT_FIELD(p, apogee_from_ground);
-  PRINT_FIELD(p, atm_temp);
+  PRINT_FIELD(p, fc_temp);
   PRINT_FIELD(p, gps_latitude);
   PRINT_FIELD(p, gps_longitude);
   PRINT_FIELD(p, gps_altitude);
@@ -90,9 +90,9 @@ void printFlight_atomicAtomic(const flight_atomic_data* p) {
   PRINT_FIELD(p, acceleration_x);
   PRINT_FIELD(p, acceleration_y);
   PRINT_FIELD(p, acceleration_z);
-  PRINT_FIELD(p, angle_yaw);
-  PRINT_FIELD(p, angle_pitch);
-  PRINT_FIELD(p, angle_roll);
+  PRINT_FIELD(p, gyro_rate_x);
+  PRINT_FIELD(p, gyro_rate_y);
+  PRINT_FIELD(p, gyro_rate_z);
   PRINT_FIELD(p, fc_rssi);
   PRINT_FIELD(p, fc_snr);
   PRINT_FIELD(p, battery_voltage);

@@ -28,11 +28,11 @@ private:
 
     inline bool enabled(uint32_t cat, LogLevel level) const
     {
+        if (level == CRIT)
+            return true;
         if (level < globalLogLevel)
             return false;
         // CRIT logs always make it through
-        if (level == CRIT)
-            return true;
         return (enabledCats & cat) != 0;
     }
 

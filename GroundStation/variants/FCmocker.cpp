@@ -261,8 +261,8 @@ static void fillFlight(flight_atomic_data &flight)
     flight.barometer_altitude_from_pad = 5.0f;
     flight.barometer_altitude_from_sea_level = 1525.0f;
     flight.apogee_from_ground = 2000.0f;
-    flight.barometer_pressure = 1012.75f;
-    flight.atm_temp = 20.45f;
+    flight.fc_pressure = 1012.75f;
+    flight.fc_temp = 2000;
 
     flight.gps_latitude = 40.7128f;
     flight.gps_longitude = -74.0060f;
@@ -278,14 +278,13 @@ static void fillFlight(flight_atomic_data &flight)
     flight.acceleration_y = -40;
     flight.acceleration_z = 1000;
 
-    flight.angle_yaw = 50;
-    flight.angle_pitch = 12;
-    flight.angle_roll = 7;
+    flight.gyro_rate_x = 50;
+    flight.gyro_rate_y = 12;
+    flight.gyro_rate_z = 7;
 
     flight.fc_rssi = (uint16_t)((radioModule->getRSSI() * 2.0f));
     flight.fc_snr = (int8_t)(radioModule->getSNR() * 4.0f);
 }
-
 
 static void fillRadio(radio_atomic_data &radio)
 {

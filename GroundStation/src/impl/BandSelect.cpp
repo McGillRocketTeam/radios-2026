@@ -16,7 +16,7 @@ namespace BandSelect
 
         pinMode(FREQ_PIN, INPUT);
         // Let the voltage stablize
-        delay(100);
+        delay(500);
         // Temp fix, since the freq pin line is being bodged to the RF_SW
         int v = analogRead(FREQ_PIN);
 

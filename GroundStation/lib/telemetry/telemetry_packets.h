@@ -74,9 +74,9 @@ typedef struct __attribute__((__packed__)) flight_atomic_data
     uint8_t flight_stage;
     float barometer_altitude_from_pad;
     float barometer_altitude_from_sea_level;
-    float barometer_pressure;
+    float fc_pressure;
     float apogee_from_ground;
-    float atm_temp;
+    int16_t fc_temp;
     float gps_latitude;
     float gps_longitude;
     float gps_altitude;
@@ -85,12 +85,12 @@ typedef struct __attribute__((__packed__)) flight_atomic_data
     int16_t acceleration_x;
     int16_t acceleration_y;
     int16_t acceleration_z;
-    uint16_t angle_yaw;
-    uint16_t angle_pitch;
-    uint16_t angle_roll;
+    int16_t gyro_rate_x;
+    int16_t gyro_rate_y;
+    int16_t gyro_rate_z;
     uint8_t fc_rssi;
     int8_t fc_snr;
-    int8_t battery_voltage;
+    uint8_t battery_voltage;
     int16_t battery_current_draw;
 } flight_atomic_data;
 

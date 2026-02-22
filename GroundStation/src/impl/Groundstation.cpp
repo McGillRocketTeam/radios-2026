@@ -264,7 +264,6 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     }
 }
 
-
 void GroundStation::printRadioParamsToGui()
 {
     // TO DO be able to publish all the params to meta data
@@ -328,12 +327,24 @@ void GroundStation::readReceivedPacket()
     currentFrameView.reset(rxBuf, rxLen);
     currentFrameState = currentFrameView.validate();
 
-    if (currentFrameState != ParseError::Ok)
+    // if (currentFrameState != ParseError::Ok)
+    // {
+    // There should be an alert sent to the GS here, perhaps just
+    // a malformed telemetry frame?
+    //     LOGGING(CAT_GS, CRIT, "Could not validate frame");
+    //     return;
+    // }
+    if (currentFrameState == ParseError::PayloadTooShort)
     {
-        // There should be an alert sent to the GS here, perhaps just
-        // a malformed telemetry frame?
-        LOGGING(CAT_GS, CRIT, "Could not validate frame");
-        return;
+        Serial.println("payload too short");
+    }
+    if (currentFrameState == ParseError::TooShort)
+    {
+        Serial.println("header too short");
+    }
+    if (currentFrameState == ParseError::UnknownAtomicSize)
+    {
+        Serial.println("uknown atomic");
     }
     lastRSSI = radioModule->getRSSI();
     lastSNR = radioModule->getSNR();
@@ -352,11 +363,9 @@ void GroundStation::printPacketToGui()
 
 void GroundStation::printVerboseTelemetryPacket()
 {
-    if (!canPrintTelemetryVerbose)
-        return;
     char buf[128] = {0};
 
-    // Standard GS data 
+    // Standard GS data
     snprintf(buf, sizeof(buf),
              "RX size=%u seq=%u cts=%u ack=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
              (unsigned)radioModule->getPacketLength(),
@@ -404,6 +413,11 @@ void GroundStation::printVerboseTelemetryPacket()
             }
         }
     }
+    if (canPrintTelemetryVerbose)
+    {
+        printAtomics(currentFrameView);
+    }
+    return;
 }
 
 // === Sending command helpers ===
@@ -429,14 +443,13 @@ void GroundStation::sendRocketCommand(command_packet &command)
     }
     const size_t length = sizeof(command.data);
 
-        char buf[128] = {0};
+    char buf[128] = {0};
 
     snprintf(buf, sizeof(buf),
              "TX cmd=%s id=%u size=%u ",
              command.data.command_string,
              (unsigned)command.data.command_id,
-             (unsigned)length
-            );
+             (unsigned)length);
     LOGGING(CAT_GS, INFO, buf);
 
     radioModule->transmitBlocking((uint8_t *)command.bytes, length);

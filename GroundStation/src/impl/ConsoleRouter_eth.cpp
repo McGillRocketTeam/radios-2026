@@ -64,11 +64,11 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 
     setTopics(role);
     delay(100);
-    
-    Ethernet.setHostname(MqttTopic::topic(role,_band,MqttTopic::TopicKind::NAME));
+
+    Ethernet.setHostname(MqttTopic::topic(role, _band, MqttTopic::TopicKind::NAME));
 
     // Initialise the ethernet stack only needs to be once as fine we handle reconnecting
-    _ethernetStackInitialised =  Ethernet.begin();
+    _ethernetStackInitialised = Ethernet.begin();
     ethernetInit();
     // This ISR will work with the reconnect function
     // to reconnect the ethernet connection if it fails
@@ -109,7 +109,7 @@ void ConsoleRouter::ethernetInit()
     if (!_ethernetStackInitialised)
     {
         Serial.println("MCU ethernet harware error retrying stack init");
-        _ethernetStackInitialised =  Ethernet.begin();
+        _ethernetStackInitialised = Ethernet.begin();
         return;
     }
 
@@ -165,6 +165,11 @@ void ConsoleRouter::handleConsoleReconnect()
     {
         Serial.println("MQTT disconnected. Reconnecting...");
         mqttReconnect();
+    }
+    else
+    {
+        // We have auto recovered from prev config so just send status
+        sendStatus();
     }
 }
 
@@ -424,24 +429,23 @@ static bool mqttUp()
 
 // === Internal helper functions ===
 
+// Make sure status does not have spaces!
 bool ConsoleRouter::publishAck(const char *status, uint8_t cmdId)
 {
-    if (!ethernetUp())
+    if (!ethernetUp() || !mqttUp())
         return false;
 
-    if (!mqttUp())
+    uint8_t jsonBuffer[128];
+
+    // status is a string -> must be JSON-escaped if it can contain quotes/newlines/backslashes.
+    int n = snprintf((char *)jsonBuffer, sizeof(jsonBuffer),
+                     "{\"cmd_id\":%u,\"status\":\"%s\"}",
+                     (unsigned)cmdId, status);
+
+    if (n <= 0 || (size_t)n >= sizeof(jsonBuffer))
         return false;
 
-    JsonDocument doc;
-    doc["cmd_id"] = cmdId;
-    doc["status"] = status;
-
-    uint8_t jsonBuffer[512];
-    size_t jsonSize = serializeJson(doc, jsonBuffer);
-    if (jsonSize == 0 || jsonSize >= sizeof(jsonBuffer))
-        return false;
-
-    return mqttClient.publish(ackTopic, jsonBuffer, jsonSize, false);
+    return mqttClient.publish(ackTopic, jsonBuffer, (size_t)n, false);
 }
 
 bool ConsoleRouter::mqttReconnect()
@@ -481,7 +485,6 @@ bool ConsoleRouter::mqttReconnect()
     Serial.println(brokerIp);
     return false;
 }
-
 
 void ConsoleRouter::_publishBytes(const uint8_t *data, size_t len)
 {
