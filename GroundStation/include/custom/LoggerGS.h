@@ -17,6 +17,8 @@ public:
     void setCategoryMask(uint32_t mask);
     uint32_t getCategoryMask() const;
 
+    void setCategory(LoggingCategory cat, bool desiredState);
+
     template <typename T>
     void log(uint32_t cat, LogLevel level, const T &msg);
 

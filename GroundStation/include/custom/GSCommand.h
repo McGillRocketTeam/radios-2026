@@ -19,6 +19,9 @@ namespace GSCommand
         Bypass,
         SetTx,
         Verbose,
+        CatGS,
+        CatRadio,
+        CatParser,
         Unknown
     };
 

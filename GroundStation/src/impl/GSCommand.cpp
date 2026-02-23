@@ -26,6 +26,12 @@ GSCommand::Command GSCommand::parseRadioCmd(const String &p)
         return Command::SetTx;
     if (p == "verbose")
         return Command::Verbose;
+    if (p == "catgs")
+        return Command::CatGS;
+    if (p == "catradio")
+        return Command::CatRadio;
+    if (p == "catparser")
+        return Command::CatParser;
     return Command::Unknown;
 }
 

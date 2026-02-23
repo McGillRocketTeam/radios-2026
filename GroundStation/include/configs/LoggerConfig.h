@@ -12,15 +12,14 @@ enum LogLevel : uint8_t {
 constexpr LogLevel GS_LOG_LEVEL = INFO;
 
 // --- Categories ---
-enum LogCat : uint32_t {
+enum LoggingCategory : uint32_t {
   CAT_NONE   = 0,
   CAT_SERIAL = 1u << 0, // serial-only
   CAT_PARSER = 1u << 1,
   CAT_RADIO  = 1u << 2,
-  CAT_MQTT   = 1u << 3,
-  CAT_GS    = 1u << 4,
-  CAT_RANGETEST = 1u << 5,
-  CAT_ASTRA_DEBUG = 1u << 6,
+  CAT_GS    = 1u << 3,
+  CAT_RANGETEST = 1u << 4,
+  CAT_ASTRA_DEBUG = 1u << 5,
   CAT_ALL    = 0xFFFFFFFFu,
 };
 

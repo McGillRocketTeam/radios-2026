@@ -4,22 +4,23 @@
 #include "frame_printer.h"
 
 #include "ConsoleRouter.h"
-#include "GroundStation.h"
 #include "GSCommand.h"
+#include "GroundStation.h"
 #include "LoggerGS.h"
 
 // Boolean for command parser ISR
 // Tells us if there are things to be processsed in serial
 volatile bool GroundStation::commandParserFlag = false;
 
+namespace
+{
+    bool parseBoolean(const String& value, bool &b);
+} // anonymous namespace
+
 // === Public Setup of Groundstation ===
 
 GroundStation::GroundStation()
-    : radioModule(std::make_unique<RadioModule>()),
-      currentFrameView(),
-      awaitingAck(false),
-      canTXFromCTS(ENABLE_RADIO_TX),
-      canPrintTelemetryVerbose(ENABLE_VERBOSE_TELMETRY_PACKET)
+    : radioModule(std::make_unique<RadioModule>()), currentFrameView(), awaitingAck(false), canTXFromCTS(ENABLE_RADIO_TX), canPrintTelemetryVerbose(ENABLE_VERBOSE_TELMETRY_PACKET)
 {
     currentParams.freq = radioModule->getFreq();
     currentParams.bw = radioModule->getBandwidth();
@@ -248,12 +249,39 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     case GSCommand::Command::Verbose:
     {
         bool b;
-        if (!GSCommand::parseBoolTF(value, b))
+        if (parseBoolean(value, b))
         {
-            Console.println("verbose accepts only 't' or 'f' as values");
+            setVerbosePacket(b);
+        }
+        break;
+    }
+
+    case GSCommand::Command::CatGS:
+    case GSCommand::Command::CatParser:
+    case GSCommand::Command::CatRadio:
+    {
+        bool b;
+        if (!parseBoolean(value, b))
+            break;
+
+        LoggingCategory cat;
+
+        switch (cmd)
+        {
+        case GSCommand::Command::CatGS:
+            cat = CAT_GS;
+            break;
+        case GSCommand::Command::CatParser:
+            cat = CAT_PARSER;
+            break;
+        case GSCommand::Command::CatRadio:
+            cat = CAT_RADIO;
+            break;
+        default:
+            cat = CAT_NONE;
             break;
         }
-        setVerbosePacket(b);
+        LoggerGS::getInstance().setCategory(cat,b);
         break;
     }
 
@@ -366,25 +394,13 @@ void GroundStation::printVerboseTelemetryPacket()
     char buf[128] = {0};
 
     // Standard GS data
-    snprintf(buf, sizeof(buf),
-             "RX size=%u seq=%u cts=%u ack=%u bad=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
-             (unsigned)radioModule->getPacketLength(),
-             (unsigned)currentFrameView.header()->seq,
-             (unsigned)currentFrameView.cts(),
-             (unsigned)currentFrameView.ack(),
-             (unsigned)currentFrameView.bad(),
-             (unsigned)currentFrameView.ack_id(),
-             millis() * 0.001f,
-             lastRSSI, lastSNR);
+    snprintf(buf, sizeof(buf), "RX size=%u seq=%u cts=%u ack=%u bad=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f", (unsigned)radioModule->getPacketLength(),
+             (unsigned)currentFrameView.header()->seq, (unsigned)currentFrameView.cts(), (unsigned)currentFrameView.ack(), (unsigned)currentFrameView.bad(), (unsigned)currentFrameView.ack_id(),
+             millis() * 0.001f, lastRSSI, lastSNR);
     LOGGING(CAT_GS, INFO, buf);
     // data for astra debug
-    snprintf(buf, sizeof(buf),
-             "ASTRA hdr: seq=%u flags(cts=%u,ack=%u,bad=%u) ack_id=%u",
-             (unsigned)currentFrameView.header()->seq,
-             (unsigned)currentFrameView.cts(),
-             (unsigned)currentFrameView.ack(),
-             (unsigned)currentFrameView.bad(),
-             (unsigned)currentFrameView.ack_id());
+    snprintf(buf, sizeof(buf), "ASTRA hdr: seq=%u flags(cts=%u,ack=%u,bad=%u) ack_id=%u", (unsigned)currentFrameView.header()->seq, (unsigned)currentFrameView.cts(), (unsigned)currentFrameView.ack(),
+             (unsigned)currentFrameView.bad(), (unsigned)currentFrameView.ack_id());
     LOGGING(CAT_ASTRA_DEBUG, INFO, buf);
 
     // Special category for logging range test info in csv form
@@ -405,12 +421,8 @@ void GroundStation::printVerboseTelemetryPacket()
             if (currentFrameView.cts() || currentFrameView.ack())
             {
                 const char *kind = currentFrameView.cts() ? "CTS" : "ACK";
-                snprintf(buf, sizeof(buf),
-                         "%u,%s,GS_T:%.3f,GS_RSSI:%.2f,GS_SNR:%.2f,FC_T:%.3f,FC_RSSI:%.2f,FC_SNR:%.2f",
-                         (unsigned)currentFrameView.header()->seq,
-                         kind,
-                         millis() * 0.001f, lastRSSI, lastSNR,
-                         FC_LastTime, FC_RSSI, FC_SNR);
+                snprintf(buf, sizeof(buf), "%u,%s,GS_T:%.3f,GS_RSSI:%.2f,GS_SNR:%.2f,FC_T:%.3f,FC_RSSI:%.2f,FC_SNR:%.2f", (unsigned)currentFrameView.header()->seq, kind, millis() * 0.001f, lastRSSI,
+                         lastSNR, FC_LastTime, FC_RSSI, FC_SNR);
                 LOGGING(CAT_RANGETEST, INFO, buf);
             }
         }
@@ -428,8 +440,7 @@ void GroundStation::handleRocketCommand()
 {
     command_packet rocketCommand;
     rocketCommand.data.command_id = 1;
-    std::strncpy(rocketCommand.data.command_string, "nop",
-                 sizeof(rocketCommand.data.command_string) - 1);
+    std::strncpy(rocketCommand.data.command_string, "nop", sizeof(rocketCommand.data.command_string) - 1);
 
     commandParser->getNextRocketCommand(rocketCommand);
 
@@ -447,11 +458,7 @@ void GroundStation::sendRocketCommand(command_packet &command)
 
     char buf[128] = {0};
 
-    snprintf(buf, sizeof(buf),
-             "TX cmd=%s id=%u size=%u ",
-             command.data.command_string,
-             (unsigned)command.data.command_id,
-             (unsigned)length);
+    snprintf(buf, sizeof(buf), "TX cmd=%s id=%u size=%u ", command.data.command_string, (unsigned)command.data.command_id, (unsigned)length);
     LOGGING(CAT_GS, INFO, buf);
 
     radioModule->transmitBlocking((uint8_t *)command.bytes, length);
@@ -461,3 +468,18 @@ void GroundStation::sendRocketCommand(command_packet &command)
         Console.sendCmdAckTx(command.data.command_id);
     }
 }
+
+namespace
+{
+
+    bool parseBoolean(const String &value, bool &out)
+    {
+        if (!GSCommand::parseBoolTF(value, out))
+        {
+            Console.println("verbose accepts only 't' or 'f' as values");
+            return false;
+        }
+        return true;
+    }
+
+} // namespace
