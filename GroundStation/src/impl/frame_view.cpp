@@ -32,6 +32,9 @@ bool FrameView::cts() const {
 bool FrameView::ack() const {
     return (_len >= sizeof(FrameHeader)) && header_has_ack(header());
 }
+bool FrameView::bad() const {
+    return (_len >= sizeof(FrameHeader)) && header_has_bad(header());
+}
 
 int FrameView::ack_id() const {
     return header_get_ack_id(header());

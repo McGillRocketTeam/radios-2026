@@ -367,21 +367,23 @@ void GroundStation::printVerboseTelemetryPacket()
 
     // Standard GS data
     snprintf(buf, sizeof(buf),
-             "RX size=%u seq=%u cts=%u ack=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
+             "RX size=%u seq=%u cts=%u ack=%u bad=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
              (unsigned)radioModule->getPacketLength(),
              (unsigned)currentFrameView.header()->seq,
              (unsigned)currentFrameView.cts(),
              (unsigned)currentFrameView.ack(),
+             (unsigned)currentFrameView.bad(),
              (unsigned)currentFrameView.ack_id(),
              millis() * 0.001f,
              lastRSSI, lastSNR);
     LOGGING(CAT_GS, INFO, buf);
     // data for astra debug
     snprintf(buf, sizeof(buf),
-             "ASTRA hdr: seq=%u flags(cts=%u,ack=%u) ack_id=%u",
+             "ASTRA hdr: seq=%u flags(cts=%u,ack=%u,bad=%u) ack_id=%u",
              (unsigned)currentFrameView.header()->seq,
              (unsigned)currentFrameView.cts(),
              (unsigned)currentFrameView.ack(),
+             (unsigned)currentFrameView.bad(),
              (unsigned)currentFrameView.ack_id());
     LOGGING(CAT_ASTRA_DEBUG, INFO, buf);
 
