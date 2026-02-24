@@ -26,23 +26,27 @@ RadioChip::RadioChip(Module *mod)
 }
 
 RadioChipStatus RadioChip::begin(float freq,
-                     float bw,
-                     int sf,
-                     int cr,
-                     int sw,
-                     int po,
-                     int pl,
-                     float tcxo,
-                     bool ldo)
+                                 float bw,
+                                 int sf,
+                                 int cr,
+                                 int sw,
+                                 int po,
+                                 int pl,
+                                 float tcxo,
+                                 bool ldo)
 {
-    if (!ParamStore::freqAllowed(freq)) {
+    if (!ParamStore::freqAllowed(freq))
+    {
         Serial.println("THIS FREQUENCY IS NOT AN ALLOWED BAND");
         return RADIOLIB_ERR_INVALID_FREQUENCY;
     }
 
-    if (ParamStore::is903()) {
+    if (ParamStore::is903())
+    {
         return _radio1262.begin(freq, bw, sf, cr, sw, po, pl, tcxo, ldo);
-    } else if (ParamStore::is435()) {
+    }
+    else if (ParamStore::is435())
+    {
         return _radio1268.begin(freq, bw, sf, cr, sw, po, pl, tcxo, ldo);
     }
     return RADIOLIB_ERR_INVALID_FREQUENCY;
@@ -53,14 +57,15 @@ void RadioChip::setDio1Action(void (*func)())
     _radio->setDio1Action(func);
 }
 
-uint32_t RadioChip::getIrqFlags() {
+uint32_t RadioChip::getIrqFlags()
+{
     return _radio->getIrqFlags();
 }
 
-RadioChipStatus RadioChip::clearIrqFlags(uint32_t mask) {
+RadioChipStatus RadioChip::clearIrqFlags(uint32_t mask)
+{
     return _radio->clearIrqFlags(mask);
 }
-
 
 RadioChipStatus RadioChip::transmit(const uint8_t *data, size_t len)
 {
@@ -72,7 +77,8 @@ RadioChipStatus RadioChip::startReceive()
     return _radio->startReceive();
 }
 
-RadioChipStatus RadioChip::standby(){
+RadioChipStatus RadioChip::standby()
+{
     return _radio->standby();
 }
 
@@ -88,7 +94,8 @@ RadioChipStatus RadioChip::readData(uint8_t *data, size_t len)
 
 RadioChipStatus RadioChip::setFrequency(float freq)
 {
-    if (!ParamStore::freqAllowed(freq)) {
+    if (!ParamStore::freqAllowed(freq))
+    {
         Serial.println("THIS FREQUENCY IS NOT AN ALLOWED BAND");
         return RADIOLIB_ERR_INVALID_FREQUENCY;
     }
@@ -112,7 +119,14 @@ RadioChipStatus RadioChip::setCodingRate(uint8_t cr)
 
 RadioChipStatus RadioChip::setOutputPower(int8_t power)
 {
-    return _radio->setOutputPower(power);
+    if (ParamStore::is903())
+    {
+        return _radio1262.setOutputPower(power);
+    }
+    else
+    {
+        return _radio1268.setOutputPower(power);
+    }
 }
 
 RadioChipStatus RadioChip::setCurrentLimit(float mA)
