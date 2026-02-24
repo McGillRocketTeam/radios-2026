@@ -1,8 +1,8 @@
 #include "RadioModule.h"
 
-#include "BandSelect.h"
 #include "ConsoleRouter.h"
 #include "LoggerGS.h"
+#include "ParamStore.h"
 
 // Static member declarations for volatile variable used in isr
 volatile bool RadioModule::interruptReceived = false;
@@ -13,7 +13,7 @@ volatile bool RadioModule::radioBusy = false;
 RadioModule::RadioModule()
     : mod(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN),
       radio(&mod),
-      frequency(BandSelect::get())
+      frequency(ParamStore::getDefaultBandFreq())
 {
     state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
                         TCXO_VOLTAGE, USE_ONLY_LDO);
@@ -47,7 +47,7 @@ bool RadioModule::retryRadioInit()
         Console.println("Checking the freq pin again");
     }
     delay(250);
-    frequency = BandSelect::get();
+    frequency = ParamStore::getDefaultBandFreq();
     state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
                         TCXO_VOLTAGE, USE_ONLY_LDO);
     return false;
@@ -79,8 +79,8 @@ bool RadioModule::transmitBlocking(const uint8_t* data, size_t size)
 bool RadioModule::pollValidPacketRx()
 {
     if (radioBusy) {
-        Serial.println("aslkfnafd");
-        delay(1000);
+        LOGGING(CAT_GS,CRIT,"Trying to read receive while busy TX this should never happen");
+        delay(10);
         return false;
     }
     // Atomically consume ISR latch
@@ -107,7 +107,7 @@ bool RadioModule::pollValidPacketRx()
         return false;
     }
 
-    // Not a vlid payload check
+    // Not a valid payload check
     if (flags & (CRC_ERR | HDR_ERR | TIMEOUT))
     {
         if (flags & CRC_ERR)
@@ -227,9 +227,28 @@ float RadioModule::getRSSI()
     return radio.getRSSI();
 }
 
+uint8_t RadioModule::getRawRSSI(){
+    float f = radio.getRSSI() * -2.0;
+    // clamp rogue values, to match the register size
+    if (f < 0.0f) f = 0.0f;
+    if (f > 255.0f) f = 255.0f;
+
+    return static_cast<uint8_t>(f);
+}
+
 float RadioModule::getSNR()
 {
     return radio.getSNR();
+}
+
+int8_t RadioModule::getRawSNR(){
+    float f = radio.getRSSI() * 4.0;
+
+    // clamp rogue values, to match the register size
+    if (f < -125.0f) f = -125.0f;
+    if (f > 125.0f) f = 125.0f;
+
+    return static_cast<int8_t>(f);
 }
 
 // === General Helper ===

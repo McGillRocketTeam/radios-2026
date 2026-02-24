@@ -1,6 +1,6 @@
 #include "ConsoleRouter.h"
 
-#include "BandSelect.h"
+#include "ParamStore.h"
 #include "Config.h"
 #include "MqttTopics.h"
 #include "PinLayout.h"
@@ -84,7 +84,7 @@ bool ConsoleRouter::isReady()
 
 void ConsoleRouter::setTopics(MqttTopic::Role role)
 {
-    if (BandSelect::is903())
+    if (ParamStore::is903())
     {
         _band = MqttTopic::Band::B;
         _role = role;
@@ -95,12 +95,16 @@ void ConsoleRouter::setTopics(MqttTopic::Role role)
         _role = role;
     }
 
-    telemetryTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::TELEMETRY);
-    metadataTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::METADATA);
+    rocketTelemetryTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::FC_TELEMETRY);
     ackTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::ACKS);
     commandTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::COMMANDS);
+
+    radioTelemetryTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::RADIO_TELEMETRY);
+    statusTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::STATUS);
+    detailTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::DETAIL);
     debugTopic = MqttTopic::topic(role, _band, MqttTopic::TopicKind::DEBUG);
 }
+
 void ConsoleRouter::ethernetInit()
 {
     Serial.println("Ethernet init (Teensy 4.1) via QNEthernet...");
@@ -235,55 +239,73 @@ int ConsoleRouter::peek()
 
 void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size)
 {
-    if (ethernetUp())
+    if (ethernetUp() && mqttUp())
     {
-        if (mqttUp())
+        bool ok = mqttClient.publish(rocketTelemetryTopic, buffer, (unsigned int)size, false);
+        if (!ok)
         {
-            bool ok = mqttClient.publish(telemetryTopic, buffer, (unsigned int)size, false);
-            if (!ok)
-            {
-                Serial.println("MQTT publish failed (packet too large or socket issue).");
-            }
+            Serial.println("MQTT publish failed (packet too large or socket issue).");
+        }
+    }
+}
+
+void ConsoleRouter::sendRadioTelemetry(const uint8_t *buffer, size_t size)
+{
+    if (ethernetUp() && mqttUp())
+    {
+        bool ok = mqttClient.publish(radioTelemetryTopic, buffer, (unsigned int)size, false);
+        if (!ok)
+        {
+            Serial.println("MQTT publish failed (packet too large or socket issue).");
         }
     }
 }
 
 void ConsoleRouter::sendStatus()
 {
-    if (ethernetUp())
-    {
-        if (mqttUp())
-        {
-            Serial.println("mqtt status refreshed");
-            char macStr[18];
-            uint8_t macRaw[6];
-            getMac(macRaw);
+    if (!ethernetUp() || !mqttUp())
+        return;
 
-            snprintf(macStr, sizeof(macStr),
-                     "%02X:%02X:%02X:%02X:%02X:%02X",
-                     macRaw[0], macRaw[1], macRaw[2],
-                     macRaw[3], macRaw[4], macRaw[5]);
+    static const uint8_t statusBuffer[] = "OK";
+    bool ok = mqttClient.publish(statusTopic, statusBuffer, sizeof(statusBuffer) - 1, true);
 
-            const char *freqStr = BandSelect::is435() ? FREQUENCY_435_STR : FREQUENCY_903_STR;
+    Serial.println("mqtt status refresh");
 
-            uint8_t jsonBuffer[256];
-            int n = snprintf((char *)jsonBuffer, sizeof(jsonBuffer),
-                "{\"status\":\"OK\",\"frequency\":\"%s\",\"long_status\":\"Online and ready\",\"mac\":\"%s\"}",
-                freqStr, macStr);
+    char macStr[18];
+    uint8_t macRaw[6];
+    getMac(macRaw);
 
-            if (n <= 0 || (size_t)n >= sizeof(jsonBuffer))
-            {
-                Serial.println("MQTT status JSON too large.");
-                return;
-            }
+    snprintf(macStr, sizeof(macStr),
+             "%02X:%02X:%02X:%02X:%02X:%02X",
+             (unsigned)macRaw[0], (unsigned)macRaw[1], (unsigned)macRaw[2],
+             (unsigned)macRaw[3], (unsigned)macRaw[4], (unsigned)macRaw[5]);
 
-            bool ok = mqttClient.publish(metadataTopic, jsonBuffer, (size_t)n, true);
-            if (!ok)
-            {
-                Serial.println("MQTT publish failed (packet too large or socket issue).");
-            }
-        }
+    const char* bandStr = ParamStore::is435() ? FREQUENCY_435_STR : FREQUENCY_903_STR;
+    const char* name = MqttTopic::topic(_role, _band, MqttTopic::TopicKind::NAME);
+
+    // Don't copy: read-only ref
+    const RadioParams& param = ParamStore::get();
+
+    // Use a char buffer for snprintf (it writes text)
+    char detailBuffer[128];
+    int n = snprintf(detailBuffer, sizeof(detailBuffer),
+                     "%s Band:%s MAC:%s FREQ:%.2f BW:%.2f SF:%d CR:%d PWR:%d",
+                     name, bandStr, macStr,
+                     (double)param.freq, (double)param.bw, // explicit is fine
+                     param.sf, param.cr, param.pow);
+
+    size_t len = 0;
+    if (n > 0) {
+        len = (n >= (int)sizeof(detailBuffer)) ? (sizeof(detailBuffer) - 1) : (size_t)n;
     }
+
+    ok &= mqttClient.publish(statusTopic,
+                             (const uint8_t*)detailBuffer,
+                             len,
+                             true);
+
+    if (!ok)
+        Serial.println("MQTT publish failed (packet too large or socket issue).");
 }
 
 void ConsoleRouter::sendCmdAckRx(const String &s)
@@ -461,22 +483,22 @@ bool ConsoleRouter::mqttReconnect()
         return false;
     }
 
-    Serial.print("MQTT broker resolved to ");
+    Serial.print("MQTT broker ip resolved to ");
     Serial.println(brokerIp);
 
     mqttClient.setServer(brokerIp, SERVER_PORT);
 
-    if (mqttClient.connect(clientId, "", "", metadataTopic, 0, true, willPayload))
+    if (mqttClient.connect(clientId, "", "", statusTopic, 0, true, willPayload))
     {
-        Serial.print("MQTT connected to ");
-        Serial.println(brokerIp);
+        Serial.print("MQTT connected success");
+
         sendStatus();
         mqttClient.subscribe(commandTopic, 1);
+
         return true;
     }
 
-    Serial.print("MQTT connect failed to ");
-    Serial.println(brokerIp);
+    Serial.print("MQTT connection failed");
     return false;
 }
 

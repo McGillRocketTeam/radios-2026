@@ -18,12 +18,14 @@ namespace MqttTopic {
     };
 
     enum class TopicKind : uint8_t {
-        TELEMETRY = 0,
-        METADATA,
+        FC_TELEMETRY = 0,
         ACKS,
         COMMANDS,
-        DEBUG,
         NAME,
+        RADIO_TELEMETRY,
+        STATUS, // enum: ("OK", "FAILED", "UNAVAIL", "DISABLED")
+        DETAIL, // string: (equivalent to long_status prior)
+        DEBUG,
         COUNT
     };
 
@@ -35,44 +37,49 @@ namespace MqttTopic {
         {
             // Band::A
             {
-                "radio-controlstation-a/telemetry",
-                "radio-controlstation-a/metadata",
-                "radio-controlstation-a/acks",
-                "radio-controlstation-a/commands",
-                "radio-controlstation-a/debug",
-                "radio-controlstation-a"
+                "SystemA/Rocket/FlightComputer/telemetry",
+                "SystemA/Rocket/FlightComputer/acks",
+                "SystemA/Rocket/FlightComputer/commands",
+                "radio-control-station-a",
+                "SystemA/ControlStation/Radio/telemetry",
+                "SystemA/ControlStation/Radio/status",
+                "SystemA/ControlStation/Radio/detail",
+                "SystemA/ControlStation/Radio/debug",
             },
             // Band::B
             {
-                "radio-controlstation-b/telemetry",
-                "radio-controlstation-b/metadata",
-                "radio-controlstation-b/acks",
-                "radio-controlstation-b/commands",
-                "radio-controlstation-b/debug",
-                "radio-controlstation-b",
-            }
+                "SystemB/Rocket/FlightComputer/telemetry",
+                "SystemB/Rocket/FlightComputer/acks",
+                "SystemB/Rocket/FlightComputer/commands",
+                "radio-control-station-a",
+                "SystemB/ControlStation/Radio/metadata",
+                "SystemB/ControlStation/Radio/telemetry",
+                "SystemB/ControlStation/Radio/debug",
+            },
         },
 
         // ---- Role::PD ----
         {
             // Band::A
             {
-                "radio-pad-a/telemetry",
-                "radio-pad-a/metadata",
-                "radio-pad-a/acks",
-                "radio-pad-a/commands",
-                "radio-pad-a/debug",
-                "radio-pad-a"
+                "SystemA/Rocket/FlightComputer/telemetry",
+                "SystemA/Rocket/FlightComputer/acks",
+                "SystemA/Rocket/FlightComputer/commands",
+                "radio-control-station-a",
+                "SystemA/Pad/Radio/metadata",
+                "SystemA/Pad/Radio/telemetry",
+                "SystemA/Pad/Radio/debug",
             },
             // Band::B
             {
-                "radio-pad-b/telemetry",
-                "radio-pad-b/metadata",
-                "radio-pad-b/acks",
-                "radio-pad-b/commands",
-                "radio-pad-b/debug",
-                "radio-pad-b",
-            }
+                "SystemB/Rocket/FlightComputer/telemetry",
+                "SystemB/Rocket/FlightComputer/acks",
+                "SystemB/Rocket/FlightComputer/commands",
+                "radio-control-station-a",
+                "SystemB/Pad/Radio/metadata",
+                "SystemB/Pad/Radio/telemetry",
+                "SystemB/Pad/Radio/debug",
+            },
         }
     };
 

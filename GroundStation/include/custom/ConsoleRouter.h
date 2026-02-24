@@ -37,8 +37,11 @@ public:
     //Peak from Serial
     int     peek();
 
-    // Sending serialised telemetry buffer via MQTT
+    // Sending serialised telemetry frame buffer via MQTT
     void sendTelemetry(const uint8_t *buffer, size_t size);
+
+    // Sending serialised gs_rssi,gs_snr of the corresponding telemetry frame
+    void sendRadioTelemetry(const uint8_t *buffer, size_t size);
 
     // Sending status of radio over MQTT
     void sendStatus();
@@ -94,11 +97,15 @@ private:
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
     
-    const char* metadataTopic;
-    const char* telemetryTopic;
+    const char* rocketTelemetryTopic;
     const char* ackTopic;
     const char* commandTopic;
+
+    const char* radioTelemetryTopic;
+    const char* statusTopic;
+    const char* detailTopic;
     const char* debugTopic;
+    
     MqttTopic::Band _band; 
     MqttTopic::Role _role;
     // The Ethernet.begin stack only needs to be succesfully inited once

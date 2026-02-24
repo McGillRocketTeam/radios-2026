@@ -22,6 +22,7 @@ void ConsoleRouter::handleConsoleReconnect() { /* no-op */ }
 void ConsoleRouter::mqttLoop() { /* no-op */ }
 
 void ConsoleRouter::sendTelemetry(const uint8_t *, size_t) { /* no-op */ }
+void ConsoleRouter::sendRadioTelemetry(const uint8_t *, size_t) { /* no-op */ }
 void ConsoleRouter::sendStatus() { /* no-op */ }
 void ConsoleRouter::sendCmdAckRx(const String &) { /* no-op */ }
 void ConsoleRouter::sendCmdAckTx(int) { /* no-op */ }
@@ -51,16 +52,7 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
     return size;
 }
 
-void ConsoleRouter::setTopics(MqttTopic::Role role)
-{
-    // You can pick a default band or keep whatever logic you want here
-    // band = MqttTopic::Band::A;
-    telemetryTopic = nullptr;
-    metadataTopic = nullptr;
-    ackTopic = nullptr;
-    commandTopic = nullptr;
-    debugTopic = nullptr;
-}
+void ConsoleRouter::setTopics(MqttTopic::Role role) { /* no-op */ }
 
 void ConsoleRouter::_publishBytes(const uint8_t *, size_t) {}
 void ConsoleRouter::_printString(const String &s, bool newline)

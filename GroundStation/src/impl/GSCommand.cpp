@@ -18,8 +18,8 @@ GSCommand::Command GSCommand::parseRadioCmd(const String &p)
         return Command::Ground;
     if (p == "ping")
         return Command::Ping;
-    if (p == "init")
-        return Command::Init;
+    if (p == "status")
+        return Command::Status;
     if (p == "bypass")
         return Command::Bypass;
     if (p == "settx")

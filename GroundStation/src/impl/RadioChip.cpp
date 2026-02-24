@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-#include "BandSelect.h"
+#include "ParamStore.h"
 #include "LoggerGS.h"
 
 // Constructor: attach module and decide which radio to use
@@ -10,11 +10,11 @@ RadioChip::RadioChip(Module *mod)
     : _radio1262(mod),
       _radio1268(mod)
 {
-    if (BandSelect::is903())
+    if (ParamStore::is903())
     {
         _radio = &_radio1262;
     }
-    else if (BandSelect::is435())
+    else if (ParamStore::is435())
     {
         _radio = &_radio1268;
     }
@@ -35,14 +35,14 @@ RadioChipStatus RadioChip::begin(float freq,
                      float tcxo,
                      bool ldo)
 {
-    if (!BandSelect::freqAllowedFromBand(freq)) {
+    if (!ParamStore::freqAllowed(freq)) {
         Serial.println("THIS FREQUENCY IS NOT AN ALLOWED BAND");
         return RADIOLIB_ERR_INVALID_FREQUENCY;
     }
 
-    if (BandSelect::is903()) {
+    if (ParamStore::is903()) {
         return _radio1262.begin(freq, bw, sf, cr, sw, po, pl, tcxo, ldo);
-    } else if (BandSelect::is435()) {
+    } else if (ParamStore::is435()) {
         return _radio1268.begin(freq, bw, sf, cr, sw, po, pl, tcxo, ldo);
     }
     return RADIOLIB_ERR_INVALID_FREQUENCY;
@@ -88,7 +88,7 @@ RadioChipStatus RadioChip::readData(uint8_t *data, size_t len)
 
 RadioChipStatus RadioChip::setFrequency(float freq)
 {
-    if (!BandSelect::freqAllowedFromBand(freq)) {
+    if (!ParamStore::freqAllowed(freq)) {
         Serial.println("THIS FREQUENCY IS NOT AN ALLOWED BAND");
         return RADIOLIB_ERR_INVALID_FREQUENCY;
     }

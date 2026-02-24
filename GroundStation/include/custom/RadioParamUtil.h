@@ -1,19 +1,7 @@
-#ifndef RADIOPARAMS_H
-#define RADIOPARAMS_H
+#pragma once
 
 #include <cmath>    
 #include <cstdint> 
-
-#pragma pack(push, 1)
-struct RadioParams
-{
-    float freq; // MHz
-    float bw;   // kHz (human-readable)
-    int cr;     // 4/5, 4/6, etc., or enum code
-    int sf;     // spreading factor
-    int pow;    // TX power
-};
-#pragma pack(pop)
 
 // Converts GS LoRa BW MHz human readable format to rocket enum mapping
 inline uint8_t toLoraBwEnum(float bw_khz) {
@@ -43,5 +31,3 @@ inline uint8_t toLoraCrEnum(int cr_human) {
         default: return 4; // default to 4/8
     }
 }
-
-#endif // RADIOPARAMS_H

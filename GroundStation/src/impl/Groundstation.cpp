@@ -7,6 +7,7 @@
 #include "GSCommand.h"
 #include "GroundStation.h"
 #include "LoggerGS.h"
+#include "RadioMetadata.h"
 
 // Boolean for command parser ISR
 // Tells us if there are things to be processsed in serial
@@ -14,7 +15,7 @@ volatile bool GroundStation::commandParserFlag = false;
 
 namespace
 {
-    bool parseBoolean(const String& value, bool &b);
+    bool parseBoolean(const String &value, bool &b);
 } // anonymous namespace
 
 // === Public Setup of Groundstation ===
@@ -22,11 +23,6 @@ namespace
 GroundStation::GroundStation()
     : radioModule(std::make_unique<RadioModule>()), currentFrameView(), awaitingAck(false), canTXFromCTS(ENABLE_RADIO_TX), canPrintTelemetryVerbose(ENABLE_VERBOSE_TELMETRY_PACKET)
 {
-    currentParams.freq = radioModule->getFreq();
-    currentParams.bw = radioModule->getBandwidth();
-    currentParams.cr = radioModule->getCodingRate();
-    currentParams.sf = radioModule->getSpreadingFactor();
-    currentParams.pow = radioModule->getPowerOutput();
 }
 
 GroundStation &GroundStation::getInstance()
@@ -109,8 +105,8 @@ void GroundStation::handleReceivedPacket()
         return;
 
     // Populate the current Frame View with the new packet
-    readReceivedPacket();
-    printPacketToGui();
+    readReceivedPacketToFrame();
+    sendTelemetryToGui();
     printVerboseTelemetryPacket();
 
     // Check the CTS flag and if we want to be able to transmit
@@ -162,8 +158,6 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     {
         const float f = value.toFloat();
         radioModule->setFreq(f);
-        currentParams.freq = f;
-        syncCurrentParamsWithRadioModule();
         break;
     }
 
@@ -171,9 +165,6 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     {
         const float bw = value.toFloat();
         radioModule->setBandwidth(bw);
-        currentParams.bw = bw;
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
         break;
     }
 
@@ -181,9 +172,6 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     {
         const int cr = value.toInt();
         radioModule->setCodingRate(cr);
-        currentParams.cr = cr;
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
         break;
     }
 
@@ -191,9 +179,6 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     {
         const int sf = value.toInt();
         radioModule->setSpreadingFactor(sf);
-        currentParams.sf = sf;
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
         break;
     }
 
@@ -201,9 +186,6 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     {
         const int pow = value.toInt();
         radioModule->setPowerOutput(pow);
-        currentParams.pow = pow;
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
         break;
     }
 
@@ -222,10 +204,9 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     case GSCommand::Command::Ping:
         radioModule->pingParams();
         break;
-
-    case GSCommand::Command::Init:
-        syncCurrentParamsWithRadioModule();
-        printRadioParamsToGui();
+    // TODO do we need this?
+    case GSCommand::Command::Status:
+        Console.sendStatus();
         break;
 
     case GSCommand::Command::Bypass:
@@ -281,7 +262,7 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
             cat = CAT_NONE;
             break;
         }
-        LoggerGS::getInstance().setCategory(cat,b);
+        LoggerGS::getInstance().setCategory(cat, b);
         break;
     }
 
@@ -292,58 +273,9 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
     }
 }
 
-void GroundStation::printRadioParamsToGui()
-{
-    // TO DO be able to publish all the params to meta data
-    return;
-}
-
-void GroundStation::syncCurrentParamsWithRadioModule()
-{
-    if (!verifyRadioStates())
-    {
-        // State of chip and GS not matching, set the GS current params back to match chip
-        currentParams.freq = radioModule->getFreq();
-        currentParams.bw = radioModule->getBandwidth();
-        currentParams.cr = radioModule->getCodingRate();
-        currentParams.sf = radioModule->getSpreadingFactor();
-        currentParams.pow = radioModule->getPowerOutput();
-    }
-}
-
-bool GroundStation::verifyRadioStates()
-{
-    if (radioModule->getFreq() != currentParams.freq)
-    {
-        LOGGING(CAT_GS, CRIT, "Frequency setting failed");
-        return false;
-    }
-    if (radioModule->getBandwidth() != currentParams.bw)
-    {
-        LOGGING(CAT_GS, CRIT, "Bandwdith setting failed");
-        return false;
-    }
-    if (radioModule->getCodingRate() != currentParams.cr)
-    {
-        LOGGING(CAT_GS, CRIT, "Coding Rate setting failed");
-        return false;
-    }
-    if (radioModule->getSpreadingFactor() != currentParams.sf)
-    {
-        LOGGING(CAT_GS, CRIT, "SF setting failed");
-        return false;
-    }
-    if (radioModule->getPowerOutput() != currentParams.pow)
-    {
-        LOGGING(CAT_GS, CRIT, "Power setting failed");
-        return false;
-    }
-    return true;
-}
-
 // === Reading telemetry helpers ===
 
-void GroundStation::readReceivedPacket()
+void GroundStation::readReceivedPacketToFrame()
 {
     uint8_t *receivedData = radioModule->getPacketData();
     int packetLength = radioModule->getPacketLength();
@@ -355,37 +287,50 @@ void GroundStation::readReceivedPacket()
     currentFrameView.reset(rxBuf, rxLen);
     currentFrameState = currentFrameView.validate();
 
-    // if (currentFrameState != ParseError::Ok)
-    // {
-    // There should be an alert sent to the GS here, perhaps just
-    // a malformed telemetry frame?
-    //     LOGGING(CAT_GS, CRIT, "Could not validate frame");
-    //     return;
-    // }
-    if (currentFrameState == ParseError::PayloadTooShort)
+    if (currentFrameState != ParseError::Ok)
     {
-        Serial.println("payload too short");
-    }
-    if (currentFrameState == ParseError::TooShort)
-    {
-        Serial.println("header too short");
-    }
-    if (currentFrameState == ParseError::UnknownAtomicSize)
-    {
-        Serial.println("uknown atomic");
+        // On bad frame we just log, let send to GUI logic decide what to do
+        // with the screwed up frame via currentFrameState
+        LOGGING(CAT_GS, CRIT, "Could not validate frame");
+        if (currentFrameState == ParseError::PayloadTooShort)
+        {
+            Serial.println("payload too short");
+        }
+        if (currentFrameState == ParseError::TooShort)
+        {
+            Serial.println("header too short");
+        }
+        if (currentFrameState == ParseError::UnknownAtomicSize)
+        {
+            Serial.println("uknown atomic");
+        }
+        return;
     }
     lastRSSI = radioModule->getRSSI();
     lastSNR = radioModule->getSNR();
+    lastRawRSSI = radioModule->getRawRSSI();
+    lastRawSNR = radioModule->getRawSNR();
 }
 
-void GroundStation::printPacketToGui()
+void GroundStation::sendTelemetryToGui()
 {
+    // TODO discuss how to alert GUI to bad ASTRA frames
     if (currentFrameState != ParseError::Ok)
     {
-        Console.println("Cannot print to gui with bad ASTRA frame");
+        LOGGING(CAT_GS, CRIT, "Force Sending BAD ASTRA frame to GUI");
+        Console.sendTelemetry(currentFrameView._base, currentFrameView._len);
         return;
     }
+
     Console.sendTelemetry(currentFrameView._base, currentFrameView._len);
+
+    // Construct and send associated radio telemetry to GUI
+    radio_metadata_data_packet packet = {0};
+    packet.data.radio_rssi = lastRawRSSI;
+    packet.data.radio_snr = lastRawSNR;
+    packet.data.seq = currentFrameView.header()->seq;
+
+    Console.sendRadioTelemetry(packet.bytes, sizeof(packet.bytes));
     return;
 }
 
@@ -427,6 +372,7 @@ void GroundStation::printVerboseTelemetryPacket()
             }
         }
     }
+    // TODO fix this to work with CATegories instead
     if (canPrintTelemetryVerbose)
     {
         printAtomics(currentFrameView);

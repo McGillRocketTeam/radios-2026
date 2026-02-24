@@ -5,7 +5,7 @@
 
 #include "CommandParser.h"
 #include "frame_view.h"
-#include "RadioParams.h"
+#include "ParamStore.h"
 #include "RadioModule.h"
 
 /**
@@ -100,14 +100,6 @@ private:
      */
     GroundStation();
 
-    // Check whether the params are matched and if not match them
-    void syncCurrentParamsWithRadioModule();
-
-    // Checks current params with whats inside of the radio chip retuns true if its all good
-    bool verifyRadioStates();
-
-    // Just like print packet to GUI instead prints the Radio Params held in current Radio Params of GS
-    void printRadioParamsToGui();
 
     /**
      * @brief Serialises string and sendes the serialised rocket command
@@ -115,10 +107,10 @@ private:
      */
     void sendRocketCommand(command_packet &command);
 
-    void printPacketToGui();
+    void sendTelemetryToGui();
 
     // Reads the received packet into the the currentFrameView and validates it
-    void readReceivedPacket();
+    void readReceivedPacketToFrame();
 
     /**
      * @brief Implements parameter changes from a radio command string.
@@ -151,12 +143,13 @@ private:
     FrameView currentFrameView;
     ParseError currentFrameState = ParseError::Ok;
 
-    /// Currently active radio parameters
-    RadioParams currentParams;
-
-    /// RSSI and SNR of the last packet received
+    /// RSSI and SNR snapshot of the last packet received
     float lastRSSI = 0;
     float lastSNR = 0;
+
+    /// Raw RSSI and SNR snapshot of last packet receive
+    uint8_t lastRawRSSI = 0;
+    int8_t lastRawSNR = 0;
 
     /// Timer for raising the commandParserFlag every 10ms
     IntervalTimer commandParserTimer;

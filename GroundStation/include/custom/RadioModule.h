@@ -7,7 +7,6 @@
 #include "LoggerGS.h"
 #include "PinLayout.h"
 #include "RadioChip.h"
-#include "RadioParams.h"
 
 class RadioModule {
 private:
@@ -42,8 +41,8 @@ public:
     bool transmitBlocking(const uint8_t* data, size_t size);
 
     bool receiveMode();
-    // Poll for a perfect rx, 
-    // if success will set the local buffer, fail will log why
+    // Poll for a perfect rx, always puts radio back to ready receive mode
+    // on success saves data into local buffer, fail will log why
     bool pollValidPacketRx();
 
     uint8_t* getPacketData();
@@ -68,8 +67,14 @@ public:
 
     // Get the RSSI of the last packet received
     float getRSSI();
+
+    // Get the raw RSSI register value of last packet received
+    uint8_t getRawRSSI();
     
     // Get the SNR of the last packet received
     float getSNR();
+    
+    // Get the raw SNR register value of last packet received
+    int8_t getRawSNR();
 };
 

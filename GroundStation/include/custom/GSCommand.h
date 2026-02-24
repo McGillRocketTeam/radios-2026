@@ -15,7 +15,7 @@ namespace GSCommand
         Param,
         Ground,
         Ping,
-        Init,
+        Status,
         Bypass,
         SetTx,
         Verbose,
