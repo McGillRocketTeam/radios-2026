@@ -241,7 +241,7 @@ void ConsoleRouter::sendTelemetry(const uint8_t *buffer, size_t size)
 {
     if (ethernetUp() && mqttUp())
     {
-        bool ok = mqttClient.publish(rocketTelemetryTopic, buffer, (unsigned int)size, false);
+        bool ok = mqttClient.publish(rocketTelemetryTopic, buffer, (unsigned int)size);
         if (!ok)
         {
             Serial.println("MQTT publish failed (packet too large or socket issue).");
@@ -253,7 +253,7 @@ void ConsoleRouter::sendRadioTelemetry(const uint8_t *buffer, size_t size)
 {
     if (ethernetUp() && mqttUp())
     {
-        bool ok = mqttClient.publish(radioTelemetryTopic, buffer, (unsigned int)size, false);
+        bool ok = mqttClient.publish(radioTelemetryTopic, buffer, (unsigned int)size);
         if (!ok)
         {
             Serial.println("MQTT publish failed (packet too large or socket issue).");
@@ -267,7 +267,8 @@ void ConsoleRouter::sendStatus()
         return;
 
     static const uint8_t statusBuffer[] = "OK";
-    bool ok = mqttClient.publish(statusTopic, statusBuffer, sizeof(statusBuffer) - 1, true);
+    // Status needs to be retained
+    bool ok = mqttClient.publish(statusTopic, statusBuffer, sizeof(statusBuffer) - 1,true);
 
     Serial.println("mqtt status refresh");
 
@@ -299,10 +300,7 @@ void ConsoleRouter::sendStatus()
         len = (n >= (int)sizeof(detailBuffer)) ? (sizeof(detailBuffer) - 1) : (size_t)n;
     }
 
-    ok &= mqttClient.publish(statusTopic,
-                             (const uint8_t*)detailBuffer,
-                             len,
-                             true);
+    ok &= mqttClient.publish(detailTopic,(const uint8_t*) detailBuffer, len);
 
     if (!ok)
         Serial.println("MQTT publish failed (packet too large or socket issue).");
@@ -403,7 +401,7 @@ size_t ConsoleRouter::write(uint8_t c)
     // Publish single byte to MQTT
     if (ethernetUp() && mqttUp())
     {
-        mqttClient.publish(debugTopic, &c, 1, false);
+        mqttClient.publish(debugTopic, &c, 1);
     }
 
     return Serial.write(c);
@@ -418,7 +416,7 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
     {
         if (mqttUp())
         {
-            bool ok = mqttClient.publish(debugTopic, buffer, (unsigned int)size, false);
+            bool ok = mqttClient.publish(debugTopic, buffer, (unsigned int)size);
             if (!ok)
             {
                 Serial.println("MQTT publish failed (packet too large or socket issue).");
@@ -461,7 +459,7 @@ bool ConsoleRouter::publishAck(const char *status, uint8_t cmdId)
     if (n <= 0 || (size_t)n >= sizeof(jsonBuffer))
         return false;
 
-    return mqttClient.publish(ackTopic, jsonBuffer, (size_t)n, false);
+    return mqttClient.publish(ackTopic, jsonBuffer, (size_t)n);
 }
 
 bool ConsoleRouter::mqttReconnect()
@@ -470,7 +468,6 @@ bool ConsoleRouter::mqttReconnect()
         return false;
 
     const char *clientId = MqttTopic::topic(_role, _band, MqttTopic::TopicKind::NAME);
-    const char *willPayload = "";
 
     IPAddress brokerIp;
     Serial.print("Resolving MQTT broker host: ");
@@ -488,7 +485,7 @@ bool ConsoleRouter::mqttReconnect()
 
     mqttClient.setServer(brokerIp, SERVER_PORT);
 
-    if (mqttClient.connect(clientId, "", "", statusTopic, 0, true, willPayload))
+    if (mqttClient.connect(clientId, "", "", statusTopic, 0, true, MQTT_LAST_WILL))
     {
         Serial.print("MQTT connected success");
 
@@ -506,7 +503,7 @@ void ConsoleRouter::_publishBytes(const uint8_t *data, size_t len)
 {
     if (ethernetUp() && mqttUp() && data && len)
     {
-        mqttClient.publish(debugTopic, data, (unsigned int)len, false);
+        mqttClient.publish(debugTopic, data, (unsigned int)len);
     }
 }
 

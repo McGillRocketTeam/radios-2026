@@ -11,6 +11,8 @@
 // BAD command acknowledged
 #define FLAG_BAD 0x04
 
+#define MAX_NUMBER_OF_ATOMIC_PACKETS 32
+
 // ---- 8-byte frame header ----
 typedef struct  __attribute__((packed)) {
     uint16_t seq;            // 2B sequence number

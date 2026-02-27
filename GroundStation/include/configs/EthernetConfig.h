@@ -15,4 +15,7 @@ inline constexpr int INITIAL_PHY_LINK_TIMEOUT = 2000;
 inline constexpr const char *BROKER_HOST = "mrt_mqtt";
 inline const int SERVER_PORT = 1883;
 
+// MQTT last will, should be "" to delete the topic
+inline constexpr const char* MQTT_LAST_WILL = "";
+
 #endif
