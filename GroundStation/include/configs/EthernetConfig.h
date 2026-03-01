@@ -18,4 +18,7 @@ inline const int SERVER_PORT = 1883;
 // MQTT last will, should be "" to delete the topic
 inline constexpr const char* MQTT_LAST_WILL = "";
 
+// Max command size we can handle from MQTT
+inline constexpr size_t MAX_MQTT_CMD = 256;
+
 #endif

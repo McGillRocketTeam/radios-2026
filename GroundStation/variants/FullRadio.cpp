@@ -29,7 +29,6 @@ void loop() {
 
     auto& gs = GroundStation::getInstance();
 
-    // Handle received commands and packets from the ground station
     gs.handleCommandParserUpdate();
     gs.handleRadioCommand();
     gs.handleReceivedPacket();

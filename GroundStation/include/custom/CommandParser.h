@@ -7,7 +7,7 @@
 #include "command_packet.h"
 
 /// Maximum length (in chars) for any single command line.
-#define MAX_COMMAND_LENGTH 100
+#define PARSER_MAX_COMMAND_LENGTH 100
 
 /// Maximum number of commands retained per queue.
 #define QUEUE_SIZE 50
@@ -74,9 +74,10 @@ public:
     void enqueueCommand(const String &command);
 
 private:
-    ArduinoQueue<String> radioCommandQueue;   ///< Queue for radio commands.
-    ArduinoQueue<String> rocketCommandQueue;  ///< Queue for rocket (non-radio) commands.
-    String currentCommand;                    ///< Buffer for building the current command.
+    ArduinoQueue<String> radioCommandQueue;         ///< Queue for radio commands.
+    ArduinoQueue<String> rocketCommandQueue;        ///< Queue for rocket (non-radio) commands.
+    char currentBuf[PARSER_MAX_COMMAND_LENGTH];     ///< Buffer for building the current command.
+    int currentLen = 0;
 
     /**
      * @brief Construct a new CommandParser object.

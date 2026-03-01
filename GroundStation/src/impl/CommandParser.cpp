@@ -8,16 +8,19 @@
 
 // === Setup ===
 
-CommandParser& CommandParser::getInstance(){
+CommandParser &CommandParser::getInstance()
+{
     static CommandParser inst;
     return inst;
 }
 
 CommandParser::CommandParser()
     : radioCommandQueue(QUEUE_SIZE),
-      rocketCommandQueue(QUEUE_SIZE),
-      currentCommand() {}
-
+      rocketCommandQueue(QUEUE_SIZE)
+{
+    currentLen = 0;
+    currentBuf[0] = '\0';
+}
 
 // === MAIN public functions ===
 
@@ -29,11 +32,15 @@ void CommandParser::update()
 
         if (receivedChar == '\n')
         {
-            if (currentCommand.length() > 0)
-            {
-                enqueueCommand(currentCommand);
-                currentCommand = "";
-            }
+            if (currentLen == 0)
+                continue;
+            currentBuf[currentLen] = '\0';
+            enqueueCommand(String(currentBuf));
+            currentLen = 0;
+            currentBuf[0] = '\0';
+        }
+        else if (receivedChar ==  '\r'){
+            continue;
         }
         else if (receivedChar == '\b' || receivedChar == 127)
         {
@@ -51,20 +58,23 @@ bool CommandParser::getNextRadioCommand(String &outCommand)
     return dequeueCommand(radioCommandQueue, outCommand);
 }
 
-bool CommandParser::getNextRocketCommand(command_packet& outPkt)
+bool CommandParser::getNextRocketCommand(command_packet &outPkt)
 {
     String raw;
-    if (!dequeueCommand(rocketCommandQueue, raw)) {
+    if (!dequeueCommand(rocketCommandQueue, raw))
+    {
         return false;
     }
 
     int commaIdx = raw.indexOf(',');
-    if (commaIdx <= 0 || (uint64_t)commaIdx == raw.length() - 1) {
+    if (commaIdx <= 0 || (uint64_t)commaIdx == raw.length() - 1)
+    {
         return false;
     }
 
     long id = raw.substring(0, commaIdx).toInt();
-    if (id < 0 || id > 255) {
+    if (id < 0 || id > 255)
+    {
         return false;
     }
     outPkt.data.command_id = (uint8_t)id;
@@ -77,8 +87,6 @@ bool CommandParser::getNextRocketCommand(command_packet& outPkt)
 
     return true;
 }
-
-
 
 // === Public debug functions ===
 
@@ -100,22 +108,23 @@ void CommandParser::printQueueStatus(const char *queueType,
     Console.println(queue.itemCount());
 }
 
-
 // === Private helper functions ===
 
 bool CommandParser::isPingCommand(const String &command)
 {
-    String trimmed = command;
-    trimmed.trim();
-    return trimmed == "ping";
+    // COULD have a more robust check here
+    return command == "ping";
 }
 
-bool CommandParser::isRadioCommand(const String &command)
-{
-    int spaceIndex = command.indexOf(' ');
-    if (spaceIndex == -1)
+bool CommandParser::isRadioCommand(const String& s) {
+    // Keyword + a trailing white space
+    if (s.length() <= (int)RADIO_COMMAND_KEY_LEN) 
         return false;
-    return command.substring(0, spaceIndex) == RADIO_COMMAND_KEYWORD;
+    if (!s.startsWith(RADIO_COMMAND_KEYWORD)) 
+        return false;
+
+    char next = s.charAt(RADIO_COMMAND_KEY_LEN);
+    return next == ' ';
 }
 
 bool CommandParser::normalizeRocketCommand(const String &in, String &out)
@@ -174,7 +183,6 @@ bool CommandParser::normalizeRocketCommand(const String &in, String &out)
     return true;
 }
 
-
 // === Queue stuff ===
 
 bool CommandParser::dequeueCommand(ArduinoQueue<String> &queue,
@@ -193,14 +201,14 @@ void CommandParser::handleQueueInsertion(
 {
     if (queue.isFull())
     {
-        LOGGING(CAT_PARSER,CRIT, "Queue for commands is full discarding old");
+        LOGGING(CAT_PARSER, CRIT, "Queue for commands is full discarding old");
         if (kind == QueueType::Radio)
         {
-            LOGGING(CAT_PARSER,CRIT, "RADIO queue is full");
+            LOGGING(CAT_PARSER, CRIT, "RADIO queue is full");
         }
         else
         {
-            LOGGING(CAT_PARSER,CRIT, "RADIO queue is full");
+            LOGGING(CAT_PARSER, CRIT, "ROCKET queue is full");
         }
         queue.dequeue();
     }
@@ -209,44 +217,49 @@ void CommandParser::handleQueueInsertion(
 
 void CommandParser::enqueueCommand(const String &command)
 {
-    LOGGING(CAT_PARSER,DEBUG, "Enqueue command triggered");
+    LOGGING(CAT_PARSER, DEBUG, "Enqueue command triggered");
     if (isRadioCommand(command))
     {
-        LOGGING(CAT_PARSER,DEBUG, "Inserting radio command into the radio queue");
-        LOGGING(CAT_PARSER,DEBUG, command);
-        handleQueueInsertion(radioCommandQueue, QueueType::Radio,command);
+        LOGGING(CAT_PARSER, DEBUG, "Inserting radio command into the radio queue");
+        LOGGING(CAT_PARSER, DEBUG, command);
+        handleQueueInsertion(radioCommandQueue, QueueType::Radio, command);
     }
     else if (isPingCommand(command))
     {
         // This is only for debugging via serial to send ping to check alive
-        LOGGING(CAT_PARSER,DEBUG, "Inserting ping command into the radio queue");
-        LOGGING(CAT_PARSER,DEBUG, command);
+        LOGGING(CAT_PARSER, DEBUG, "Inserting ping command into the radio queue");
+        LOGGING(CAT_PARSER, DEBUG, command);
         handleQueueInsertion(radioCommandQueue, QueueType::Radio, "radio ping");
     }
     else
     {
-        LOGGING(CAT_PARSER,DEBUG, "Inserting rocket command into the rocket queue");
-        LOGGING(CAT_PARSER,DEBUG, command);
+        LOGGING(CAT_PARSER, DEBUG, "Inserting rocket command into the rocket queue");
+        LOGGING(CAT_PARSER, DEBUG, command);
 
         String normalized;
         if (!normalizeRocketCommand(command, normalized))
         {
-            LOGGING(CAT_PARSER,DEBUG, "Rejected rocket command (bad format): " + command);
+            LOGGING(CAT_PARSER, DEBUG, "Rejected rocket command (bad format):");
+            LOGGING(CAT_PARSER, DEBUG, command);
             return;
         }
 
-        LOGGING(CAT_PARSER,DEBUG, "Normalized rocket command: " + normalized);
-        handleQueueInsertion(rocketCommandQueue,QueueType::Rocket,normalized);
+        LOGGING(CAT_PARSER, DEBUG, "Normalized rocket command: ");
+        LOGGING(CAT_PARSER, DEBUG, normalized);
+        handleQueueInsertion(rocketCommandQueue, QueueType::Rocket, normalized);
     }
 }
 
-
-// === String and char heloers === 
+// === String and char heloers ===
 void CommandParser::handleBackspace()
 {
-    if (currentCommand.length() > 0)
+    if (currentLen <= 0)
+        return;
+    // We could also set null terminator, but before we send
+    // the command we always null terminate so its okk
+    currentLen--;
+    if (LoggerGS::getInstance().getLogLevel() == PIPE)
     {
-        currentCommand.remove(currentCommand.length() - 1);
         Serial.print("\b \b");
     }
 }
@@ -258,9 +271,9 @@ bool CommandParser::isPrintableCharacter(char c)
 
 void CommandParser::handleCharacterAppend(char c)
 {
-    if (currentCommand.length() < MAX_COMMAND_LENGTH - 1)
+    if (currentLen < PARSER_MAX_COMMAND_LENGTH - 1)
     {
-        currentCommand += c;
+        currentBuf[currentLen++] = c;
         if (LoggerGS::getInstance().getLogLevel() == PIPE)
         {
             Serial.print(c);

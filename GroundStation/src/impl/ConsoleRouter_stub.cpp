@@ -4,19 +4,13 @@
 
 #if TEENSY != 41
 
-ConsoleRouter::ConsoleRouter() {}
-
 void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 {
     Serial.begin(GS_SERIAL_BAUD_RATE);
     commandParser = &parser;
-    setTopics(role); // optional if you still want topics defined for prints
 }
 
-bool ConsoleRouter::isReady()
-{
-    true;
-}
+bool ConsoleRouter::isReady() { true; }
 
 void ConsoleRouter::handleConsoleReconnect() { /* no-op */ }
 void ConsoleRouter::mqttLoop() { /* no-op */ }
@@ -27,9 +21,8 @@ void ConsoleRouter::sendStatus() { /* no-op */ }
 void ConsoleRouter::sendCmdAckRx(const String &) { /* no-op */ }
 void ConsoleRouter::sendCmdAckTx(int) { /* no-op */ }
 
-void ConsoleRouter::ethernetInit() { /* no-op */ }
 bool ConsoleRouter::mqttReconnect() { return false; }
-bool ConsoleRouter::publishAck(const char *, uint8_t) { return false; }
+void ConsoleRouter::publishAck(const char *, uint8_t) { /* no-op */ }
 void ConsoleRouter::getMac(uint8_t mac[6] ){
     // Can implement the hardware get here since we dont have the Ethernet object
     for (int i = 0; i < 6; i++) mac[i] = 0;
@@ -51,8 +44,6 @@ size_t ConsoleRouter::write(const uint8_t *buffer, size_t size)
     Serial.write(buffer, size);
     return size;
 }
-
-void ConsoleRouter::setTopics(MqttTopic::Role role) { /* no-op */ }
 
 void ConsoleRouter::_publishBytes(const uint8_t *, size_t) {}
 void ConsoleRouter::_printString(const String &s, bool newline)

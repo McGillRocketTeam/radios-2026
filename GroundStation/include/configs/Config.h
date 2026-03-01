@@ -24,7 +24,6 @@ constexpr bool ENABLE_VERBOSE_TELMETRY_PACKET = false;
 
 // Radio identity and keywording
 constexpr const char *RADIO_CALL_SIGN = "VA2 JWL";
-constexpr const char *RADIO_COMMAND_KEYWORD = "radio";
-
-
+constexpr char RADIO_COMMAND_KEYWORD[] = "radio";
+constexpr size_t RADIO_COMMAND_KEY_LEN = sizeof(RADIO_COMMAND_KEYWORD) - 1;
 

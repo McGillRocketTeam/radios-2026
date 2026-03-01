@@ -13,9 +13,8 @@ public:
     // Singleton accessor
     static ConsoleRouter &getInstance();
 
-    // 
+    // Verify if .begin has been called
     static bool isReady();
-
 
     // Init Serial, Ethernet Physical Link, MQTT Digital Link
     void begin(MqttTopic::Role role,CommandParser& parser);
@@ -36,6 +35,10 @@ public:
 
     //Peak from Serial
     int     peek();
+    
+    // Write to Serial and MQTT
+    size_t  write(uint8_t c);
+    size_t  write(const uint8_t *buffer, size_t size);
 
     // Sending serialised telemetry frame buffer via MQTT
     void sendTelemetry(const uint8_t *buffer, size_t size);
@@ -47,14 +50,16 @@ public:
     void sendStatus();
 
     // Sending ack for rx of cmd from GSC
-    void sendCmdAckRx( const String& s);
+    void sendCmdAckRx(const String& s);
 
     // Sending ack after tx of cmd from CTS to GSC
-    void sendCmdAckTx( int id);
+    void sendCmdAckTx(int id);
 
+    // Print overloads via templating
     template <typename T> void print(const T& v)   { _printString(String(v), false); }
     template <typename T> void println(const T& v) { _printString(String(v), true ); }
     
+    // Supported specific types
     void print(const char* s);
     void println(const char* s);
     void print(const String& s);
@@ -67,18 +72,14 @@ public:
 
 private:
 
-    size_t  write(uint8_t c);
-    size_t  write(const uint8_t *buffer, size_t size);
-
-    ConsoleRouter();
+    ConsoleRouter() = default;
     ConsoleRouter(const ConsoleRouter&) = delete;
     ConsoleRouter& operator=(const ConsoleRouter&) = delete;
 
-    // Checks the pins and sets the topics based on the frequency
-    void setTopics(MqttTopic::Role role);
+    // Sets the mqtt topics and host name via role and band
+    void applyRoleConfig(MqttTopic::Role role);
 
-    // Ethernet bring-up and periodic check ISR
-    void        ethernetInit();
+    // Ethernet ISR to set ethernet reconnect check flag
     static void ethernetCheckISR();
 
     // Try to connect to the server
@@ -86,7 +87,10 @@ private:
     bool mqttReconnect();
 
     // Internal helper for cmd acks
-    bool publishAck(const char* status, uint8_t ackId);
+    void publishAck(const char* status, uint8_t ackId);
+
+    void publish(const char* topic, const uint8_t* payload, unsigned int length);
+    void publishRetained(const char* topic, const uint8_t* payload, unsigned int length);
 
     // Grabbing the mac address of the teensy
     void getMac(uint8_t mac[6]);
@@ -96,21 +100,21 @@ private:
 
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
-    
-    const char* rocketTelemetryTopic;
-    const char* ackTopic;
-    const char* commandTopic;
 
-    const char* radioTelemetryTopic;
-    const char* statusTopic;
-    const char* detailTopic;
-    const char* debugTopic;
+    const char* deviceName_              = nullptr;
     
-    MqttTopic::Band _band; 
-    MqttTopic::Role _role;
-    // The Ethernet.begin stack only needs to be succesfully inited once
-    bool _ethernetStackInitialised = false;
+    const char* rocketTelemetryTopic_    = nullptr;
+    const char* ackTopic_                = nullptr;
+    const char* commandTopic_            = nullptr;
 
+    const char* radioTelemetryTopic_     = nullptr;
+    const char* statusTopic_             = nullptr;
+    const char* detailTopic_             = nullptr;
+    const char* debugTopic_              = nullptr;
+    
+    // Some safe defaults, but band and role needs to be set dynamically on startup
+    MqttTopic::Band band_ = MqttTopic::Band::A;
+    MqttTopic::Role role_ = MqttTopic::Role::CS;
 
     // Internal helpers for printing/publishing
     void _printString(const String& s, bool newline);
