@@ -1,16 +1,17 @@
 #pragma once
 
 #include <Arduino.h>
-#include <ArduinoQueue.h>
+#include <cstdint>
 
 #include "Config.h"
+#include "RingQueue.h"
 #include "command_packet.h"
 
 /// Maximum length (in chars) for any single command line.
-#define PARSER_MAX_COMMAND_LENGTH 100
+constexpr uint16_t PARSER_MAX_COMMAND_LENGTH = 100;
 
 /// Maximum number of commands retained per queue.
-#define QUEUE_SIZE 50
+constexpr uint16_t MAX_QUEUE_SIZE = 50;
 
 /**
  * @class CommandParser
@@ -20,10 +21,10 @@
  * On receiving a newline, it determines whether the command is radio-related or not
  * and enqueues it in the corresponding queue. Older entries are discarded when queue is full.
  */
-class CommandParser {
+class CommandParser
+{
 public:
-
-    static CommandParser& getInstance();
+    static CommandParser &getInstance();
 
     /**
      * @brief Reads Serial input and updates the parser state.
@@ -45,7 +46,7 @@ public:
     /**
      * @brief Puts the next rocket command into the stuct, if available.
      */
-    bool getNextRocketCommand(command_packet& outCommand);
+    bool getNextRocketCommand(command_packet &outCommand);
 
     /**
      * @brief Prints the number of pending radio commands to the Console.
@@ -57,12 +58,12 @@ public:
      */
     void printRocketQueueStatus();
 
-
     // Converts human inputed commands into nice format 33,po for the rocket queue
     // handles "," "-" " " ":" seperators
-    bool normalizeRocketCommand(const String& in, String& out);
+    bool normalizeRocketCommand(const String &in, String &out);
 
-    enum class QueueType : uint8_t {
+    enum class QueueType : uint8_t
+    {
         Radio,
         Rocket
     };
@@ -74,27 +75,24 @@ public:
     void enqueueCommand(const String &command);
 
 private:
-    ArduinoQueue<String> radioCommandQueue;         ///< Queue for radio commands.
-    ArduinoQueue<String> rocketCommandQueue;        ///< Queue for rocket (non-radio) commands.
-    char currentBuf[PARSER_MAX_COMMAND_LENGTH];     ///< Buffer for building the current command.
-    int currentLen = 0;
+    RingQueue<String, MAX_QUEUE_SIZE> radioCommandQueue;  ///< Queue for radio commands.
+    RingQueue<String, MAX_QUEUE_SIZE> rocketCommandQueue; ///< Queue for rocket (non-radio) commands.
+    char currentBuf[PARSER_MAX_COMMAND_LENGTH + 1];           ///< Buffer for building the current command.
+    uint16_t currentLen;
 
     /**
      * @brief Construct a new CommandParser object.
      */
     CommandParser();
 
-
     /**
      * @brief Determines whether the given command is a radio command.
      * @param command The command string to evaluate.
      * @return true if it is a radio command (based on keyword); false otherwise.
      */
-    bool isRadioCommand(const String &command);
+    bool isRadioCommand(const String& command);
 
-    bool isPingCommand(const String &command);
-
-    
+    bool isPingCommand(const String& command);
 
     /**
      * @brief Inserts a command into a specified queue and logs overflow if necessary.
@@ -102,10 +100,9 @@ private:
      * @param command The command string to insert.
      * @param kind which queue we want to put it in
      */
-    void handleQueueInsertion(
-        ArduinoQueue<String> &queue,
-        QueueType kind,                      
-        const String &command);
+    void handleQueueInsertion(RingQueue<String, MAX_QUEUE_SIZE> &queue,
+                              QueueType kind,
+                              const String &command);
 
     /**
      * @brief Handles backspace character by removing the last character from the buffer.
@@ -131,7 +128,7 @@ private:
      * @param[out] outCommand The string to populate with the dequeued command.
      * @return true if a command was successfully dequeued; false otherwise.
      */
-    bool dequeueCommand(ArduinoQueue<String> &queue, String &outCommand);
+    bool dequeueCommand(RingQueue<String, MAX_QUEUE_SIZE> &queue, String &outCommand);
 
     /**
      * @brief Prints the size of a given queue to Serial.
@@ -139,7 +136,5 @@ private:
      * @param queue The queue whose size will be printed.
      */
     void printQueueStatus(const char *queueType,
-                          ArduinoQueue<String> &queue);
-
+                          RingQueue<String, MAX_QUEUE_SIZE> &queue);
 };
-

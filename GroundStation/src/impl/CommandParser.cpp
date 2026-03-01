@@ -1,10 +1,11 @@
 #include "CommandParser.h"
 
 #include <Arduino.h>
-#include <LoggerGS.h>
 
 #include "Config.h"
 #include "ConsoleRouter.h"
+#include "LoggerGS.h"
+#include "RingQueue.h"
 
 // === Setup ===
 
@@ -15,10 +16,10 @@ CommandParser &CommandParser::getInstance()
 }
 
 CommandParser::CommandParser()
-    : radioCommandQueue(QUEUE_SIZE),
-      rocketCommandQueue(QUEUE_SIZE)
+    : radioCommandQueue(),
+      rocketCommandQueue(),
+      currentLen(0)
 {
-    currentLen = 0;
     currentBuf[0] = '\0';
 }
 
@@ -28,27 +29,35 @@ void CommandParser::update()
 {
     while (Serial.available())
     {
-        char receivedChar = Serial.read();
+        char c = (char)Serial.read();
+        if (c == '\r')
+        {
+            continue;
+        }
 
-        if (receivedChar == '\n')
+        if (c == '\n')
         {
             if (currentLen == 0)
                 continue;
+
             currentBuf[currentLen] = '\0';
             enqueueCommand(String(currentBuf));
+
             currentLen = 0;
             currentBuf[0] = '\0';
-        }
-        else if (receivedChar ==  '\r'){
             continue;
         }
-        else if (receivedChar == '\b' || receivedChar == 127)
+
+        if (c == '\b' || c == 127)
         {
             handleBackspace();
+            continue;
         }
-        else if (isPrintableCharacter(receivedChar))
+
+        if (isPrintableCharacter(c))
         {
-            handleCharacterAppend(receivedChar);
+            handleCharacterAppend(c);
+            continue;
         }
     }
 }
@@ -61,29 +70,24 @@ bool CommandParser::getNextRadioCommand(String &outCommand)
 bool CommandParser::getNextRocketCommand(command_packet &outPkt)
 {
     String raw;
-    if (!dequeueCommand(rocketCommandQueue, raw))
-    {
+    if (!dequeueCommand(rocketCommandQueue, raw)) {
         return false;
     }
 
     int commaIdx = raw.indexOf(',');
-    if (commaIdx <= 0 || (uint64_t)commaIdx == raw.length() - 1)
-    {
+    if (commaIdx <= 0 || commaIdx == (int)raw.length() - 1) {
         return false;
     }
 
     long id = raw.substring(0, commaIdx).toInt();
-    if (id < 0 || id > 255)
-    {
+    if (id < 0 || id > 255) {
         return false;
     }
     outPkt.data.command_id = (uint8_t)id;
 
-    String cmd = raw.substring(commaIdx + 1);
-
+    const char* cmdp = raw.c_str() + commaIdx + 1;
     memset(outPkt.data.command_string, 0, sizeof(outPkt.data.command_string));
-    cmd.toCharArray(outPkt.data.command_string,
-                    sizeof(outPkt.data.command_string));
+    strncpy(outPkt.data.command_string, cmdp, sizeof(outPkt.data.command_string) - 1);
 
     return true;
 }
@@ -101,7 +105,7 @@ void CommandParser::printRocketQueueStatus()
 }
 
 void CommandParser::printQueueStatus(const char *queueType,
-                                     ArduinoQueue<String> &queue)
+                                     RingQueue<String, MAX_QUEUE_SIZE> &queue)
 {
     Console.print(queueType);
     Console.print(F(" commands in queue: "));
@@ -116,11 +120,12 @@ bool CommandParser::isPingCommand(const String &command)
     return command == "ping";
 }
 
-bool CommandParser::isRadioCommand(const String& s) {
+bool CommandParser::isRadioCommand(const String &s)
+{
     // Keyword + a trailing white space
-    if (s.length() <= (int)RADIO_COMMAND_KEY_LEN) 
+    if (s.length() <= (int)RADIO_COMMAND_KEY_LEN)
         return false;
-    if (!s.startsWith(RADIO_COMMAND_KEYWORD)) 
+    if (!s.startsWith(RADIO_COMMAND_KEYWORD))
         return false;
 
     char next = s.charAt(RADIO_COMMAND_KEY_LEN);
@@ -185,34 +190,30 @@ bool CommandParser::normalizeRocketCommand(const String &in, String &out)
 
 // === Queue stuff ===
 
-bool CommandParser::dequeueCommand(ArduinoQueue<String> &queue,
+bool CommandParser::dequeueCommand(RingQueue<String, MAX_QUEUE_SIZE> &queue,
                                    String &outCommand)
 {
-    if (queue.isEmpty())
-        return false;
-    outCommand = queue.dequeue();
-    return true;
+    return queue.dequeue(outCommand);
 }
 
 void CommandParser::handleQueueInsertion(
-    ArduinoQueue<String> &queue,
+    RingQueue<String, MAX_QUEUE_SIZE> &queue,
     QueueType kind,
     const String &command)
 {
-    if (queue.isFull())
-    {
-        LOGGING(CAT_PARSER, CRIT, "Queue for commands is full discarding old");
-        if (kind == QueueType::Radio)
-        {
-            LOGGING(CAT_PARSER, CRIT, "RADIO queue is full");
-        }
-        else
-        {
-            LOGGING(CAT_PARSER, CRIT, "ROCKET queue is full");
-        }
-        queue.dequeue();
-    }
+    const bool wasFull = queue.isFull();
+
+    // Auto discards if full
     queue.enqueue(command);
+
+    if (wasFull)
+    {
+        LOGGING(CAT_PARSER, CRIT, "Queue for commands is full; discarded oldest");
+        if (kind == QueueType::Radio)
+            LOGGING(CAT_PARSER, CRIT, "RADIO queue is full");
+        else
+            LOGGING(CAT_PARSER, CRIT, "ROCKET queue is full");
+    }
 }
 
 void CommandParser::enqueueCommand(const String &command)
@@ -256,7 +257,7 @@ void CommandParser::handleBackspace()
     if (currentLen <= 0)
         return;
     // We could also set null terminator, but before we send
-    // the command we always null terminate so its okk
+    // the command we always null terminate so its ok
     currentLen--;
     if (LoggerGS::getInstance().getLogLevel() == PIPE)
     {
@@ -271,7 +272,7 @@ bool CommandParser::isPrintableCharacter(char c)
 
 void CommandParser::handleCharacterAppend(char c)
 {
-    if (currentLen < PARSER_MAX_COMMAND_LENGTH - 1)
+    if (currentLen < PARSER_MAX_COMMAND_LENGTH)
     {
         currentBuf[currentLen++] = c;
         if (LoggerGS::getInstance().getLogLevel() == PIPE)

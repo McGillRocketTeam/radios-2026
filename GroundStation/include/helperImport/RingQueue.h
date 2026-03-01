@@ -13,6 +13,10 @@ public:
         return count_ == 0;
     }
 
+    bool isFull() const {
+        return count_ == Capacity;
+    }
+
     uint16_t itemCount() const {
         return count_;
     }
