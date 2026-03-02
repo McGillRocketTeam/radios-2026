@@ -31,6 +31,6 @@ void loop() {
 
     // Handle received commands and packets from the ground station
     gs.handleCommandParserUpdate();
-    gs.handleRadioCommand();
+    gs.handleGroundCommand();
     gs.handleReceivedPacket();
 }

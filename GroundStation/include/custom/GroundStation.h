@@ -50,9 +50,9 @@ public:
     void handleCommandParserUpdate();
 
     /**
-     * @brief Grabs the next available radio command and tries to do it.
+     * @brief Grabs the next available ground command and tries to do it.
      */
-    void handleRadioCommand();
+    void handleGroundCommand();
 
     /**
      * @brief Processes the most recently received radio packet.
@@ -105,18 +105,14 @@ private:
      * @brief Serialises string and sendes the serialised rocket command
      * @param command The command to send.
      */
-    void sendRocketCommand(command_packet &command);
+    void sendRocketCommand(command_packet_extended &command);
 
     void sendTelemetryToGui();
 
     // Reads the received packet into the the currentFrameView and validates it
     void readReceivedPacketToFrame();
 
-    /**
-     * @brief Implements parameter changes from a radio command string.
-     * @param radioCommand The raw command string from the radio queue.
-     */
-    void implementRadioParamCommand(String radioCommand);
+    void implementGroundCommand(GroundCommand::Cmd command);
 
     /**
      * @brief Static ISR callback to raise the command parser flag.

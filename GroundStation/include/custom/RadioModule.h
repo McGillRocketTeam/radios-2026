@@ -56,9 +56,9 @@ public:
 
     void setFreq(float newFrequency);
     void setBandwidth(float newBandwidth);
-    void setSpreadingFactor(int newSpreadingFactor);
-    void setCodingRate(int newCodingRate);
-    void setPowerOutput(int newPowerOutput);
+    void setSpreadingFactor(uint8_t newSpreadingFactor);
+    void setCodingRate(uint8_t newCodingRate);
+    void setPowerOutput(int8_t newPowerOutput);
 
     void checkParams();
     void pingParams();

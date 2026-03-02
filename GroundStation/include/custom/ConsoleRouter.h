@@ -50,10 +50,10 @@ public:
     void sendStatus();
 
     // Sending ack for rx of cmd from GSC
-    void sendCmdAckRx(const String& s);
+    void sendCmdAckRx(uint8_t cmd_id, bool success);
 
     // Sending ack after tx of cmd from CTS to GSC
-    void sendCmdAckTx(int id);
+    void sendCmdAckTx(uint8_t cmd_id, bool success);
 
     // Print overloads via templating
     template <typename T> void print(const T& v)   { _printString(String(v), false); }
@@ -86,6 +86,10 @@ private:
     // will search the ip list and send a status if succesful
     bool mqttReconnect();
 
+    void handleMqttCommand();
+    // Try to consume and save into local the mqttCommandLine
+    bool takeMqttCmdLine();
+
     // Internal helper for cmd acks
     void publishAck(const char* status, uint8_t ackId);
 
@@ -100,6 +104,9 @@ private:
 
     // Timer for periodic link checks
     IntervalTimer ethernetTimer;
+
+    // Holds a copy of the last command string we received
+    command_line currentCommandLine = {0};
 
     const char* deviceName_              = nullptr;
     

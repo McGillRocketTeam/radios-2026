@@ -15,10 +15,14 @@ typedef union command_packet {
     uint8_t bytes[sizeof(command_packet_data)];
 } command_packet;
 
+static_assert(sizeof(command_packet_data) % 4 == 3,
+    "command_packet_data must be ensure 4 byte alignment in command_packet_extended_data");
+
+// Be very careful, we need the float args to start 4byte aligned
 typedef struct __attribute__((__packed__)) command_packet_extended_data {
     command_packet base;
-    uint8_t argc; // 0..3
-    float args[3]; // This float array should be 4 byte aligned
+    uint8_t argc;
+    float args[3];
 } command_packet_extended_data;
 
 typedef union command_packet_extended {

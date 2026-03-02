@@ -4,9 +4,10 @@
 #include "frame_printer.h"
 
 #include "ConsoleRouter.h"
-#include "GSCommand.h"
+#include "GroundCommand.h"
 #include "GroundStation.h"
 #include "LoggerGS.h"
+#include "RocketCommand.h"
 #include "RadioMetadata.h"
 
 // Boolean for command parser ISR
@@ -15,7 +16,15 @@ volatile bool GroundStation::commandParserFlag = false;
 
 namespace
 {
-    bool parseBoolean(const String &value, bool &b);
+    bool parseBoolean(const float value)
+    {
+        if (value == 0) {
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
 } // anonymous namespace
 
 // === Public Setup of Groundstation ===
@@ -69,7 +78,7 @@ void GroundStation::setVerbosePacket(bool state)
 
 void GroundStation::getQueueStatus()
 {
-    commandParser->printRadioQueueStatus();
+    commandParser->printGroundQueueStatus();
     commandParser->printRocketQueueStatus();
 }
 
@@ -89,12 +98,12 @@ void GroundStation::handleCommandParserUpdate()
     }
 }
 
-void GroundStation::handleRadioCommand()
+void GroundStation::handleGroundCommand()
 {
-    String radioCommand;
-    if (commandParser->getNextRadioCommand(radioCommand))
+    GroundCommand::Cmd groundCommand;
+    if (commandParser->getNextGroundCommand(groundCommand))
     {
-        implementRadioParamCommand(radioCommand);
+        implementGroundCommand(groundCommand);
     }
 }
 
@@ -126,74 +135,50 @@ void GroundStation::raiseCommandParserFlag()
 
 // === Radio Command helpers ===
 
-void GroundStation::implementRadioParamCommand(String radioCommand)
+void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
 {
-    String param, value;
-
-    int firstSpace = radioCommand.indexOf(' ');
-    int secondSpace = radioCommand.indexOf(' ', firstSpace + 1);
-
-    if (firstSpace == -1)
+    
+    // Switch case on the possible actions
+    switch (command.action)
     {
-        Console.println("Radio command missing a first space");
-        return;
-    }
-
-    if (secondSpace == -1)
+    case GroundCommand::Action::Freq:
     {
-        param = radioCommand.substring(firstSpace + 1).toLowerCase();
-        value = "";
-    }
-    else
-    {
-        param = radioCommand.substring(firstSpace + 1, secondSpace).toLowerCase();
-        value = radioCommand.substring(secondSpace + 1);
-    }
-
-    const GSCommand::Command cmd = GSCommand::parseRadioCmd(param);
-
-    switch (cmd)
-    {
-    case GSCommand::Command::Freq:
-    {
-        const float f = value.toFloat();
-        radioModule->setFreq(f);
+        radioModule->setFreq(command.arg);
         break;
     }
 
-    case GSCommand::Command::Bw:
+    case GroundCommand::Action::Bw:
     {
-        const float bw = value.toFloat();
-        radioModule->setBandwidth(bw);
+        radioModule->setBandwidth(command.arg);
         break;
     }
 
-    case GSCommand::Command::Cr:
+    case GroundCommand::Action::Cr:
     {
-        const int cr = value.toInt();
-        radioModule->setCodingRate(cr);
+        uint8_t cr = (uint8_t) floorf(command.arg);
+        radioModule->setCodingRate(command.arg);
         break;
     }
 
-    case GSCommand::Command::Sf:
+    case GroundCommand::Action::Sf:
     {
-        const int sf = value.toInt();
+        uint8_t sf = (uint8_t) floorf(command.arg);
         radioModule->setSpreadingFactor(sf);
         break;
     }
 
-    case GSCommand::Command::Pow:
+    case GroundCommand::Action::Pow:
     {
-        const int pow = value.toInt();
+        int8_t pow = (int8_t) floorf(command.arg);
         radioModule->setPowerOutput(pow);
         break;
     }
 
-    case GSCommand::Command::Param:
+    case GroundCommand::Action::Param:
         radioModule->checkParams();
         break;
 
-    case GSCommand::Command::Ground:
+    case GroundCommand::Action::Ground:
         radioModule->checkParams();
         Console.print("gsc_verbose_packet: ");
         Console.print(canPrintTelemetryVerbose);
@@ -201,61 +186,51 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         Console.print(canTXFromCTS);
         break;
 
-    case GSCommand::Command::Ping:
+    case GroundCommand::Action::Ping:
         radioModule->pingParams();
         break;
     // TODO do we need this?
-    case GSCommand::Command::Status:
+    case GroundCommand::Action::Status:
         Console.sendStatus();
         break;
 
-    case GSCommand::Command::Bypass:
+    case GroundCommand::Action::Bypass:
         LOGGING(CAT_GS, CRIT, "bypass has not been implemented");
         break;
 
-    case GSCommand::Command::SetTx:
+    case GroundCommand::Action::SetTx:
     {
-        bool b;
-        if (!GSCommand::parseBoolTF(value, b))
-        {
-            Console.println("setTx accepts only 't' or 'f' as values");
-            break;
-        }
+        bool b = parseBoolean(command.arg);
         setCanTXFromCTS(b);
-        LOGGING(CAT_GS, DEBUG, "setting tx from cts");
-        LOGGING(CAT_GS, DEBUG, value);
+        char buf[64];
+        snprintf(buf, sizeof(buf), "setting tx from cts b=%s", b ? "true" : "false");
+        LOGGING(CAT_GS, DEBUG,buf);
         break;
     }
 
-    case GSCommand::Command::Verbose:
+    case GroundCommand::Action::Verbose:
     {
-        bool b;
-        if (parseBoolean(value, b))
-        {
-            setVerbosePacket(b);
-        }
+        setVerbosePacket(parseBoolean(command.arg));
         break;
     }
 
-    case GSCommand::Command::CatGS:
-    case GSCommand::Command::CatParser:
-    case GSCommand::Command::CatRadio:
+    case GroundCommand::Action::CatGS:
+    case GroundCommand::Action::CatParser:
+    case GroundCommand::Action::CatRadio:
     {
-        bool b;
-        if (!parseBoolean(value, b))
-            break;
+        bool b = parseBoolean(command.arg);
 
         LoggingCategory cat;
 
-        switch (cmd)
+        switch (command.action)
         {
-        case GSCommand::Command::CatGS:
+        case GroundCommand::Action::CatGS:
             cat = CAT_GS;
             break;
-        case GSCommand::Command::CatParser:
+        case GroundCommand::Action::CatParser:
             cat = CAT_PARSER;
             break;
-        case GSCommand::Command::CatRadio:
+        case GroundCommand::Action::CatRadio:
             cat = CAT_RADIO;
             break;
         default:
@@ -266,7 +241,7 @@ void GroundStation::implementRadioParamCommand(String radioCommand)
         break;
     }
 
-    case GSCommand::Command::Unknown:
+    case GroundCommand::Action::Unknown:
     default:
         Console.println("command not recognised, please check spelling");
         break;
@@ -384,48 +359,51 @@ void GroundStation::printVerboseTelemetryPacket()
 
 void GroundStation::handleRocketCommand()
 {
-    command_packet rocketCommand;
-    rocketCommand.data.command_id = 1;
-    std::strncpy(rocketCommand.data.command_string, "nop", sizeof(rocketCommand.data.command_string) - 1);
+    command_packet_extended rocketCommand = {0};
+    // Populate with default nop 
+    rocketCommand.data.base.data.command_id = 1;
+    std::strncpy(
+        rocketCommand.data.base.data.command_string, 
+        "nop",
+        sizeof(rocketCommand.data.base.data.command_string) - 1);
 
     commandParser->getNextRocketCommand(rocketCommand);
 
     sendRocketCommand(rocketCommand);
 }
 
-void GroundStation::sendRocketCommand(command_packet &command)
+void GroundStation::sendRocketCommand(command_packet_extended &command)
 {
     if (!radioModule)
     {
         Console.println("Error: Radio module is not initialized.");
         return;
     }
-    const size_t length = sizeof(command.data);
+    // CRITICAL, here we decide to send just the header or the whole extended
 
     char buf[128] = {0};
+    size_t length;
+    if (command.data.argc == 0){
+        //Sending the shortedned header only
+        length = sizeof(command.data.base.bytes);
+        radioModule->transmitBlocking((uint8_t *)command.data.base.bytes, length);
+    }
+    else {
+        //Sending the full extended
+        length = sizeof(command.bytes);
+        radioModule->transmitBlocking((uint8_t *)command.bytes, length);
+    }
 
-    snprintf(buf, sizeof(buf), "TX cmd=%s id=%u size=%u ", command.data.command_string, (unsigned)command.data.command_id, (unsigned)length);
+    snprintf(buf, sizeof(buf), "TX cmd=%s id=%u size=%u ",
+        command.data.base.data.command_string,
+        (unsigned)command.data.base.data.command_id,
+        (unsigned)length);
+
     LOGGING(CAT_GS, INFO, buf);
 
-    radioModule->transmitBlocking((uint8_t *)command.bytes, length);
-
-    if (strcasecmp(command.data.command_string, "nop") != 0)
+    if (strcasecmp(command.data.base.data.command_string, "nop") != 0)
     {
-        Console.sendCmdAckTx(command.data.command_id);
+        Console.sendCmdAckTx(command.data.base.data.command_id,true);
     }
 }
 
-namespace
-{
-
-    bool parseBoolean(const String &value, bool &out)
-    {
-        if (!GSCommand::parseBoolTF(value, out))
-        {
-            Console.println("verbose accepts only 't' or 'f' as values");
-            return false;
-        }
-        return true;
-    }
-
-} // namespace

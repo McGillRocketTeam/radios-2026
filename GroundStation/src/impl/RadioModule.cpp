@@ -322,7 +322,7 @@ void RadioModule::setBandwidth(float newBandwidth)
     }
 }
 
-void RadioModule::setSpreadingFactor(int newSpreadingFactor)
+void RadioModule::setSpreadingFactor(uint8_t newSpreadingFactor)
 {
     state = radio.setSpreadingFactor(newSpreadingFactor);
     if (verifyRadioState("Switching to spreading factor of " + String(newSpreadingFactor)))
@@ -331,7 +331,7 @@ void RadioModule::setSpreadingFactor(int newSpreadingFactor)
     }
 }
 
-void RadioModule::setCodingRate(int newCodingRate)
+void RadioModule::setCodingRate(uint8_t newCodingRate)
 {
     state = radio.setCodingRate(newCodingRate);
     if (verifyRadioState("Switching to coding rate of " + String(newCodingRate)))
@@ -340,7 +340,7 @@ void RadioModule::setCodingRate(int newCodingRate)
     }
 }
 
-void RadioModule::setPowerOutput(int newPowerOutput)
+void RadioModule::setPowerOutput(int8_t newPowerOutput)
 {
     state = radio.setOutputPower(newPowerOutput);
     if (verifyRadioState("Switching to power output of " + String(newPowerOutput)))

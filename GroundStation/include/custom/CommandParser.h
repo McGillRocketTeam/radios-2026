@@ -4,14 +4,13 @@
 #include <cstdint>
 
 #include "Config.h"
+#include "CommandLine.h"
 #include "RingQueue.h"
 #include "command_packet.h"
-
-/// Maximum length (in chars) for any single command line.
-constexpr uint16_t PARSER_MAX_COMMAND_LENGTH = 100;
+#include "GroundCommand.h"
 
 /// Maximum number of commands retained per queue.
-constexpr uint16_t MAX_QUEUE_SIZE = 50;
+constexpr uint16_t MAX_QUEUE_SIZE = 30;
 
 /**
  * @class CommandParser
@@ -26,115 +25,36 @@ class CommandParser
 public:
     static CommandParser &getInstance();
 
-    /**
-     * @brief Reads Serial input and updates the parser state.
-     *
-     * This function should be called continuously (e.g., inside the main loop)
-     * to consume incoming characters from Serial. It supports backspace editing
-     * and enqueues complete commands upon newline.
-     */
+    // Main call to check serial for inputs
     void update();
 
-    /**
-     * @brief Retrieves the next radio command, if available.
-     * @param[out] outCommand String object populated with the dequeued command.
-     * @return true if a command was available and dequeued.
-     * @return false if the radio command queue was empty.
-     */
-    bool getNextRadioCommand(String &outCommand);
+    bool getNextGroundCommand(GroundCommand::Cmd &out);
 
-    /**
-     * @brief Puts the next rocket command into the stuct, if available.
-     */
-    bool getNextRocketCommand(command_packet &outCommand);
+    // Loads command into out, if false means no command, and we dont touch out
+    bool getNextRocketCommand(command_packet_extended &outCommand);
 
-    /**
-     * @brief Prints the number of pending radio commands to the Console.
-     */
-    void printRadioQueueStatus();
+    void printGroundQueueStatus();
 
-    /**
-     * @brief Prints the number of pending rocket commands to the Console.
-     */
     void printRocketQueueStatus();
 
-    // Converts human inputed commands into nice format 33,po for the rocket queue
-    // handles "," "-" " " ":" seperators
-    bool normalizeRocketCommand(const String &in, String &out);
+    // Always queues to command, discards oldest if full,
+    // returns false if we cant parse the command_line
+    bool enqueueCommand(const command_line &line);
 
-    enum class QueueType : uint8_t
-    {
-        Radio,
-        Rocket
-    };
-
-    /**
-     * @brief Enqueues the given command into the appropriate queue.
-     * @param command The command string to enqueue.
-     */
-    void enqueueCommand(const String &command);
+    bool isRocketQueueFull();
 
 private:
-    RingQueue<String, MAX_QUEUE_SIZE> radioCommandQueue;  ///< Queue for radio commands.
-    RingQueue<String, MAX_QUEUE_SIZE> rocketCommandQueue; ///< Queue for rocket (non-radio) commands.
-    char currentBuf[PARSER_MAX_COMMAND_LENGTH + 1];           ///< Buffer for building the current command.
-    uint16_t currentLen;
+    RingQueue<GroundCommand::Cmd, MAX_QUEUE_SIZE> groundCommandQueue;
+    RingQueue<command_packet_extended, MAX_QUEUE_SIZE> rocketCommandQueue;
 
-    /**
-     * @brief Construct a new CommandParser object.
-     */
+    // Buffer for building the current command.
+    command_line currentLine;
+
     CommandParser();
 
-    /**
-     * @brief Determines whether the given command is a radio command.
-     * @param command The command string to evaluate.
-     * @return true if it is a radio command (based on keyword); false otherwise.
-     */
-    bool isRadioCommand(const String& command);
-
-    bool isPingCommand(const String& command);
-
-    /**
-     * @brief Inserts a command into a specified queue and logs overflow if necessary.
-     * @param queue The target queue.
-     * @param command The command string to insert.
-     * @param kind which queue we want to put it in
-     */
-    void handleQueueInsertion(RingQueue<String, MAX_QUEUE_SIZE> &queue,
-                              QueueType kind,
-                              const String &command);
-
-    /**
-     * @brief Handles backspace character by removing the last character from the buffer.
-     */
     void handleBackspace();
 
-    /**
-     * @brief Checks whether a character is printable (excluding control characters).
-     * @param c The character to check.
-     * @return true if printable; false otherwise.
-     */
     bool isPrintableCharacter(char c);
 
-    /**
-     * @brief Appends a character to the current command buffer.
-     * @param c The character to append.
-     */
     void handleCharacterAppend(char c);
-
-    /**
-     * @brief Attempts to dequeue a command from the specified queue.
-     * @param queue The source queue.
-     * @param[out] outCommand The string to populate with the dequeued command.
-     * @return true if a command was successfully dequeued; false otherwise.
-     */
-    bool dequeueCommand(RingQueue<String, MAX_QUEUE_SIZE> &queue, String &outCommand);
-
-    /**
-     * @brief Prints the size of a given queue to Serial.
-     * @param queueType A descriptive name (e.g., "radio", "rocket") for logging.
-     * @param queue The queue whose size will be printed.
-     */
-    void printQueueStatus(const char *queueType,
-                          RingQueue<String, MAX_QUEUE_SIZE> &queue);
 };
