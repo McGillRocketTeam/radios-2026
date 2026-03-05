@@ -18,8 +18,8 @@ void ConsoleRouter::mqttLoop() { /* no-op */ }
 void ConsoleRouter::sendTelemetry(const uint8_t *, size_t) { /* no-op */ }
 void ConsoleRouter::sendRadioTelemetry(const uint8_t *, size_t) { /* no-op */ }
 void ConsoleRouter::sendStatus() { /* no-op */ }
-void ConsoleRouter::sendCmdAckRx(const String &) { /* no-op */ }
-void ConsoleRouter::sendCmdAckTx(int) { /* no-op */ }
+void ConsoleRouter::sendCmdAckRx(uint8_t, bool) { /* no-op */ }
+void ConsoleRouter::sendCmdAckTx(uint8_t, bool) { /* no-op */ }
 
 bool ConsoleRouter::mqttReconnect() { return false; }
 void ConsoleRouter::publishAck(const char *, uint8_t) { /* no-op */ }

@@ -1,6 +1,6 @@
 #include <cstdint>
 
-// ---------- radio metadata astra atomic ----------
+// Radio meta data struct to report gs radio data to gsc
 struct __attribute__((__packed__)) radio_metadata_data
 {
     // 2B sequence number for the corresponding telemetry frame 
