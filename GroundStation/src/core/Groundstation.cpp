@@ -156,7 +156,7 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     case GroundCommand::Action::Cr:
     {
         uint8_t cr = (uint8_t) floorf(command.arg);
-        radioModule->setCodingRate(command.arg);
+        radioModule->setCodingRate(cr);
         break;
     }
 

@@ -9,6 +9,7 @@
 #include "GroundStation.h"
 
 // Variant for full ground station radio operation
+// TODO make a env flag centered main dispatcher
 void setup() {
     auto& cmd = CommandParser::getInstance();
 

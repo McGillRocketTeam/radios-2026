@@ -14,9 +14,9 @@ private:
     static volatile bool radioBusy;
     static void radioDio1ISR(); 
 
-    RadioChipStatus state = RADIOLIB_ERR_NONE;
-    Module mod;
-    RadioChip radio;
+    RadioChipStatus state_ = RADIOLIB_ERR_NONE;
+    Module mod_;
+    RadioChip radio_;
 
     // RX_LED and TX_LED toggle when each of the ops is done
     int rxLedPin_ = RX_LED_PIN;

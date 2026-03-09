@@ -11,36 +11,36 @@ volatile bool RadioModule::radioBusy = false;
 // === Setup ===
 
 RadioModule::RadioModule()
-    : mod(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN),
-      radio(&mod),
+    : mod_(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN),
+      radio_(&mod_),
       frequency(ParamStore::getDefaultBandFreq())
 {
     // Default initiliased pins need to be set in the right mode
     pinMode(rxLedPin_,OUTPUT);
     pinMode(txLedPin_,OUTPUT);
-    state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
+    state_ = radio_.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
                         TCXO_VOLTAGE, USE_ONLY_LDO);
     while (!retryRadioInit())
     {
         Serial.println("radio init failure");
     }
     verifyRadioState("Intializing radio module...");
-    radio.setDio1Action(radioDio1ISR);
-    radio.setCurrentLimit(RADIO_CURRENT_LIMIT);
+    radio_.setDio1Action(radioDio1ISR);
+    radio_.setCurrentLimit(RADIO_CURRENT_LIMIT);
     memset(buffer, 0, sizeof(buffer));
 }
 
 RadioChip *RadioModule::getRadioChipInstance()
 {
-    return &radio;
+    return &radio_;
 }
 
 bool RadioModule::retryRadioInit()
 {
-    if (RadioStatus::ok(state))
+    if (RadioStatus::ok(state_))
         return true;
     Console.print("FATAL ERROR RADIO MODULE FAILED TO INTIALISE RADIOLIB ERROR CODE: ");
-    Console.println(state);
+    Console.println(state_);
     Console.print("frequency is");
     Console.println(frequency);
     Console.print("if error persists try power cycling by disconnecting and reconnecting/ usb");
@@ -51,7 +51,7 @@ bool RadioModule::retryRadioInit()
     }
     delay(250);
     frequency = ParamStore::getDefaultBandFreq();
-    state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
+    state_ = radio_.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
                         TCXO_VOLTAGE, USE_ONLY_LDO);
     return false;
 }
@@ -65,13 +65,13 @@ bool RadioModule::transmitBlocking(const uint8_t* data, size_t size)
     noInterrupts();
     interruptReceived = false;
     interrupts();
-    radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
 
-    state = radio.transmit(data, size);
-    bool ok = RadioStatus::ok(state);
+    state_ = radio_.transmit(data, size);
+    bool ok = RadioStatus::ok(state_);
 
-    radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-    radio.startReceive();
+    radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    radio_.startReceive();
 
     radioBusy = false;
     toggleLedOnOk(txLedPin_);
@@ -96,7 +96,7 @@ bool RadioModule::pollValidPacketRx()
     if (!hadIrq)
         return false;
 
-    const uint32_t flags = radio.getIrqFlags();
+    const uint32_t flags = radio_.getIrqFlags();
 
     const uint32_t RX_DONE = (1UL << RADIOLIB_IRQ_RX_DONE);
     const uint32_t CRC_ERR = (1UL << RADIOLIB_IRQ_CRC_ERR);
@@ -106,8 +106,8 @@ bool RadioModule::pollValidPacketRx()
     // Not a RX_DONE
     if ((flags & RX_DONE) == 0)
     {
-        radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-        radio.startReceive();
+        radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        radio_.startReceive();
         return false;
     }
 
@@ -128,39 +128,39 @@ bool RadioModule::pollValidPacketRx()
             LOGGING(CAT_RADIO,DEBUG, "RX timeout");
         }
 
-        radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-        radio.startReceive();
+        radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        radio_.startReceive();
         return false;
     }
 
     // Valid packet read it now and set the buffer
-    const size_t n = radio.getPacketLength();
+    const size_t n = radio_.getPacketLength();
     if (n == 0 || n > sizeof(buffer))
     {
         LOGGING(CAT_RADIO,CRIT, String("RX length invalid: ") + String((int)n));
-        state = radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-        state = radio.startReceive();
+        state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        state_ = radio_.startReceive();
         return false;
     }
 
     lastPacketLength = (int)n;
     memset(buffer, 0, sizeof(buffer));
 
-    state = radio.readData(buffer, n);
+    state_ = radio_.readData(buffer, n);
 
     // If RadioLib still reports CRC mismatch here, treat as invalid.
-    if (!RadioStatus::ok(state))
+    if (!RadioStatus::ok(state_))
     {
         verifyRadioState("readData");
-        radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-        radio.startReceive();
+        radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        radio_.startReceive();
         return false;
     }
 
-    state = radio.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
     verifyRadioState("clearIrqFlags");
 
-    state = radio.startReceive();
+    state_ = radio_.startReceive();
     verifyRadioState("startReceive");
 
     toggleLedOnOk(rxLedPin_);
@@ -171,7 +171,7 @@ bool RadioModule::pollValidPacketRx()
 
 bool RadioModule::receiveMode()
 {
-    state = radio.startReceive();
+    state_ = radio_.startReceive();
     return verifyRadioState("Switching into receive mode... ");
 }
 
@@ -230,11 +230,11 @@ uint8_t *RadioModule::getPacketData()
 
 float RadioModule::getRSSI()
 {
-    return radio.getRSSI();
+    return radio_.getRSSI();
 }
 
 uint8_t RadioModule::getRawRSSI(){
-    float f = radio.getRSSI() * -2.0;
+    float f = radio_.getRSSI() * -2.0;
     // clamp rogue values, to match the register size
     if (f < 0.0f) f = 0.0f;
     if (f > 255.0f) f = 255.0f;
@@ -244,11 +244,11 @@ uint8_t RadioModule::getRawRSSI(){
 
 float RadioModule::getSNR()
 {
-    return radio.getSNR();
+    return radio_.getSNR();
 }
 
 int8_t RadioModule::getRawSNR(){
-    float f = radio.getRSSI() * 4.0;
+    float f = radio_.getRSSI() * 4.0;
 
     // clamp rogue values, to match the register size
     if (f < -125.0f) f = -125.0f;
@@ -260,7 +260,7 @@ int8_t RadioModule::getRawSNR(){
 // === General Helper ===
 
 void RadioModule::toggleLedOnOk(int pin){
-    if (!RadioStatus::ok(state)){
+    if (!RadioStatus::ok(state_)){
         return;
     }
     if (pin == rxLedPin_){
@@ -278,12 +278,12 @@ void RadioModule::toggleLedOnOk(int pin){
 
 bool RadioModule::verifyRadioState(String message)
 {
-    if (RadioStatus::ok(state))
+    if (RadioStatus::ok(state_))
     {
         LOGGING(CAT_RADIO,DEBUG, message + " Success!");
         return true;
     }
-    else if (RadioStatus::crcErr(state))
+    else if (RadioStatus::crcErr(state_))
     {
         // If its a crc error we can log the SNR and RSSI
         // of the packet received even though its data is cooked
@@ -296,7 +296,7 @@ bool RadioModule::verifyRadioState(String message)
         return false;
     }
 
-    LOGGING(CAT_RADIO,CRIT, message + " Failure. Error code: " + String(state));
+    LOGGING(CAT_RADIO,CRIT, message + " Failure. Error code: " + String(state_));
     return false;
 }
 
@@ -329,7 +329,7 @@ int RadioModule::getPowerOutput()
 
 void RadioModule::setFreq(float newFrequency)
 {
-    state = radio.setFrequency(newFrequency);
+    state_ = radio_.setFrequency(newFrequency);
     if (verifyRadioState("Switching to frequency of " + String(newFrequency)))
     {
         frequency = newFrequency;
@@ -338,7 +338,7 @@ void RadioModule::setFreq(float newFrequency)
 
 void RadioModule::setBandwidth(float newBandwidth)
 {
-    state = radio.setBandwidth(newBandwidth);
+    state_ = radio_.setBandwidth(newBandwidth);
     if (verifyRadioState("Switching to bandwidth of " + String(newBandwidth)))
     {
         bandwidth = newBandwidth;
@@ -347,7 +347,7 @@ void RadioModule::setBandwidth(float newBandwidth)
 
 void RadioModule::setSpreadingFactor(uint8_t newSpreadingFactor)
 {
-    state = radio.setSpreadingFactor(newSpreadingFactor);
+    state_ = radio_.setSpreadingFactor(newSpreadingFactor);
     if (verifyRadioState("Switching to spreading factor of " + String(newSpreadingFactor)))
     {
         spreadingFactor = newSpreadingFactor;
@@ -356,7 +356,7 @@ void RadioModule::setSpreadingFactor(uint8_t newSpreadingFactor)
 
 void RadioModule::setCodingRate(uint8_t newCodingRate)
 {
-    state = radio.setCodingRate(newCodingRate);
+    state_ = radio_.setCodingRate(newCodingRate);
     if (verifyRadioState("Switching to coding rate of " + String(newCodingRate)))
     {
         codingRate = newCodingRate;
@@ -365,7 +365,7 @@ void RadioModule::setCodingRate(uint8_t newCodingRate)
 
 void RadioModule::setPowerOutput(int8_t newPowerOutput)
 {
-    state = radio.setOutputPower(newPowerOutput);
+    state_ = radio_.setOutputPower(newPowerOutput);
     if (verifyRadioState("Switching to power output of " + String(newPowerOutput)))
     {
         powerOutput = newPowerOutput;
