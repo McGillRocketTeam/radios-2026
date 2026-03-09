@@ -15,6 +15,9 @@ RadioModule::RadioModule()
       radio(&mod),
       frequency(ParamStore::getDefaultBandFreq())
 {
+    // Default initiliased pins need to be set in the right mode
+    pinMode(rxLedPin_,OUTPUT);
+    pinMode(txLedPin_,OUTPUT);
     state = radio.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
                         TCXO_VOLTAGE, USE_ONLY_LDO);
     while (!retryRadioInit())
@@ -71,6 +74,7 @@ bool RadioModule::transmitBlocking(const uint8_t* data, size_t size)
     radio.startReceive();
 
     radioBusy = false;
+    toggleLedOnOk(txLedPin_);
 
     return ok;
 }
@@ -158,6 +162,8 @@ bool RadioModule::pollValidPacketRx()
 
     state = radio.startReceive();
     verifyRadioState("startReceive");
+
+    toggleLedOnOk(rxLedPin_);
 
     // buffer now contains a valid packet
     return true;
@@ -252,6 +258,23 @@ int8_t RadioModule::getRawSNR(){
 }
 
 // === General Helper ===
+
+void RadioModule::toggleLedOnOk(int pin){
+    if (!RadioStatus::ok(state)){
+        return;
+    }
+    if (pin == rxLedPin_){
+        rxLedState_ = !rxLedState_;
+        digitalWrite(pin,rxLedState_);
+    }
+    else if (pin == txLedPin_){
+        txLedState_ = !txLedState_;
+        digitalWrite(pin,txLedState_);
+    }
+    else{
+        LOGGING(CAT_RADIO,INFO, "Toggling a LED that is not set in the radio module");
+    }
+}
 
 bool RadioModule::verifyRadioState(String message)
 {

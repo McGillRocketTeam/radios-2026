@@ -9,7 +9,6 @@
 #include "GroundStation.h"
 
 // Variant for full ground station radio operation
-
 void setup() {
     auto& cmd = CommandParser::getInstance();
 
@@ -29,7 +28,6 @@ void loop() {
 
     auto& gs = GroundStation::getInstance();
 
-    // Handle received commands and packets from the ground station
     gs.handleCommandParserUpdate();
     gs.handleGroundCommand();
     gs.handleReceivedPacket();

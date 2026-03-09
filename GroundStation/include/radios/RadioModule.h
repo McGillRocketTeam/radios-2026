@@ -18,6 +18,12 @@ private:
     Module mod;
     RadioChip radio;
 
+    // RX_LED and TX_LED toggle when each of the ops is done
+    int rxLedPin_ = RX_LED_PIN;
+    int txLedPin_ = TX_LED_PIN;
+    bool rxLedState_ = false;
+    bool txLedState_ = false;
+
     float frequency;
     float bandwidth = BANDWIDTH_USED;
     int spreadingFactor = SPREADING_FACTOR_USED;
@@ -31,6 +37,8 @@ private:
     // Checks that the current state of the chip is good
     // If its bad then we will output the critical messsage
     bool verifyRadioState(String message);
+
+    void toggleLedOnOk(int pin);
 
 public:
     RadioModule();

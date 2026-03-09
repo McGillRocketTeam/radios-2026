@@ -331,17 +331,34 @@ static void handleCommandPacket(const uint8_t* buffer,
         Serial.println("ERROR: Packet too short");
         return;
     }
-
+    
     command_packet_data pkt;
-    memcpy(&pkt, buffer, sizeof(pkt));
+    command_packet_extended extended;
+    if (packetLength == sizeof(command_packet_extended_data)) {
+        memcpy(&extended, buffer, sizeof(extended));
+        char debugBuf[128];
+        snprintf(debugBuf,sizeof(debugBuf),"Extended packet detected: argc: %d ,%.2f,%.2f ,%.2f",
+            extended.data.argc,
+            extended.data.args[0],
+            extended.data.args[1],
+            extended.data.args[2]
+            );
+        Serial.print(debugBuf);
+        pkt = extended.data.base.data;
+    }
+    else if (packetLength == sizeof(command_packet_data)){
+        memcpy(&pkt, buffer, sizeof(pkt));
+    }
+    else{
+        Serial.println("Received command is not the right length");
+    }
 
-    pkt.command_string[4] = '\0';
+    pkt.command_string[5] = '\0';
 
     Serial.print("Command: ");
     Serial.println(pkt.command_string);
 
     // Case-insensitive compare for up to 4-char commands
-    // "nop" is 3 chars; this matches "nop" regardless of case
     if (strncasecmp(pkt.command_string, "nop", 3) == 0) {
         currentState = FCState::Transmit_NoCTS;
         return;

@@ -9,7 +9,6 @@
 #include "GroundStation.h"
 
 // Variant for full ground station radio operation
-// TODO, organise src and include folders
 void setup() {
     auto& cmd = CommandParser::getInstance();
 
