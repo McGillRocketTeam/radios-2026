@@ -38,7 +38,7 @@ namespace MqttTopic {
             // Band::A
             {
                 "SystemA/Rocket/FlightComputer/telemetry",
-                "SystemA/Rocket/Radio/acks",
+                "SystemA/ControlStation/Radio/acks",
                 "SystemA/Rocket/FlightComputer/commands",
                 "radio-control-station-a",
                 "SystemA/ControlStation/Radio/telemetry",
@@ -49,7 +49,7 @@ namespace MqttTopic {
             // Band::B
             {
                 "SystemB/Rocket/FlightComputer/telemetry",
-                "SystemB/Rocket/Radio/acks",
+                "SystemB/ControlStation/Radio/acks",
                 "SystemB/Rocket/FlightComputer/commands",
                 "radio-control-station-b",
                 "SystemB/ControlStation/Radio/telemetry",
