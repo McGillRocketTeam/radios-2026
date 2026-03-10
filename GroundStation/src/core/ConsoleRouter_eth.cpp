@@ -23,8 +23,6 @@ static ConsoleRouter *s_router = nullptr;
 
 // === Static global function forward decleration ===
 
-static bool ethernetLinkUp();
-static bool ethernetHasIp();
 static bool ethernetUp();
 static bool mqttUp();
 
@@ -78,13 +76,16 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 
     // Init the eth stack with in built MAC and try dhcp
     Ethernet.begin();
-    delay(10);
 
     // This ISR will work with the reconnect function
     // to reconnect the ethernet connection if it fails
     ethernetTimer.begin(ethernetCheckISR, ETHERNET_RECONNECT_INTERVAL);
     mqttClient.setCallback(onMqttMessage);
 
+    if (!Ethernet.waitForLocalIP(5000))
+    {
+        Serial.println("DHCP failed");
+    }
     handleConsoleReconnect();
 }
 
@@ -101,22 +102,19 @@ void ConsoleRouter::handleConsoleReconnect()
     ethernetReconnectNeeded = false;
 
     // If the cable is not plugged in do not attempt the blocking dhcp timeout
-    if (!ethernetLinkUp())
+    if (!ethernetUp())
     {
         Serial.println("Ethernet link still DOWN: waiting for cable");
-        return;
-    }
-
-    if (!ethernetHasIp())
-    {
-        // QNEth does dhcp backsoff on long dhcp failure, its max is 20seconds
-        Serial.println("No IP assigned, waiting for dhcp retry via service loop");
         return;
     }
 
     if (!mqttUp())
     {
         mqttReconnect();
+    }
+    else
+    {
+        sendStatus();
     }
 }
 
@@ -125,23 +123,17 @@ void ConsoleRouter::mqttLoop()
     if (!ENABLE_ETHERNET_CONNECTION)
         return;
     Ethernet.loop();
+
     if (!ethernetUp())
     {
-        // Link down means we should invalidate the client
-        if (mqttUp())
-        {
-            mqttClient.disconnect();
-            ethClient.stop();
-        }
         return;
     }
 
-    if (!mqttUp())
-        return;
-
     mqttClient.loop();
-
-    handleMqttCommand();
+    if (mqttUp())
+    {
+        handleMqttCommand();
+    }
 }
 
 // === State Management ===
@@ -266,21 +258,25 @@ void ConsoleRouter::sendStatus()
 
 void ConsoleRouter::sendCmdAckRx(uint8_t cmd_id, bool success)
 {
-    if (success) {
-        publishAck("RX_OK",cmd_id);
+    if (success)
+    {
+        publishAck("RX_OK", cmd_id);
     }
-    else {
-        publishAck("RX_NOK",cmd_id);
+    else
+    {
+        publishAck("RX_NOK", cmd_id);
     }
 }
 
 void ConsoleRouter::sendCmdAckTx(uint8_t cmd_id, bool success)
 {
-    if (success) {
-        publishAck("TX_OK",cmd_id);
+    if (success)
+    {
+        publishAck("TX_OK", cmd_id);
     }
-    else {
-        publishAck("TX_NOK",cmd_id);
+    else
+    {
+        publishAck("TX_NOK", cmd_id);
     }
 }
 
@@ -294,24 +290,16 @@ void ConsoleRouter::getMac(uint8_t mac[6])
 
 // === Local accesable helper functions ===
 
-static bool ethernetLinkUp()
-{
-    return Ethernet.linkState();
-}
-
-static bool ethernetHasIp()
-{
-    IPAddress ip = Ethernet.localIP();
-    return !(ip[0] == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] == 0);
-}
-
 static bool ethernetUp()
 {
-    return ethernetLinkUp() && ethernetHasIp();
+    return Ethernet.linkStatus() == LinkON;
 }
 
 static bool mqttUp()
 {
+    Serial.print(millis());
+    Serial.print(" ");
+    Serial.println(mqttClient.state());
     return mqttClient.connected();
 }
 
@@ -363,11 +351,12 @@ void ConsoleRouter::publishRetained(const char *topic, const uint8_t *payload, u
     }
 }
 
-
 // == Handling logic for processing a command from mqtt ==
 
-void ConsoleRouter::handleMqttCommand(){
-    if (!takeMqttCmdLine()) return;
+void ConsoleRouter::handleMqttCommand()
+{
+    if (!takeMqttCmdLine())
+        return;
 
     // A full rocket queue means we need to discard and send TX NOT OK
     if (!GroundCommand::isGroundCommand(currentCommandLine) &&
@@ -375,14 +364,15 @@ void ConsoleRouter::handleMqttCommand(){
     {
         command_packet_extended cmd = {};
         commandParser->getNextRocketCommand(cmd);
-        sendCmdAckTx(cmd.data.base.data.command_id,false);
+        sendCmdAckTx(cmd.data.base.data.command_id, false);
     }
 
     commandParser->enqueueCommand(currentCommandLine);
     // Only send acks for rocket commands
     uint8_t id;
-    if (RocketCommand::tryParseCommandId(currentCommandLine,id)){
-        sendCmdAckRx(id,true);
+    if (RocketCommand::tryParseCommandId(currentCommandLine, id))
+    {
+        sendCmdAckRx(id, true);
     }
     // COULD figure out a way to tell the GSC received is invalid
 }
@@ -415,7 +405,6 @@ bool ConsoleRouter::takeMqttCmdLine()
     return has;
 }
 
-
 void ConsoleRouter::publishAck(const char *status, uint8_t cmdId)
 {
     if (!ethernetUp() || !mqttUp())
@@ -437,8 +426,6 @@ void ConsoleRouter::publishAck(const char *status, uint8_t cmdId)
 // == Reconnect and resend status to mqtt ==
 bool ConsoleRouter::mqttReconnect()
 {
-    if (!ethernetUp())
-        return false;
 
     IPAddress brokerIp;
     Serial.print("Resolving MQTT broker host: ");
@@ -469,7 +456,6 @@ bool ConsoleRouter::mqttReconnect()
     Serial.print("MQTT connection failed");
     return false;
 }
-
 
 // === Wrappers to support varios type templated prints ===
 

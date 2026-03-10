@@ -5,7 +5,7 @@
 using namespace qindesign::network;
 
 // Interval between etherent and mqtt reconnect attempts in micro seconds!
-inline constexpr int ETHERNET_RECONNECT_INTERVAL = 5 * 1000 * 1000;
+inline constexpr int ETHERNET_RECONNECT_INTERVAL = 1 * 1000 * 1000;
 
 inline constexpr int DHCP_IP_ASSIGN_TIMEOUT = 2000;
 inline constexpr int INITIAL_PHY_LINK_TIMEOUT = 2000;
