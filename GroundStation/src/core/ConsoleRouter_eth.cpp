@@ -123,15 +123,15 @@ void ConsoleRouter::mqttLoop()
     if (!ENABLE_ETHERNET_CONNECTION)
         return;
     Ethernet.loop();
-
+    
     if (!ethernetUp())
     {
         return;
     }
-
-    mqttClient.loop();
+    
     if (mqttUp())
     {
+        mqttClient.loop();
         handleMqttCommand();
     }
 }
@@ -297,9 +297,6 @@ static bool ethernetUp()
 
 static bool mqttUp()
 {
-    Serial.print(millis());
-    Serial.print(" ");
-    Serial.println(mqttClient.state());
     return mqttClient.connected();
 }
 

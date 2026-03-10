@@ -51,7 +51,7 @@ namespace MqttTopic {
                 "SystemB/Rocket/FlightComputer/telemetry",
                 "SystemB/Rocket/Radio/acks",
                 "SystemB/Rocket/FlightComputer/commands",
-                "radio-control-station-a",
+                "radio-control-station-b",
                 "SystemB/ControlStation/Radio/telemetry",
                 "SystemB/ControlStation/Radio/status",
                 "SystemB/ControlStation/Radio/detail",
