@@ -80,6 +80,9 @@ private:
 
     // Sets the mqtt topics and host name via role and band
     void applyRoleConfig(MqttTopic::Role role);
+    
+    // Sets the host name given the role
+    void setupHostName(MqttTopic::Role role);
 
     // Ethernet ISR to set ethernet reconnect check flag
     static void ethernetCheckISR();
@@ -109,8 +112,9 @@ private:
 
     // Holds a copy of the last command string we received
     command_line currentCommandLine = {0};
-
-    const char* deviceName_              = nullptr;
+    
+    char deviceNameBuf_[64];
+    const char* deviceName_              = deviceNameBuf_;
     
     const char* rocketTelemetryTopic_    = nullptr;
     const char* ackTopic_                = nullptr;

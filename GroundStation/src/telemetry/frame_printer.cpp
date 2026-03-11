@@ -18,6 +18,7 @@ const __FlashStringHelper* atomicTypeName(AtomicType at) {
     case AT_PROP_ATOMIC: return F("prop_atomic");
     case AT_FLIGHT_ATOMIC: return F("flight_atomic");
     case AT_RADIO_ATOMIC: return F("radio_atomic");
+    case AT_SD_ATOMIC: return F("sd_atomic");
     default: return F("unknown_atomic");
   }
 }
@@ -108,6 +109,15 @@ void printRadio_atomicAtomic(const radio_atomic_data* p) {
   Serial.println(F("}"));
 }
 
+// ---------------- sd_atomic ----------------
+void printSd_atomicAtomic(const sd_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("sd_atomic {"));
+  PRINT_FIELD(p, sd_card_file_open);
+  PRINT_FIELD(p, sd_card_deletion_armed);
+  Serial.println(F("}"));
+}
+
 void printAtomic(const FrameView& view, AtomicType at) {
   switch (at) {
     case AT_STATES_ATOMIC: {
@@ -128,6 +138,11 @@ void printAtomic(const FrameView& view, AtomicType at) {
     case AT_RADIO_ATOMIC: {
       const auto* p = view.atomicAs<radio_atomic_data>(AT_RADIO_ATOMIC);
       printRadio_atomicAtomic(p);
+      break;
+    }
+    case AT_SD_ATOMIC: {
+      const auto* p = view.atomicAs<sd_atomic_data>(AT_SD_ATOMIC);
+      printSd_atomicAtomic(p);
       break;
     }
     default: Serial.print(F("Unknown atomic type: ")); Serial.println(static_cast<int>(at)); break;

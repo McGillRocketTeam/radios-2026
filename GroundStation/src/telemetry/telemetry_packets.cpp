@@ -7,4 +7,5 @@ const uint16_t AT_SIZE[AT_TOTAL] = {
     /*1*/ sizeof(prop_atomic_data),
     /*2*/ sizeof(flight_atomic_data),
     /*3*/ sizeof(radio_atomic_data),
+    /*4*/ sizeof(sd_atomic_data),
 };

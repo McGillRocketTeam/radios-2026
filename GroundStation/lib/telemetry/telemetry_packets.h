@@ -9,6 +9,7 @@ enum AtomicType {
     AT_PROP_ATOMIC          = 1,  // bit 1
     AT_FLIGHT_ATOMIC        = 2,  // bit 2
     AT_RADIO_ATOMIC         = 3,  // bit 3
+    AT_SD_ATOMIC            = 4,  // bit 4
     AT_TOTAL                             // total count
 };
 
@@ -109,6 +110,18 @@ typedef union radio_atomic_packet {
     radio_atomic_data data;
     uint8_t bytes[sizeof(radio_atomic_data)];
 } radio_atomic_packet;
+
+// ---------- sd_atomic atomic ----------
+typedef struct __attribute__((__packed__)) sd_atomic_data
+{
+    bool sd_card_file_open : 1;
+    bool sd_card_deletion_armed : 1;
+} sd_atomic_data;
+
+typedef union sd_atomic_packet {
+    sd_atomic_data data;
+    uint8_t bytes[sizeof(sd_atomic_data)];
+} sd_atomic_packet;
 
 // ---------- Atomic Size Catalog (declaration) ----------
 extern const uint16_t AT_SIZE[AT_TOTAL];

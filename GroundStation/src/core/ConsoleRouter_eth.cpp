@@ -326,8 +326,7 @@ void ConsoleRouter::applyRoleConfig(MqttTopic::Role role)
         role_ = role;
     }
 
-    deviceName_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::NAME);
-    Ethernet.setHostname(deviceName_);
+    setupHostName(role);
 
     rocketTelemetryTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::FC_TELEMETRY);
     ackTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::ACKS);
@@ -339,6 +338,25 @@ void ConsoleRouter::applyRoleConfig(MqttTopic::Role role)
     debugTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::DEBUG);
     radioCommandTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::RADIO_COMMANDS);
 }
+
+void ConsoleRouter::setupHostName(MqttTopic::Role role) 
+{
+    const char* baseName = MqttTopic::topic(role, band_, MqttTopic::TopicKind::NAME);
+
+    uint8_t mac[6];
+    getMac(mac);
+
+    // Use only last 3 bytes to keep hostname shorter
+    snprintf(
+        deviceNameBuf_,
+        sizeof(deviceNameBuf_),
+        "%s-%02X%02X%02X",
+        baseName,
+        mac[3], mac[4], mac[5]
+    );
+
+    Ethernet.setHostname(deviceName_);
+} 
 
 // == Centralised publish stuff ==
 void ConsoleRouter::publish(const char *topic, const uint8_t *payload, unsigned int length)
