@@ -22,6 +22,7 @@ static void fillStates(states_atomic_data &states);
 static void fillProp(prop_atomic_data &prop);
 static void fillFlight(flight_atomic_data &flight);
 static void fillRadio(radio_atomic_data &radio);
+static void fillSdCard(sd_atomic_data &sdcard);
 
 static bool buildTelemetryFrame(uint8_t *frameBuf,
                                 size_t frameCap,
@@ -180,11 +181,13 @@ static bool buildTelemetryFrame(uint8_t *frameBuf,
     prop_atomic_data prop{};
     flight_atomic_data flight{};
     radio_atomic_data radio{};
+    sd_atomic_data sdcard{};
 
     fillStates(states);
     fillProp(prop);
     fillFlight(flight);
     fillRadio(radio);
+    fillSdCard(sdcard);
 
     FrameBuilder fb(frameBuf, frameCap);
 
@@ -193,6 +196,7 @@ static bool buildTelemetryFrame(uint8_t *frameBuf,
     ok &= fb.addAtomic((int)AT_PROP_ATOMIC, &prop, sizeof(prop));
     ok &= fb.addAtomic((int)AT_FLIGHT_ATOMIC, &flight, sizeof(flight));
     ok &= fb.addAtomic((int)AT_RADIO_ATOMIC, &radio, sizeof(radio));
+    ok &= fb.addAtomic((int)AT_SD_ATOMIC,&sdcard,sizeof(sdcard));
     if (!ok)
         return false;
 
@@ -292,6 +296,12 @@ static void fillRadio(radio_atomic_data &radio)
     strncpy(radio.call_sign, "VA2JWL", sizeof(radio.call_sign));
 }
 
+static void fillSdCard(sd_atomic_data &sdcard){
+    sdcard = {};
+    sdcard.sd_card_file_open = false;
+    sdcard.sd_card_deletion_armed = false;
+}
+
 static bool setFlagsFromState(FCState state,
                               uint8_t &flags,
                               uint8_t &ack_id)
@@ -322,6 +332,7 @@ static bool setFlagsFromState(FCState state,
     }
     return true;
 }
+
 static void handleCommandPacket(const uint8_t* buffer,
                                 size_t packetLength,
                                 uint8_t& ack_number)

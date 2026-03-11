@@ -33,11 +33,11 @@ namespace ParamStore
             return;
 
         pinMode(FREQ_PIN, INPUT);
-        delay(500);
+        delay(800);
         // TO DO fix this analog read once the RF_SW pin is fixed
         int v = analogRead(FREQ_PIN);
 
-        if (v > 100)
+        if (v > 50)
         {
             g_band = RadioBand::B903;
             g_params = defaultsFor903();

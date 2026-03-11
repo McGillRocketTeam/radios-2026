@@ -112,10 +112,6 @@ void ConsoleRouter::handleConsoleReconnect()
     {
         mqttReconnect();
     }
-    else
-    {
-        sendStatus();
-    }
 }
 
 void ConsoleRouter::mqttLoop()
@@ -129,9 +125,9 @@ void ConsoleRouter::mqttLoop()
         return;
     }
     
+    mqttClient.loop();
     if (mqttUp())
     {
-        mqttClient.loop();
         handleMqttCommand();
     }
 }
