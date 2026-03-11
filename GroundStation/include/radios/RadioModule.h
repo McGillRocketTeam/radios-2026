@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ArduinoQueue.h>
 #include <RadioLib.h>
 
 #include "ConsoleRouter.h"

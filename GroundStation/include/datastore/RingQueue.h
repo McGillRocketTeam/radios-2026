@@ -44,6 +44,12 @@ public:
         return true;
     }
 
+    void clear() {
+        head_ = 0;
+        tail_ = 0;
+        count_ = 0;
+    }
+
 private:
     T buffer_[Capacity];
     uint16_t head_;
