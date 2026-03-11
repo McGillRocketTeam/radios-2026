@@ -125,9 +125,9 @@ void ConsoleRouter::mqttLoop()
         return;
     }
     
-    mqttClient.loop();
     if (mqttUp())
     {
+        mqttClient.loop();
         handleMqttCommand();
     }
 }

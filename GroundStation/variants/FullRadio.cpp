@@ -22,7 +22,7 @@ void setup() {
 }
 
 void loop() {
-    delay(20);
+    delay(1);
 
     Console.handleConsoleReconnect();
     Console.mqttLoop();
