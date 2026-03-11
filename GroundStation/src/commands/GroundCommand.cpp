@@ -142,6 +142,8 @@ GroundCommand::Action GroundCommand::parseActionToken(const command_line &cmd,
         return Action::CatRadio;
     if (line_util::span_ieq_lit(cmd, start, end, "catparser"))
         return Action::CatParser;
+    if (line_util::span_ieq_lit(cmd, start, end, "clear"))
+        return Action::Clear;
     return Action::Unknown;
 }
 

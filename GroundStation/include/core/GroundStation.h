@@ -125,6 +125,8 @@ private:
      */
     void setVerbosePacket(bool state);
 
+    void clearRocketCommandQueue();
+
     /// Pointer to the radio module
     std::unique_ptr<RadioModule> radioModule;
 

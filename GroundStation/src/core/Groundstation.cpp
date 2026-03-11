@@ -18,10 +18,12 @@ namespace
 {
     bool parseBoolean(const float value)
     {
-        if (value == 0) {
+        if (value == 0)
+        {
             return false;
         }
-        else {
+        else
+        {
             return true;
         }
     }
@@ -74,6 +76,12 @@ void GroundStation::setCanTXFromCTS(bool enable)
 void GroundStation::setVerbosePacket(bool state)
 {
     canPrintTelemetryVerbose = state;
+}
+
+void GroundStation::clearRocketCommandQueue()
+{
+    commandParser->clearRocketQueue();
+    Console.sendRadioCmdAck();
 }
 
 void GroundStation::getQueueStatus()
@@ -137,7 +145,7 @@ void GroundStation::raiseCommandParserFlag()
 
 void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
 {
-    
+
     // Switch case on the possible actions
     switch (command.action)
     {
@@ -155,21 +163,21 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
 
     case GroundCommand::Action::Cr:
     {
-        uint8_t cr = (uint8_t) floorf(command.arg);
+        uint8_t cr = (uint8_t)floorf(command.arg);
         radioModule->setCodingRate(cr);
         break;
     }
 
     case GroundCommand::Action::Sf:
     {
-        uint8_t sf = (uint8_t) floorf(command.arg);
+        uint8_t sf = (uint8_t)floorf(command.arg);
         radioModule->setSpreadingFactor(sf);
         break;
     }
 
     case GroundCommand::Action::Pow:
     {
-        int8_t pow = (int8_t) floorf(command.arg);
+        int8_t pow = (int8_t)floorf(command.arg);
         radioModule->setPowerOutput(pow);
         break;
     }
@@ -204,13 +212,19 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
         setCanTXFromCTS(b);
         char buf[64];
         snprintf(buf, sizeof(buf), "setting tx from cts b=%s", b ? "true" : "false");
-        LOGGING(CAT_GS, DEBUG,buf);
+        LOGGING(CAT_GS, DEBUG, buf);
         break;
     }
 
     case GroundCommand::Action::Verbose:
     {
         setVerbosePacket(parseBoolean(command.arg));
+        break;
+    }
+
+    case GroundCommand::Action::Clear:
+    {
+        clearRocketCommandQueue();
         break;
     }
 
@@ -360,10 +374,10 @@ void GroundStation::printVerboseTelemetryPacket()
 void GroundStation::handleRocketCommand()
 {
     command_packet_extended rocketCommand = {0};
-    // Populate with default nop 
+    // Populate with default nop
     rocketCommand.data.base.data.command_id = 1;
     std::strncpy(
-        rocketCommand.data.base.data.command_string, 
+        rocketCommand.data.base.data.command_string,
         "nop",
         sizeof(rocketCommand.data.base.data.command_string) - 1);
 
@@ -383,27 +397,28 @@ void GroundStation::sendRocketCommand(command_packet_extended &command)
 
     char buf[128] = {0};
     size_t length;
-    if (command.data.argc == 0){
-        //Sending the shortedned header only
+    if (command.data.argc == 0)
+    {
+        // Sending the shortedned header only
         length = sizeof(command.data.base.bytes);
         radioModule->transmitBlocking((uint8_t *)command.data.base.bytes, length);
     }
-    else {
-        //Sending the full extended
+    else
+    {
+        // Sending the full extended
         length = sizeof(command.bytes);
         radioModule->transmitBlocking((uint8_t *)command.bytes, length);
     }
 
     snprintf(buf, sizeof(buf), "TX cmd=%s id=%u size=%u ",
-        command.data.base.data.command_string,
-        (unsigned)command.data.base.data.command_id,
-        (unsigned)length);
+             command.data.base.data.command_string,
+             (unsigned)command.data.base.data.command_id,
+             (unsigned)length);
 
     LOGGING(CAT_GS, INFO, buf);
 
     if (strcasecmp(command.data.base.data.command_string, "nop") != 0)
     {
-        Console.sendCmdAckTx(command.data.base.data.command_id,true);
+        Console.sendCmdAckTx(command.data.base.data.command_id, true);
     }
 }
-

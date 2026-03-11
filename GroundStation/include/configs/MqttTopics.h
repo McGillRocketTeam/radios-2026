@@ -26,6 +26,7 @@ namespace MqttTopic {
         STATUS, // enum: ("OK", "FAILED", "UNAVAIL", "DISABLED")
         DETAIL, // string: (equivalent to long_status prior)
         DEBUG,
+        RADIO_COMMANDS,
         COUNT
     };
 
@@ -45,6 +46,7 @@ namespace MqttTopic {
                 "SystemA/ControlStation/Radio/status",
                 "SystemA/ControlStation/Radio/detail",
                 "SystemA/ControlStation/Radio/debug",
+                "SystemA/ControlStation/Radio/commands",
             },
             // Band::B
             {
@@ -56,6 +58,7 @@ namespace MqttTopic {
                 "SystemB/ControlStation/Radio/status",
                 "SystemB/ControlStation/Radio/detail",
                 "SystemB/ControlStation/Radio/debug",
+                "SystemB/ControlStation/Radio/commands",
             },
         },
 
@@ -71,17 +74,19 @@ namespace MqttTopic {
                 "SystemA/Pad/Radio/status",
                 "SystemA/Pad/Radio/detail",
                 "SystemA/Pad/Radio/debug",
+                "SystemB/Pad/Radio/commands",
             },
             // Band::B
             {
-                "SystemA/Rocket/FlightComputer/telemetry",
-                "SystemA/Rocket/Radio/acks",
-                "SystemA/Rocket/FlightComputer/commands",
+                "SystemB/Rocket/FlightComputer/telemetry",
+                "SystemB/Rocket/Radio/acks",
+                "SystemB/Rocket/FlightComputer/commands",
                 "radio-control-station-a",
-                "SystemA/Pad/Radio/telemetry",
-                "SystemA/Pad/Radio/status",
-                "SystemA/Pad/Radio/detail",
-                "SystemA/Pad/Radio/debug",
+                "SystemB/Pad/Radio/telemetry",
+                "SystemB/Pad/Radio/status",
+                "SystemB/Pad/Radio/detail",
+                "SystemB/Pad/Radio/debug",
+                "SystemB/Pad/Radio/commands",
             },
         }
     };

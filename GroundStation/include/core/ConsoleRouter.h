@@ -55,6 +55,8 @@ public:
     // Sending ack after tx of cmd from CTS to GSC
     void sendCmdAckTx(uint8_t cmd_id, bool success);
 
+    void sendRadioCmdAck();
+
     // Print overloads via templating
     template <typename T> void print(const T& v)   { _printString(String(v), false); }
     template <typename T> void println(const T& v) { _printString(String(v), true ); }
@@ -118,6 +120,7 @@ private:
     const char* statusTopic_             = nullptr;
     const char* detailTopic_             = nullptr;
     const char* debugTopic_              = nullptr;
+    const char* radioCommandTopic_       = nullptr;
     
     // Some safe defaults, but band and role needs to be set dynamically on startup
     MqttTopic::Band band_ = MqttTopic::Band::A;

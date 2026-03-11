@@ -42,6 +42,8 @@ public:
     bool enqueueCommand(const command_line &line);
 
     bool isRocketQueueFull();
+    // Emptoes the rocket queue
+    void clearRocketQueue();
 
 private:
     RingQueue<GroundCommand::Cmd, MAX_QUEUE_SIZE> groundCommandQueue;

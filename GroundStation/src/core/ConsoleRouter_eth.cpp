@@ -280,6 +280,20 @@ void ConsoleRouter::sendCmdAckTx(uint8_t cmd_id, bool success)
     }
 }
 
+void ConsoleRouter::sendRadioCmdAck(){
+    uint8_t jsonBuffer[64];
+
+    // status is a string -> must be JSON-escaped if it can contain quotes/newlines/backslashes.
+    int n = snprintf((char *)jsonBuffer,
+                    sizeof(jsonBuffer),
+                    "{\"status\":\"ACK_OK\"}");
+
+    if (n <= 0 || (size_t)n >= sizeof(jsonBuffer))
+        return;
+
+    this->publish(ackTopic_, jsonBuffer,(size_t)n);
+}
+
 // == Getters Setters ==
 void ConsoleRouter::getMac(uint8_t mac[6])
 {
@@ -327,6 +341,7 @@ void ConsoleRouter::applyRoleConfig(MqttTopic::Role role)
     statusTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::STATUS);
     detailTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::DETAIL);
     debugTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::DEBUG);
+    radioCommandTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::RADIO_COMMANDS);
 }
 
 // == Centralised publish stuff ==
@@ -446,6 +461,7 @@ bool ConsoleRouter::mqttReconnect()
 
         sendStatus();
         mqttClient.subscribe(commandTopic_, 1);
+        mqttClient.subscribe(radioCommandTopic_,1);
 
         return true;
     }

@@ -25,6 +25,7 @@ namespace GroundCommand
         CatGS,
         CatRadio,
         CatParser,
+        Clear,
         Unknown
     };
 

@@ -77,11 +77,14 @@ bool CommandParser::getNextRocketCommand(command_packet_extended &outPkt)
 
 bool CommandParser::enqueueCommand(const command_line &line)
 {
+    LOGGING(CAT_PARSER, INFO, "enqueue called ");
+    LOGGING(CAT_PARSER, INFO, line.buf);
     if (GroundCommand::isGroundCommand(line))
     {
         if (groundCommandQueue.isFull()) {
             LOGGING(CAT_PARSER, INFO, "ground command queue full, discarding old, enqueuing new");
         }
+        
         GroundCommand::Cmd groundCommand = GroundCommand::parseGroundCmd(line);
         if (groundCommand.action != GroundCommand::Action::Unknown)
         {
@@ -113,6 +116,15 @@ bool CommandParser::enqueueCommand(const command_line &line)
 
 bool CommandParser::isRocketQueueFull(){
     return rocketCommandQueue.isFull();
+}
+
+void CommandParser::clearRocketQueue()
+{
+    printRocketQueueStatus();
+    command_packet_extended tmp;
+    
+    while (rocketCommandQueue.dequeue(tmp)) {}
+    printRocketQueueStatus();
 }
 // === Public debug functions ===
 
