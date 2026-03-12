@@ -16,10 +16,10 @@ RadioModule::RadioModule()
       frequency(ParamStore::getDefaultBandFreq())
 {
     // Default initiliased pins need to be set in the right mode
-    pinMode(rxLedPin_,OUTPUT);
-    pinMode(txLedPin_,OUTPUT);
+    pinMode(rxLedPin_, OUTPUT);
+    pinMode(txLedPin_, OUTPUT);
     state_ = radio_.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
-                        TCXO_VOLTAGE, USE_ONLY_LDO);
+                          TCXO_VOLTAGE, USE_ONLY_LDO);
     while (!retryRadioInit())
     {
         Serial.println("radio init failure");
@@ -58,46 +58,107 @@ bool RadioModule::retryRadioInit()
     delay(250);
     frequency = ParamStore::getDefaultBandFreq();
     state_ = radio_.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
-                        TCXO_VOLTAGE, USE_ONLY_LDO);
+                          TCXO_VOLTAGE, USE_ONLY_LDO);
     return false;
 }
 
 // === MAIN functions ===
 
-bool RadioModule::transmitBlocking(const uint8_t* data, size_t size)
+bool RadioModule::transmitBlocking(const uint8_t *data, size_t size)
 {
     radioBusy = true;
 
+    // clear previous interrupt latch
     noInterrupts();
     interruptReceived = false;
     interrupts();
 
+    // clear radio IRQ flags
     state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-    verifyRadioState("clearIrqFlags before TX");
+    if (!verifyRadioState("clearIrqFlags before TX"))
+    {
+        radioBusy = false;
+        return false;
+    }
 
-    state_ = radio_.transmit(data, size);
-    bool txOk = verifyRadioState("transmit");
+    // start transmit (non-blocking)
+    state_ = radio_.startTransmit(data, size);
+    if (!verifyRadioState("startTransmit"))
+    {
+        radioBusy = false;
+        return false;
+    }
 
-    state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-    verifyRadioState("clearIrqFlags after TX");
+    // wait for ISR to fire
+    uint32_t start = millis();
 
+    while (!interruptReceived)
+    {
+
+        if (millis() - start > 200)
+        {
+
+            LOGGING(CAT_RADIO, CRIT, "TX wait timeout");
+
+            // wait for chip to become ready for SPI commands
+            while (digitalRead(BUSY_PIN))
+                ;
+
+            // force radio into known state
+            state_ = radio_.standby();
+            verifyRadioState("standby after TX timeout");
+
+            // clear stale interrupts
+            state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+            verifyRadioState("clearIrqFlags after TX timeout");
+
+            // restart RX
+            state_ = radio_.startReceive();
+            verifyRadioState("startReceive after TX timeout");
+
+            radioBusy = false;
+            return false;
+        }
+    }
+
+    // consume latch
+    noInterrupts();
+    interruptReceived = false;
+    interrupts();
+
+    // read IRQ flags
+    uint32_t flags = radio_.getIrqFlags();
+
+    const uint32_t TX_DONE = (1UL << RADIOLIB_IRQ_TX_DONE);
+
+    if ((flags & TX_DONE) == 0)
+    {
+        LOGGING(CAT_RADIO, CRIT, "TX interrupt but TX_DONE not set");
+        radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+        radio_.startReceive();
+        radioBusy = false;
+        return false;
+    }
+
+    // clear flags
+    radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+
+    // switch back to RX
     state_ = radio_.startReceive();
-    bool rxOk = verifyRadioState("startReceive after TX");
+    verifyRadioState("startReceive after TX");
+
+    toggleLedOnOk(txLedPin_);
 
     radioBusy = false;
 
-    if (txOk) {
-        toggleLedOnOk(txLedPin_);
-    }
-
-    return txOk && rxOk;
+    return true;
 }
-
 
 bool RadioModule::pollValidPacketRx()
 {
-    if (radioBusy) {
-        LOGGING(CAT_GS,CRIT,"Trying to read receive while busy TX this should never happen");
+    if (radioBusy)
+    {
+        LOGGING(CAT_GS, CRIT, "Trying to read receive while busy TX this should never happen");
         delay(10);
         return false;
     }
@@ -130,16 +191,15 @@ bool RadioModule::pollValidPacketRx()
     {
         if (flags & CRC_ERR)
         {
-            LOGGING(CAT_RADIO,CRIT, String("RX CRC error, RSSI: ") + String(getRSSI(), 2) +
-                              ", SNR: " + String(getSNR(), 2));
+            LOGGING(CAT_RADIO, CRIT, String("RX CRC error, RSSI: ") + String(getRSSI(), 2) + ", SNR: " + String(getSNR(), 2));
         }
         else if (flags & HDR_ERR)
         {
-            LOGGING(CAT_RADIO,CRIT, "RX header error");
+            LOGGING(CAT_RADIO, CRIT, "RX header error");
         }
         else
         {
-            LOGGING(CAT_RADIO,DEBUG, "RX timeout");
+            LOGGING(CAT_RADIO, DEBUG, "RX timeout");
         }
 
         radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
@@ -151,7 +211,7 @@ bool RadioModule::pollValidPacketRx()
     const size_t n = radio_.getPacketLength();
     if (n == 0 || n > sizeof(buffer))
     {
-        LOGGING(CAT_RADIO,CRIT, String("RX length invalid: ") + String((int)n));
+        LOGGING(CAT_RADIO, CRIT, String("RX length invalid: ") + String((int)n));
         state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
         state_ = radio_.startReceive();
         return false;
@@ -247,11 +307,14 @@ float RadioModule::getRSSI()
     return radio_.getRSSI();
 }
 
-uint8_t RadioModule::getRawRSSI(){
+uint8_t RadioModule::getRawRSSI()
+{
     float f = radio_.getRSSI() * -2.0;
     // clamp rogue values, to match the register size
-    if (f < 0.0f) f = 0.0f;
-    if (f > 255.0f) f = 255.0f;
+    if (f < 0.0f)
+        f = 0.0f;
+    if (f > 255.0f)
+        f = 255.0f;
 
     return static_cast<uint8_t>(f);
 }
@@ -261,32 +324,40 @@ float RadioModule::getSNR()
     return radio_.getSNR();
 }
 
-int8_t RadioModule::getRawSNR(){
+int8_t RadioModule::getRawSNR()
+{
     float f = radio_.getRSSI() * 4.0;
 
     // clamp rogue values, to match the register size
-    if (f < -125.0f) f = -125.0f;
-    if (f > 125.0f) f = 125.0f;
+    if (f < -125.0f)
+        f = -125.0f;
+    if (f > 125.0f)
+        f = 125.0f;
 
     return static_cast<int8_t>(f);
 }
 
 // === General Helper ===
 
-void RadioModule::toggleLedOnOk(int pin){
-    if (!RadioStatus::ok(state_)){
+void RadioModule::toggleLedOnOk(int pin)
+{
+    if (!RadioStatus::ok(state_))
+    {
         return;
     }
-    if (pin == rxLedPin_){
+    if (pin == rxLedPin_)
+    {
         rxLedState_ = !rxLedState_;
-        digitalWrite(pin,rxLedState_);
+        digitalWrite(pin, rxLedState_);
     }
-    else if (pin == txLedPin_){
+    else if (pin == txLedPin_)
+    {
         txLedState_ = !txLedState_;
-        digitalWrite(pin,txLedState_);
+        digitalWrite(pin, txLedState_);
     }
-    else{
-        LOGGING(CAT_RADIO,INFO, "Toggling a LED that is not set in the radio module");
+    else
+    {
+        LOGGING(CAT_RADIO, INFO, "Toggling a LED that is not set in the radio module");
     }
 }
 
@@ -294,7 +365,7 @@ bool RadioModule::verifyRadioState(String message)
 {
     if (RadioStatus::ok(state_))
     {
-        LOGGING(CAT_RADIO,DEBUG, message + " Success!");
+        LOGGING(CAT_RADIO, DEBUG, message + " Success!");
         return true;
     }
     else if (RadioStatus::crcErr(state_))
@@ -306,11 +377,11 @@ bool RadioModule::verifyRadioState(String message)
         snprintf(buf, sizeof(buf),
                  "CRC error, RSSI: %.2f, SNR: %.2f",
                  getRSSI(), getSNR());
-        LOGGING(CAT_RADIO,CRIT, buf);
+        LOGGING(CAT_RADIO, CRIT, buf);
         return false;
     }
 
-    LOGGING(CAT_RADIO,CRIT, message + " Failure. Error code: " + String(state_));
+    LOGGING(CAT_RADIO, CRIT, message + " Failure. Error code: " + String(state_));
     return false;
 }
 

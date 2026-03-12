@@ -72,6 +72,11 @@ RadioChipStatus RadioChip::transmit(const uint8_t *data, size_t len)
     return _radio->transmit(data, len);
 }
 
+RadioChipStatus RadioChip::startTransmit(const uint8_t *data, size_t len)
+{
+    return _radio->startTransmit(data, len);
+}
+
 RadioChipStatus RadioChip::startReceive()
 {
     return _radio->startReceive();
