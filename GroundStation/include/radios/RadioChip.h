@@ -66,6 +66,8 @@ public:
      */
     RadioChipStatus transmit(const uint8_t *data, size_t len);
 
+    RadioChipStatus startTransmit(const uint8_t *data, size_t len);
+
     /**
      * @brief Start receiving packets asynchronously.
      * @return RadioLib status code.
