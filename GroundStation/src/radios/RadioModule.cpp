@@ -71,18 +71,26 @@ bool RadioModule::transmitBlocking(const uint8_t* data, size_t size)
     noInterrupts();
     interruptReceived = false;
     interrupts();
-    radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+
+    state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    verifyRadioState("clearIrqFlags before TX");
 
     state_ = radio_.transmit(data, size);
-    bool ok = RadioStatus::ok(state_);
+    bool txOk = verifyRadioState("transmit");
 
-    radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
-    radio_.startReceive();
+    state_ = radio_.clearIrqFlags(RADIOLIB_SX126X_IRQ_ALL);
+    verifyRadioState("clearIrqFlags after TX");
+
+    state_ = radio_.startReceive();
+    bool rxOk = verifyRadioState("startReceive after TX");
 
     radioBusy = false;
-    toggleLedOnOk(txLedPin_);
 
-    return ok;
+    if (txOk) {
+        toggleLedOnOk(txLedPin_);
+    }
+
+    return txOk && rxOk;
 }
 
 
