@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand.
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-03-19 12:10
 #include "telemetry_generator.h"
 
 #include <cstring>
@@ -11,78 +11,78 @@ static void fillStatesAtomic(states_atomic_data& x)
 {
     x = {};
     x.mov_hall_state = false;
-    x.fdov_armed_SW = false;
+    x.fdov_armed_SW = true;
     x.fdov_armed_HW = false;
-    x.fdov_energized_SW = false;
+    x.fdov_energized_SW = true;
     x.fdov_energizedGate_HW = false;
-    x.fdov_energizedCurrent_HW = false;
+    x.fdov_energizedCurrent_HW = true;
     x.fdov_continuity_HW = false;
-    x.mov_armed_SW = false;
+    x.mov_armed_SW = true;
     x.mov_armed_HW = false;
-    x.mov_energized_SW = false;
+    x.mov_energized_SW = true;
     x.mov_energizedGate_HW = false;
-    x.mov_energizedCurrent_HW = false;
+    x.mov_energizedCurrent_HW = true;
     x.mov_continuity_HW = false;
-    x.drogue_armed_SW = false;
+    x.drogue_armed_SW = true;
     x.drogue_armed_HW = false;
-    x.drogue_energized_SW = false;
+    x.drogue_energized_SW = true;
     x.drogue_energizedGate_HW = false;
-    x.drogue_energizedCurrent_HW = false;
+    x.drogue_energizedCurrent_HW = true;
     x.drogue_continuity_HW = false;
-    x.main_armed_SW = false;
+    x.main_armed_SW = true;
     x.main_armed_HW = false;
-    x.main_energized_SW = false;
+    x.main_energized_SW = true;
     x.main_energizedGate_HW = false;
-    x.main_energizedCurrent_HW = false;
+    x.main_energizedCurrent_HW = true;
     x.main_continuity_HW = false;
-    x.prop_energized_electric = false;
+    x.prop_energized_electric = true;
     x.vent_armed_SW = false;
-    x.vent_armed_HW = false;
+    x.vent_armed_HW = true;
     x.vent_energized_SW = false;
-    x.vent_energizedGate_HW = false;
+    x.vent_energizedGate_HW = true;
     x.vent_energizedCurrent_HW = false;
-    x.vent_continuity_HW = false;
+    x.vent_continuity_HW = true;
 }
 
 static void fillPropAtomic(prop_atomic_data& x)
 {
     x = {};
     x.cc_pressure = 0;
-    x.tank_pressure = 0;
-    x.tank_temp = 0;
+    x.tank_pressure = 1;
+    x.tank_temp = 2;
     x.vent_temp = 0;
 }
 
 static void fillFlightAtomic(flight_atomic_data& x)
 {
     x = {};
-    x.flight_stage = 0;
+    x.flight_stage = 1;
     x.barometer_altitude_from_pad = 0.0f;
-    x.barometer_altitude_from_sea_level = 0.0f;
-    x.fc_pressure = 0.0f;
-    x.apogee_from_ground = 0.0f;
+    x.barometer_altitude_from_sea_level = 0.1f;
+    x.fc_pressure = 0.2f;
+    x.apogee_from_ground = 0.3f;
     x.fc_temp = 0;
-    x.gps_latitude = 0.0f;
-    x.gps_longitude = 0.0f;
-    x.gps_altitude = 0.0f;
-    x.gps_time_last_update = 0.0f;
-    x.vertical_speed = 0.0f;
-    x.acceleration_x = 0;
-    x.acceleration_y = 0;
-    x.acceleration_z = 0;
-    x.gyro_rate_x = 0;
-    x.gyro_rate_y = 0;
-    x.gyro_rate_z = 0;
-    x.fc_rssi = 0;
+    x.gps_latitude = 0.4f;
+    x.gps_longitude = 0.5f;
+    x.gps_altitude = 0.6f;
+    x.gps_time_last_update = 0.7f;
+    x.vertical_speed = 0.8f;
+    x.acceleration_x = 1;
+    x.acceleration_y = 2;
+    x.acceleration_z = 3;
+    x.gyro_rate_x = 4;
+    x.gyro_rate_y = 5;
+    x.gyro_rate_z = 6;
+    x.fc_rssi = 2;
     x.fc_snr = 0;
-    x.battery_voltage = 0;
-    x.battery_current_draw = 0;
+    x.battery_voltage = 3;
+    x.battery_current_draw = 7;
 }
 
 static void fillRadioAtomic(radio_atomic_data& x)
 {
     x = {};
-    std::strncpy(x.call_sign, "", sizeof(x.call_sign));
+    std::strncpy(x.call_sign, "str0", sizeof(x.call_sign));
     x.call_sign[sizeof(x.call_sign) - 1] = '\0';
 }
 
@@ -90,7 +90,7 @@ static void fillSdAtomic(sd_atomic_data& x)
 {
     x = {};
     x.sd_card_file_open = false;
-    x.sd_card_deletion_armed = false;
+    x.sd_card_deletion_armed = true;
 }
 
 bool buildTelemetryFrame(uint8_t* frameBuf,
