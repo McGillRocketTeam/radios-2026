@@ -9,7 +9,7 @@
 #include "PinLayout.h"
 #include "RocketCommand.h"
 
-#if TEENSY == 41
+#ifdef GS_ETHERNET_ENABLE
 #include <EthernetConfig.h>
 #include <PubSubClient.h>
 

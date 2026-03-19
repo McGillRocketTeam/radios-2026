@@ -94,7 +94,7 @@ bool RadioModule::transmitBlocking(const uint8_t *data, size_t size)
 
     while (!interruptReceived)
     {
-
+        // TODO we should calculate the timeout threshold based on toa
         if (millis() - start > 200)
         {
 
@@ -115,7 +115,8 @@ bool RadioModule::transmitBlocking(const uint8_t *data, size_t size)
             // restart RX
             state_ = radio_.startReceive();
             verifyRadioState("startReceive after TX timeout");
-
+            // TODO some sort of ultimiate fail safe if startReceive dosnt work
+            // Probably a hard reset of the radio,and then a hard restart of the system
             radioBusy = false;
             return false;
         }

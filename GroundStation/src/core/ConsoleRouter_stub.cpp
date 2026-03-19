@@ -2,7 +2,7 @@
 #include "Config.h"
 #include "MqttTopics.h"
 
-#if TEENSY != 41
+#ifndef GS_ETHERNET_ENABLE
 
 void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 {

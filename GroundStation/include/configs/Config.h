@@ -11,6 +11,8 @@ constexpr int GS_SERIAL_BAUD_RATE = 115200;
 constexpr bool ENABLE_RADIO_TX = true;
 
 // Controls whether ethernet stuff will be allowed
+// TODO this should be controlled via a compile time flag
+// Set according the running mode of the GS_ variants
 #if TEENSY == 41
 constexpr bool ENABLE_ETHERNET_CONNECTION = true;
 #else

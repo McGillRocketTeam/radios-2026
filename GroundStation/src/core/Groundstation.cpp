@@ -338,6 +338,7 @@ void GroundStation::printVerboseTelemetryPacket()
     LOGGING(CAT_ASTRA_DEBUG, INFO, buf);
 
     // Special category for logging range test info in csv form
+    // TODO use the compiile time flags to gate the range test logs
     if (LoggerGS::getInstance().getCategoryMask() & CAT_RANGETEST)
     {
         flight_atomic_data flight{};

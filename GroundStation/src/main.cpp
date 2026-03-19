@@ -1,34 +1,14 @@
 #include <Arduino.h>
+#include "VariantFactory.h"
 
-#include <cassert>
+static IVariant& variant = getVariant();
 
-#include "Config.h"
-#include "CommandParser.h"
-#include "ConsoleRouter.h"
-#include "MqttTopics.h"
-#include "GroundStation.h"
-
-// Variant for full ground station radio operation
-void setup() {
-    auto& cmd = CommandParser::getInstance();
-
-    Console.begin(MqttTopic::Role::CS,cmd);
-
-    auto& gs = GroundStation::getInstance();
-    gs.initialise(cmd);
-    gs.setCanTXFromCTS(true);
-
+void setup()
+{
+    variant.setup();
 }
 
-void loop() {
-    delay(1);
-
-    Console.handleConsoleReconnect();
-    Console.mqttLoop();
-
-    auto& gs = GroundStation::getInstance();
-
-    gs.handleCommandParserUpdate();
-    gs.handleGroundCommand();
-    gs.handleReceivedPacket();
+void loop()
+{
+    variant.loop();
 }
