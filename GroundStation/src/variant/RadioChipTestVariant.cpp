@@ -38,57 +38,71 @@ void RadioChipTestVariant::setup()
     SX1262 probe1262(&mod);
     SX1268 probe1268(&mod);
 
-    // Try starting it as a 900 MHz SX1262
-    int state1262 = probe1262.begin(FREQUENCY_903, BANDWIDTH_USED, SPREADING_FACTOR_USED, CODING_RATE_USED, SYNC_WORD, POWER_OUTPUT, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
-    probe1262.standby();
-
-    // Try starting it as a 400 MHz SX1268
-    int state1268 = probe1268.begin(FREQUENCY_435, BANDWIDTH_USED, SPREADING_FACTOR_USED, CODING_RATE_USED, SYNC_WORD, POWER_OUTPUT, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
-    probe1268.standby();
-
-    // Checking what chip we are actually working with
-    bool chip_is_1262 = (state1262 == RADIOLIB_ERR_NONE);
-    bool chip_is_1268 = (state1268 == RADIOLIB_ERR_NONE);
-
-    if (chip_is_1262 && chip_is_1268) {
-        Serial.println("WARNING: Both initializations succeeded. Hardware might be ambiguous or bypassing hardware checks.");
-    } else if (!chip_is_1262 && !chip_is_1268) {
-        Serial.println("FATAL: Both initializations failed. The SPI connection is likely broken or the chip is dead.");
-    } else {
-        bool actual_is_903 = chip_is_1262;
-
-        Serial.println("Chip deduced: " + String(actual_is_903 ? "SX1262" : "SX1268"));
-        
-        if (actual_is_903 == is903_pin) {
-            Serial.println("Frequency Test: SUCCESS. The chip matches the configuration of FREQ_PIN.");
-        } else {
-            Serial.println("Frequency Test: FAILURE. The chip does NOT match the configuration of FREQ_PIN.");
-            Serial.println("Aborting test...");
-            return;
+    int chip_state;
+    // We strictly use the pin to decide which chip to test
+    if (is903_pin) {
+        Serial.println("FREQ_PIN says 900. Attempting to initialize as 900 MHz (SX1262)...");
+        chip_state = probe1262.begin(FREQUENCY_903, BANDWIDTH_USED, SPREADING_FACTOR_USED, CODING_RATE_USED, SYNC_WORD, POWER_OUTPUT, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
+        Serial.print("SX1262 State: ");
+        Serial.println(chip_state);
+        if (chip_state == RADIOLIB_ERR_NONE) {
+            probe1262.standby();
         }
+    } else {
+        Serial.println("FREQ_PIN says 400. Attempting to initialize as 433 MHz (SX1268)...");
+        chip_state = probe1268.begin(FREQUENCY_435, BANDWIDTH_USED, SPREADING_FACTOR_USED, CODING_RATE_USED, SYNC_WORD, POWER_OUTPUT, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
+        Serial.print("SX1268 State: ");
+        Serial.println(chip_state);
+        probe1268.standby();
+    }
+
+    if (chip_state != RADIOLIB_ERR_NONE) {
+        Serial.print("FATAL: Expected chip failed to initialize with error code: ");
+        Serial.println(chip_state);
+
+        if (chip_state == RADIOLIB_ERR_CHIP_NOT_FOUND) {
+            Serial.println("Radio chip was not found during initialization. This "
+                           "can be caused by specifying wrong chip type in the constructor "
+                           "(i.e. calling SX1272 constructor for SX1278 chip) or by a fault in your wiring "
+                           "(incorrect slave select pin).");
+        } else if (chip_state == RADIOLIB_ERR_INVALID_FREQUENCY) {
+            Serial.println("The supplied frequency value is invalid for this module.");
+        } else if (chip_state == RADIOLIB_ERR_WRONG_MODEM) {
+            Serial.println("User tried to execute modem-exclusive method on a wrong modem. "
+                           "For example, this can happen when you try to change LoRa configuration when FSK modem is active.");
+        } else if (chip_state == RADIOLIB_ERR_SPI_CMD_TIMEOUT) {
+            Serial.println("SX126x timed out while waiting for complete SPI command.");
+        } else {
+            Serial.println("Check https://jgromes.github.io/RadioLib/group__status__codes.html for more details.");
+        }
+        
+        Serial.println("================================================");
+        return;
+    } else {
+        Serial.println("Frequency Test: SUCCESS. The physical chip perfectly MATCHES the FREQ_PIN configuration!");
 
         Serial.println("4. Testing State Transitions (Standby, TX, RX)");
         // Inherit base SX126x class to test the detected hardware
-        SX126x* active_radio = actual_is_903 ? (SX126x*)&probe1262 : (SX126x*)&probe1268;
+        SX126x* active_radio = is903_pin ? (SX126x*)&probe1262 : (SX126x*)&probe1268;
         
         // Re-initialize again
-        if (actual_is_903) {
+        if (is903_pin) {
             probe1262.begin(FREQUENCY_903, BANDWIDTH_USED, SPREADING_FACTOR_USED, CODING_RATE_USED, SYNC_WORD, POWER_OUTPUT, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
         } else {
             probe1268.begin(FREQUENCY_435, BANDWIDTH_USED, SPREADING_FACTOR_USED, CODING_RATE_USED, SYNC_WORD, POWER_OUTPUT, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
         }
 
         // Test Standby
-        Serial.print("Testing Standby Mode... ");
+        Serial.println("Testing Standby Mode... ");
         int standbyState = active_radio->standby();
 
         // Test Blocking Transmit
-        Serial.print("Testing Transmit Mode (Sending 'MRT_TEST')... ");
+        Serial.println("Testing Transmit Mode (Sending 'MRT_TEST')... ");
         uint8_t testMsg[] = "MRT_TEST";
         int txState = active_radio->transmit(testMsg, sizeof(testMsg));
 
         // Test Asynchronous Receive Initialization
-        Serial.print("Testing Receive Mode... ");
+        Serial.println("Testing Receive Mode... ");
         int rxState = active_radio->startReceive();
         
         active_radio->standby(); // return the radio to a safe idle state
