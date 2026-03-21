@@ -22,7 +22,7 @@ RadioModule::RadioModule()
                           TCXO_VOLTAGE, USE_ONLY_LDO);
     while (!retryRadioInit())
     {
-        Serial.println("radio init failure");
+        //We block forever, when freq select is wrong
     }
     verifyRadioState("Intializing radio module...");
     radio_.setDio1Action(radioDio1ISR);
@@ -39,22 +39,17 @@ bool RadioModule::retryRadioInit()
 {
     if (RadioStatus::ok(state_))
         return true;
-    // TODO there is a bug here, where if we realise we picked the wrong freq
-    // and call console.print it will print to the wrong topic as well, cause of the wrong freq
-    // also this error is unique to 900 band, for now just use serial.print, and the router
-    // to do debug this issue but future will need a better solution
 
-    // Console.print("FATAL ERROR RADIO MODULE FAILED TO INTIALISE RADIOLIB ERROR CODE: ");
-    // Console.println(state_);
-    // Console.print("frequency is");
-    // Console.println(frequency);
-    // Console.print("if error persists try power cycling by disconnecting and reconnecting/ usb");
+    char msg[128];
+    int n = snprintf( 
+    msg,sizeof(msg),
+    "FATAL INIT OF RADIO FAILED ERROR CODE: %d freq at %.3f freq pin at: %d",
+    state_, frequency, ParamStore::getFreqPinAnalogValue());
 
-    Serial.print("FATAL ERROR RADIO MODULE FAILED TO INTIALISE RADIOLIB ERROR CODE: ");
-    Serial.println(state_);
-    Serial.print("frequency is");
-    Serial.println(frequency);
-    Serial.print("if error persists try power cycling by disconnecting and reconnecting/ usb");
+    // Note that n doesnt include null terminator, but mqtt doesnt care about it
+    Console.sendFallbackError(msg,n);
+    // Serial.println(msg);
+
     delay(250);
     frequency = ParamStore::getDefaultBandFreq();
     state_ = radio_.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,

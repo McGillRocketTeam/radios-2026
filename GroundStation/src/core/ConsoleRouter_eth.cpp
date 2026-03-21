@@ -1,15 +1,15 @@
 #include "ConsoleRouter.h"
 
+#ifdef GS_ETHERNET_ENABLE
 #include "Config.h"
 #include "CommandLine.h"
 #include "CommandParser.h"
 #include "GroundCommand.h"
-#include "ParamStore.h"
 #include "MqttTopics.h"
+#include "ParamStore.h"
 #include "PinLayout.h"
 #include "RocketCommand.h"
 
-#ifdef GS_ETHERNET_ENABLE
 #include <EthernetConfig.h>
 #include <PubSubClient.h>
 
@@ -69,9 +69,6 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
     s_router = this;
     commandParser = &parser;
 
-    if (!ENABLE_ETHERNET_CONNECTION)
-        return;
-
     applyRoleConfig(role);
 
     // Init the eth stack with in built MAC and try dhcp
@@ -92,8 +89,6 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
 // === Main functions  ===
 void ConsoleRouter::handleConsoleReconnect()
 {
-    if (!ENABLE_ETHERNET_CONNECTION)
-        return;
     Ethernet.loop();
 
     if (!ethernetReconnectNeeded)
@@ -116,8 +111,6 @@ void ConsoleRouter::handleConsoleReconnect()
 
 void ConsoleRouter::mqttLoop()
 {
-    if (!ENABLE_ETHERNET_CONNECTION)
-        return;
     Ethernet.loop();
     
     if (!ethernetUp())
@@ -209,7 +202,7 @@ void ConsoleRouter::sendRadioTelemetry(const uint8_t *buffer, size_t size)
     }
 }
 
-void ConsoleRouter::sendStatus()
+void ConsoleRouter::sendStatusOk()
 {
     if (!ethernetUp() || !mqttUp())
         return;
@@ -252,6 +245,17 @@ void ConsoleRouter::sendStatus()
     this->publish(detailTopic_, (const uint8_t *)detailBuffer, len);
 }
 
+void ConsoleRouter::sendStatusFailed()
+{
+    if (!ethernetUp() || !mqttUp())
+        return;
+
+    static const uint8_t statusBuffer[] = "FAILED";
+
+    // Status needs to be retained
+    this->publishRetained(statusTopic_, statusBuffer, sizeof(statusBuffer) - 1);
+}
+
 void ConsoleRouter::sendCmdAckRx(uint8_t cmd_id, bool success)
 {
     if (success)
@@ -288,6 +292,13 @@ void ConsoleRouter::sendRadioCmdAck(){
         return;
 
     this->publish(ackTopic_, jsonBuffer,(size_t)n);
+}
+
+void ConsoleRouter::sendFallbackError(const char* msg,size_t n)
+{
+    // Reinterpret case the goat
+    this->publish(MqttTopic::FALLBACK_ERROR_TOPIC, reinterpret_cast<const uint8_t*>(msg), n);
+    sendStatusFailed();
 }
 
 // == Getters Setters ==
@@ -473,7 +484,7 @@ bool ConsoleRouter::mqttReconnect()
     {
         Serial.print("MQTT connected success");
 
-        sendStatus();
+        sendStatusOk();
         mqttClient.subscribe(commandTopic_, 1);
         mqttClient.subscribe(radioCommandTopic_,1);
 

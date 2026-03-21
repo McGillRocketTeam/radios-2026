@@ -129,7 +129,7 @@ GroundCommand::Action GroundCommand::parseActionToken(const command_line &cmd,
     if (line_util::span_ieq_lit(cmd, start, end, "ping"))
         return Action::Ping;
     if (line_util::span_ieq_lit(cmd, start, end, "status"))
-        return Action::Status;
+        return Action::SetStatus;
     if (line_util::span_ieq_lit(cmd, start, end, "bypass"))
         return Action::Bypass;
     if (line_util::span_ieq_lit(cmd, start, end, "settx"))

@@ -18,7 +18,7 @@ namespace GroundCommand
         Param,
         Ground,
         Ping,
-        Status,
+        SetStatus, // Sets the status that appears to the gui, t,f
         Bypass,
         SetTx,
         Verbose,

@@ -163,7 +163,4 @@ private:
 
     /// Enables or disables TX based on CTS logic
     bool canTXFromCTS;
-
-    /// Controls if we print the human readble telmetry
-    bool canPrintTelemetryVerbose = false;
 };

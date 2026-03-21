@@ -13,7 +13,7 @@
 void GroundStationVariant::setup() {
     auto& cmd = CommandParser::getInstance();
     auto role = MqttTopic::Role::CS;
-    #ifdef DDEVICE_VARIANT_GROUNDSTATION
+    #ifdef DEVICE_VARIANT_GROUNDSTATION
         #ifdef GROUNDSTATION_LOCATION_CONTROLSTATION
             role = MqttTopic::Role::CS;
         #elif defined(GROUNDSTATION_LOCATION_PAD)

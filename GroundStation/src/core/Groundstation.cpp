@@ -32,7 +32,7 @@ namespace
 // === Public Setup of Groundstation ===
 
 GroundStation::GroundStation()
-    : radioModule(std::make_unique<RadioModule>()), currentFrameView(), awaitingAck(false), canTXFromCTS(ENABLE_RADIO_TX), canPrintTelemetryVerbose(ENABLE_VERBOSE_TELMETRY_PACKET)
+    : radioModule(std::make_unique<RadioModule>()), currentFrameView(), awaitingAck(false), canTXFromCTS(ENABLE_RADIO_TX)
 {
 }
 
@@ -75,7 +75,7 @@ void GroundStation::setCanTXFromCTS(bool enable)
 
 void GroundStation::setVerbosePacket(bool state)
 {
-    canPrintTelemetryVerbose = state;
+    LoggerGS::getInstance().setCategory(CAT_TELEMETRY, state);
 }
 
 void GroundStation::clearRocketCommandQueue()
@@ -120,7 +120,7 @@ void GroundStation::handleReceivedPacket()
     // Check if we got an interupt and if it has led to a valid packet
     if (!radioModule->pollValidPacketRx())
         return;
-
+    Serial.println("polled");
     // Populate the current Frame View with the new packet
     readReceivedPacketToFrame();
     sendTelemetryToGui();
@@ -188,8 +188,6 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
 
     case GroundCommand::Action::Ground:
         radioModule->checkParams();
-        Console.print("gsc_verbose_packet: ");
-        Console.print(canPrintTelemetryVerbose);
         Console.print(" TxFromCTS ");
         Console.print(canTXFromCTS);
         break;
@@ -197,14 +195,20 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     case GroundCommand::Action::Ping:
         radioModule->pingParams();
         break;
-    // TODO do we need this?
-    case GroundCommand::Action::Status:
-        Console.sendStatus();
-        break;
 
     case GroundCommand::Action::Bypass:
         LOGGING(CAT_GS, CRIT, "bypass has not been implemented");
         break;
+
+    case GroundCommand::Action::SetStatus:
+    {
+        bool b = parseBoolean(command.arg);
+        if (b)
+            Console.sendStatusOk();
+        else
+            Console.sendStatusFailed();
+        break;
+    }
 
     case GroundCommand::Action::SetTx:
     {
@@ -283,15 +287,15 @@ void GroundStation::readReceivedPacketToFrame()
         LOGGING(CAT_GS, CRIT, "Could not validate frame");
         if (currentFrameState == ParseError::PayloadTooShort)
         {
-            Serial.println("payload too short");
+            LOGGING(CAT_GS, CRIT, "payload too short");
         }
         if (currentFrameState == ParseError::TooShort)
         {
-            Serial.println("header too short");
+            LOGGING(CAT_GS, CRIT, "header too short");
         }
         if (currentFrameState == ParseError::UnknownAtomicSize)
         {
-            Serial.println("uknown atomic");
+            LOGGING(CAT_GS, CRIT, "uknown atomic");
         }
         return;
     }
@@ -332,10 +336,6 @@ void GroundStation::printVerboseTelemetryPacket()
              (unsigned)currentFrameView.header()->seq, (unsigned)currentFrameView.cts(), (unsigned)currentFrameView.ack(), (unsigned)currentFrameView.bad(), (unsigned)currentFrameView.ack_id(),
              millis() * 0.001f, lastRSSI, lastSNR);
     LOGGING(CAT_GS, INFO, buf);
-    // data for astra debug
-    snprintf(buf, sizeof(buf), "ASTRA hdr: seq=%u flags(cts=%u,ack=%u,bad=%u) ack_id=%u", (unsigned)currentFrameView.header()->seq, (unsigned)currentFrameView.cts(), (unsigned)currentFrameView.ack(),
-             (unsigned)currentFrameView.bad(), (unsigned)currentFrameView.ack_id());
-    LOGGING(CAT_ASTRA_DEBUG, INFO, buf);
 
     // Special category for logging range test info in csv form
     // TODO use the compiile time flags to gate the range test logs
@@ -362,8 +362,8 @@ void GroundStation::printVerboseTelemetryPacket()
             }
         }
     }
-    // TODO fix this to work with CATegories instead
-    if (canPrintTelemetryVerbose)
+
+    if (LoggerGS::getInstance().getCategoryMask() & CAT_TELEMETRY)
     {
         printAtomics(currentFrameView);
     }

@@ -13,7 +13,7 @@ struct RadioParams {
 
 // The store will set the initial frequency via the band configured by the frequency pin
 // The frequency pin is the pins soldered on the MRT radio hat.
-// 435 Band means a sx1262 chip, 900 means a sx1268 chip
+// 435 Band means a sx1268 chip, 900 means a sx1262 chip
 // They function extremely similarily but differ on the freq range they handle
 // When we start the radio freq equals band, but during runtime the actual freq
 // can change, but the band will always stay the same once we set it
@@ -29,7 +29,5 @@ namespace ParamStore {
     // Compares the freq given to the band that has been set
     bool freqAllowed(float f);
 
-    namespace detail {
-        void applyFromRadio(const RadioParams& p);
-    }
+    int getFreqPinAnalogValue();
 }

@@ -10,16 +10,19 @@ void ConsoleRouter::begin(MqttTopic::Role role, CommandParser &parser)
     commandParser = &parser;
 }
 
-bool ConsoleRouter::isReady() { true; }
+bool ConsoleRouter::isReady() { return true; }
 
 void ConsoleRouter::handleConsoleReconnect() { /* no-op */ }
 void ConsoleRouter::mqttLoop() { /* no-op */ }
 
 void ConsoleRouter::sendTelemetry(const uint8_t *, size_t) { /* no-op */ }
 void ConsoleRouter::sendRadioTelemetry(const uint8_t *, size_t) { /* no-op */ }
-void ConsoleRouter::sendStatus() { /* no-op */ }
+void ConsoleRouter::sendStatusOk() { /* no-op */ }
+void ConsoleRouter::sendStatusFailed() { /* no-op */ }
 void ConsoleRouter::sendCmdAckRx(uint8_t, bool) { /* no-op */ }
 void ConsoleRouter::sendCmdAckTx(uint8_t, bool) { /* no-op */ }
+void ConsoleRouter::sendRadioCmdAck() { /* no-op */ }
+void ConsoleRouter::sendFallbackError(const char* msg,size_t n) { /* no-op */ }
 
 bool ConsoleRouter::mqttReconnect() { return false; }
 void ConsoleRouter::publishAck(const char *, uint8_t) { /* no-op */ }

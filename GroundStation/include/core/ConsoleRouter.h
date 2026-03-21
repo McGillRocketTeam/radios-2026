@@ -47,7 +47,9 @@ public:
     void sendRadioTelemetry(const uint8_t *buffer, size_t size);
 
     // Sending status of radio over MQTT
-    void sendStatus();
+    void sendStatusOk();
+
+    void sendStatusFailed();
 
     // Sending ack for rx of cmd from GSC
     void sendCmdAckRx(uint8_t cmd_id, bool success);
@@ -56,6 +58,9 @@ public:
     void sendCmdAckTx(uint8_t cmd_id, bool success);
 
     void sendRadioCmdAck();
+
+    // Sending error to the fallback universal topic
+    void sendFallbackError(const char* msg, size_t n);
 
     // Print overloads via templating
     template <typename T> void print(const T& v)   { _printString(String(v), false); }

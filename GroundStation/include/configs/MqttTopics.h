@@ -17,6 +17,10 @@ namespace MqttTopic {
         COUNT
     };
 
+    //This is the fallback topic for when the radio is unable to 
+    //relibaly determine its band, therefore we will spam init error logs here
+    constexpr const char * FALLBACK_ERROR_TOPIC = "Radio/Error";
+
     enum class TopicKind : uint8_t {
         FC_TELEMETRY = 0,
         ACKS,

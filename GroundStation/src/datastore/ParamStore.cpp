@@ -36,18 +36,20 @@ namespace ParamStore
         delay(800);
         // TO DO fix this analog read once the RF_SW pin is fixed
         int v = analogRead(FREQ_PIN);
-
+        char debug[64];
         if (v > 50)
         {
             g_band = RadioBand::B903;
             g_params = defaultsFor903();
-            LOGGING(CAT_RADIO, DEBUG, "FREQ_PIN is HIGH using 900 MHz band");
+            snprintf(debug, sizeof(debug), "FREQ_PIN is HIGH at value %d using 900 MHz band", v);
+            LOGGING(CAT_RADIO, DEBUG, debug);
         }
         else
         {
             g_band = RadioBand::B435;
             g_params = defaultsFor435();
-            LOGGING(CAT_RADIO, DEBUG, "FREQ_PIN is LOW using 430 MHz band");
+            snprintf(debug, sizeof(debug), "FREQ_PIN is LOW at value %d using 433 MHz band", v);
+            LOGGING(CAT_RADIO, DEBUG, debug);
         }
 
         g_inited = true;
@@ -77,7 +79,7 @@ namespace ParamStore
             return (f > 430.0f && f < 440.0f);
         return false;
     }
-     
+
     float getDefaultBandFreq()
     {
         ensureInit();
@@ -91,13 +93,8 @@ namespace ParamStore
         }
     }
 
-    namespace detail
+    int getFreqPinAnalogValue()
     {
-        // Make sure the freq is valid before sending the params
-        void applyFromRadio(const RadioParams &p)
-        {
-            ensureInit();
-            g_params = p;
-        }
+        return digitalRead(FREQ_PIN);
     }
 }
