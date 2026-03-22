@@ -32,7 +32,7 @@ namespace
 // === Public Setup of Groundstation ===
 
 GroundStation::GroundStation()
-    : radioModule(std::make_unique<RadioModule>()), currentFrameView(), awaitingAck(false), canTXFromCTS(ENABLE_RADIO_TX)
+    : radioModule(std::make_unique<RadioModule>()), currentFrameView(), canTXFromCTS(ENABLE_RADIO_TX)
 {
 }
 
@@ -88,6 +88,11 @@ void GroundStation::getQueueStatus()
 {
     commandParser->printGroundQueueStatus();
     commandParser->printRocketQueueStatus();
+}
+
+void GroundStation::setPrintHook(PrintHook hook)
+{
+    verbosePrintHook = hook;
 }
 
 // === MAIN public functions ===
@@ -329,39 +334,29 @@ void GroundStation::sendTelemetryToGui()
 
 void GroundStation::printVerboseTelemetryPacket()
 {
+    // If we have set a special verbose printHook differ to that
+    if (verbosePrintHook)
+    {
+        verbosePrintHook(currentFrameView, currentFrameState, lastRSSI, lastSNR);
+        return;
+    }
+
     char buf[128] = {0};
 
     // Standard GS data
-    snprintf(buf, sizeof(buf), "RX size=%u seq=%u cts=%u ack=%u bad=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f", (unsigned)radioModule->getPacketLength(),
-             (unsigned)currentFrameView.header()->seq, (unsigned)currentFrameView.cts(), (unsigned)currentFrameView.ack(), (unsigned)currentFrameView.bad(), (unsigned)currentFrameView.ack_id(),
-             millis() * 0.001f, lastRSSI, lastSNR);
+    snprintf(buf, sizeof(buf),
+        "RX size=%u seq=%u cts=%u ack=%u bad=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
+        (unsigned)radioModule->getPacketLength(),
+        (unsigned)currentFrameView.header()->seq,
+        (unsigned)currentFrameView.cts(),
+        (unsigned)currentFrameView.ack(),
+        (unsigned)currentFrameView.bad(),
+        (unsigned)currentFrameView.ack_id(),
+        millis() * 0.001f,
+        lastRSSI,
+        lastSNR
+    );
     LOGGING(CAT_GS, INFO, buf);
-
-    // Special category for logging range test info in csv form
-    // TODO use the compiile time flags to gate the range test logs
-    if (LoggerGS::getInstance().getCategoryMask() & CAT_RANGETEST)
-    {
-        flight_atomic_data flight{};
-        const uint8_t *p = currentFrameView.atomicPtr(AT_FLIGHT_ATOMIC);
-
-        if (p && currentFrameView.hasAtomic(AT_FLIGHT_ATOMIC))
-        {
-            lastRSSI = radioModule->getRSSI();
-            lastSNR = radioModule->getSNR();
-            memcpy(&flight, p, sizeof(flight_atomic_data));
-
-            float FC_RSSI = -1.0f * ((int32_t)flight.fc_rssi / 2.0f);
-            float FC_SNR = flight.fc_snr * 0.25f;
-            float FC_LastTime = flight.gps_time_last_update;
-            if (currentFrameView.cts() || currentFrameView.ack())
-            {
-                const char *kind = currentFrameView.cts() ? "CTS" : "ACK";
-                snprintf(buf, sizeof(buf), "%u,%s,GS_T:%.3f,GS_RSSI:%.2f,GS_SNR:%.2f,FC_T:%.3f,FC_RSSI:%.2f,FC_SNR:%.2f", (unsigned)currentFrameView.header()->seq, kind, millis() * 0.001f, lastRSSI,
-                         lastSNR, FC_LastTime, FC_RSSI, FC_SNR);
-                LOGGING(CAT_RANGETEST, INFO, buf);
-            }
-        }
-    }
 
     if (LoggerGS::getInstance().getCategoryMask() & CAT_TELEMETRY)
     {

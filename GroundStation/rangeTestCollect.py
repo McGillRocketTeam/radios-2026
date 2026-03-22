@@ -2,23 +2,28 @@ import subprocess
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
+
 import serial
 import serial.tools.list_ports
 
 # ==========================================================
 # HARD-CODE HERE
 # ==========================================================
-PROJECT_DIR = r"C:\Jeff_Documents\Programming\MRT\radios-2026\GroundStation"
 UPLOAD_PORT = "COM4"
 
 # =========================================================
 
-BAUD        = 115200
-WAIT_SECS   = 2
-PIO_ENV     = "teensy41" 
+PROJECT_DIR = Path.cwd()
 
-FILE_NAME = "test" + datetime.now().strftime("%d_%H_%M")
-LOG_FILE    = r"C:\Jeff_Documents\Programming\MRT\radios-2026\GroundStation\logs\\" + FILE_NAME + ".txt"
+BAUD = 115200
+WAIT_SECS = 2
+PIO_ENV = "RANGETEST_GS"
+
+FILE_NAME = "test_" + datetime.now().strftime("%d_%H_%M")
+LOGS_DIR = PROJECT_DIR / "logs"
+LOG_FILE = LOGS_DIR / f"{FILE_NAME}.csv"
+
 # ==========================================================
 
 
@@ -30,13 +35,13 @@ def pio_upload() -> int:
         "--upload-port", UPLOAD_PORT,
     ]
 
-    print(f"[INFO] Uploading via PlatformIO...")
+    print("[INFO] Uploading via PlatformIO...")
     print("       " + " ".join(cmd))
 
     try:
         proc = subprocess.run(
             cmd,
-            cwd=PROJECT_DIR,
+            cwd=str(PROJECT_DIR),
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
@@ -46,8 +51,7 @@ def pio_upload() -> int:
         return 127
 
 
-
-def wait_for_port(port: str, timeout=15.0):
+def wait_for_port(port: str, timeout: float = 15.0) -> bool:
     start = time.time()
     while time.time() - start < timeout:
         ports = [p.device for p in serial.tools.list_ports.comports()]
@@ -56,6 +60,7 @@ def wait_for_port(port: str, timeout=15.0):
         time.sleep(0.25)
     return False
 
+
 def log_serial():
     print(f"[INFO] Waiting for serial port {UPLOAD_PORT} to appear...")
 
@@ -63,30 +68,32 @@ def log_serial():
         print(f"[ERROR] {UPLOAD_PORT} did not appear.")
         return
 
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
     print(f"[INFO] Opening serial port {UPLOAD_PORT} @ {BAUD}")
     print(f"[INFO] Logging to {LOG_FILE}")
     print("       Ctrl+C to stop")
 
     with serial.Serial(UPLOAD_PORT, BAUD, timeout=0.5) as ser, \
-         open(LOG_FILE, "a", buffering=1) as f:
+         open(LOG_FILE, "a", buffering=1, encoding="utf-8") as f:
 
-        time.sleep(0.2)
+        time.sleep(2)
         ser.write(b"ping\n")
         ser.flush()
-
-        f.write(f"\n=== Session start {datetime.now().isoformat()} ===\n")
 
         try:
             while True:
                 line = ser.readline()
                 if not line:
                     continue
+
                 text = line.decode(errors="replace").rstrip()
                 f.write(text + "\n")
                 print("[LOG] " + text)
 
         except KeyboardInterrupt:
-            f.write(f"=== Session end {datetime.now().isoformat()} ===\n")
+            print("\n[INFO] Logging stopped.")
+
 
 def main() -> int:
     rc = pio_upload()
@@ -94,6 +101,7 @@ def main() -> int:
         print(f"[ERROR] Upload failed (exit code {rc}).")
         return rc
 
+    time.sleep(WAIT_SECS)
     log_serial()
     return 0
 

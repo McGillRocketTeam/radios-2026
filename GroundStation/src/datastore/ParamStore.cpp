@@ -33,7 +33,7 @@ namespace ParamStore
             return;
 
         pinMode(FREQ_PIN, INPUT);
-        delay(800);
+        delay(400);
         // TO DO fix this analog read once the RF_SW pin is fixed
         int v = analogRead(FREQ_PIN);
         char debug[64];

@@ -4,6 +4,8 @@
 #include "TestVariant.h"
 #include "FlightComputerVariant.h"
 #include "RadioChipTestVariant.h"
+#include "RangeTestFCVariant.h"
+#include "RangeTestGSVariant.h"
 
 
 IVariant& getVariant()
@@ -16,6 +18,12 @@ IVariant& getVariant()
     return variant;
 #elif defined(DEVICE_VARIANT_GROUNDSTATION)
     static GroundStationVariant variant;
+    return variant;
+#elif defined(DEVICE_VARIANT_RANGETEST_FC)
+    static RangeTestFCVariant variant;
+    return variant;
+#elif defined(DEVICE_VARIANT_RANGETEST_GS)
+    static RangeTestGSVariant variant;
     return variant;
 #elif defined(DEVICE_VARIANT_FLIGHTCOMPUTER)
     static FlightComputerVariant variant;

@@ -31,6 +31,7 @@ void GroundStationVariant::setup() {
 
 }
 
+// TODO investigate stabillity of system without delay
 void GroundStationVariant::loop() {
     delay(1);
 

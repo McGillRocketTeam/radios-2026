@@ -18,6 +18,9 @@
 class GroundStation
 {
 public:
+    // This is an injectable call back to overrid behaviour of verbose print
+    using PrintHook = void (*)(const FrameView&, ParseError, float, float);
+
     /**
      * @brief Get the singleton instance of the GroundStation.
      * @return Pointer to the GroundStation instance.
@@ -74,6 +77,8 @@ public:
      * @return Pointer to the radio module.
      */
     RadioModule *getRadioModule();
+
+    void setPrintHook(PrintHook hook);
 
     void printVerboseTelemetryPacket();
 
@@ -133,6 +138,9 @@ private:
     /// Pointer to the command parser
     CommandParser *commandParser;
 
+    /// Pointer to poential verbose print function override
+    PrintHook verbosePrintHook = nullptr;
+
     // Frame view setup
     //  Buffer that persists for the life of Ground Station
     //  It will hold the actual bytes for the frame view
@@ -152,14 +160,11 @@ private:
     /// Timer for raising the commandParserFlag every 10ms
     IntervalTimer commandParserTimer;
 
-    /// Indicates if the system is awaiting an acknowledgment packet
-    bool awaitingAck;
-
     /// Timer for reverting parameters after a timeout
     IntervalTimer paramRevertTimer;
 
     /// Flag raised by the timer interrupt to indicate it's time to update the parser
-    static volatile bool commandParserFlag; // Shared global thing
+    static volatile bool commandParserFlag;
 
     /// Enables or disables TX based on CTS logic
     bool canTXFromCTS;

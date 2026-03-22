@@ -66,7 +66,6 @@ void setup()
     }
 
     radioModule = new RadioModule();
-    LoggerGS::getInstance().setCategoryMask(CAT_RANGETEST);
 }
 
 void loop()
