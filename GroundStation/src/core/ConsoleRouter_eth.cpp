@@ -226,7 +226,7 @@ void ConsoleRouter::sendStatusOk()
     const char *bandStr = ParamStore::is435() ? FREQUENCY_435_STR : FREQUENCY_903_STR;
     const char *name = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::NAME);
 
-    const RadioParams &param = ParamStore::get();
+    const RadioParams &param = ParamStore::getRadioParams();
 
     // Use a char buffer for snprintf
     char detailBuffer[128];

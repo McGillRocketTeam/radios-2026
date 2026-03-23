@@ -12,17 +12,18 @@ volatile bool RadioModule::radioBusy = false;
 
 RadioModule::RadioModule()
     : mod_(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN),
-      radio_(&mod_),
-      frequency(ParamStore::getDefaultBandFreq())
+      radio_(&mod_)
 {
     // Default initiliased pins need to be set in the right mode
     pinMode(rxLedPin_, OUTPUT);
     pinMode(txLedPin_, OUTPUT);
-    state_ = radio_.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
-                          TCXO_VOLTAGE, USE_ONLY_LDO);
+    const RadioParams param = ParamStore::getRadioParams();
+    state_ = radio_.begin(
+        param.freq, param.bw, param.sf, param.cr,
+        SYNC_WORD, param.pow, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
     while (!retryRadioInit())
     {
-        //We block forever, when freq select is wrong
+        // We block forever, when freq select is wrong
     }
     verifyRadioState("Intializing radio module...");
     radio_.setDio1Action(radioDio1ISR);
@@ -39,21 +40,21 @@ bool RadioModule::retryRadioInit()
 {
     if (RadioStatus::ok(state_))
         return true;
-
+    const RadioParams param = ParamStore::getRadioParams();
     char msg[128];
-    int n = snprintf( 
-    msg,sizeof(msg),
-    "FATAL INIT OF RADIO FAILED ERROR CODE: %d freq at %.3f freq pin at: %d",
-    state_, frequency, ParamStore::getFreqPinAnalogValue());
+    int n = snprintf(
+        msg, sizeof(msg),
+        "FATAL INIT OF RADIO FAILED ERROR CODE: %d freq at %.3f freq pin at: %d",
+        state_, param.freq, ParamStore::getFreqPinAnalogValue());
 
     // Note that n doesnt include null terminator, but mqtt doesnt care about it
-    Console.sendFallbackError(msg,n);
-    // Serial.println(msg);
+    Console.sendFallbackError(msg, n);
+    Serial.println(msg);
 
     delay(250);
-    frequency = ParamStore::getDefaultBandFreq();
-    state_ = radio_.begin(frequency, bandwidth, spreadingFactor, codingRate, syncWord, powerOutput, preambleLength,
-                          TCXO_VOLTAGE, USE_ONLY_LDO);
+    state_ = radio_.begin(
+        param.freq, param.bw, param.sf, param.cr,
+        SYNC_WORD, POWER_OUTPUT, PREAMBLE_LENGTH, TCXO_VOLTAGE, USE_ONLY_LDO);
     return false;
 }
 
@@ -254,36 +255,34 @@ void RadioModule::radioDio1ISR()
 
 void RadioModule::checkParams()
 {
-    Console.print("frequency: ");
-    Console.print(frequency);
-
-    Console.print(" bandwidth: ");
-    Console.print(bandwidth);
-
-    Console.print(" spreading factor: ");
-    Console.print(spreadingFactor);
-
-    Console.print(" coding rate: ");
-    Console.print(codingRate);
-
-    Console.print(" power output: ");
-    Console.print(powerOutput);
+    const RadioParams param = ParamStore::getRadioParams();
+    Console.print("Freq:");
+    Console.print(param.freq);
+    Console.print(" BW:");
+    Console.print(param.bw);
+    Console.print(" SF:");
+    Console.print(param.sf);
+    Console.print(" CR:");
+    Console.print(param.cr);
+    Console.print(" POW:");
+    Console.println(param.pow);
 }
 
 void RadioModule::pingParams()
 {
-    // ping_ack:8,250.00,903.00,7,20
+    // ping_ack:903.00,250.00,8,8,20
+    const RadioParams param = ParamStore::getRadioParams();
     Console.print("ping_ack");
     Console.print(":");
-    Console.print(spreadingFactor);
+    Console.print(param.freq);
     Console.print(",");
-    Console.print(bandwidth);
+    Console.print(param.bw);
     Console.print(",");
-    Console.print(frequency);
+    Console.print(param.sf);
     Console.print(",");
-    Console.print(codingRate);
+    Console.print(param.cr);
     Console.print(",");
-    Console.println(powerOutput);
+    Console.println(param.pow);
 }
 
 // === Packet Getters Setters ===
@@ -356,7 +355,7 @@ void RadioModule::toggleLedOnOk(int pin)
         LOGGING(CAT_RADIO, INFO, "Toggling a LED that is not set in the radio module");
     }
 }
-
+// TODO get rid of this string thing
 bool RadioModule::verifyRadioState(String message)
 {
     if (RadioStatus::ok(state_))
@@ -385,70 +384,95 @@ bool RadioModule::verifyRadioState(String message)
 
 float RadioModule::getFreq()
 {
-    return frequency;
+    return ParamStore::getRadioParams().freq;
 }
 
 float RadioModule::getBandwidth()
 {
-    return bandwidth;
+    return ParamStore::getRadioParams().bw;
 }
 
 int RadioModule::getSpreadingFactor()
 {
-    return spreadingFactor;
+    return ParamStore::getRadioParams().sf;
 }
 
 int RadioModule::getCodingRate()
 {
-    return codingRate;
+    return ParamStore::getRadioParams().cr;
 }
 
 int RadioModule::getPowerOutput()
 {
-    return powerOutput;
+    return ParamStore::getRadioParams().pow;
 }
 
-void RadioModule::setFreq(float newFrequency)
+bool RadioModule::setFreq(float newFrequency)
 {
+    if (!ParamStore::freqAllowed(newFrequency))
+    {
+        LOGGING(CAT_RADIO,CRIT,"ERROR new freq incompatible with current band");
+        return false;
+    }
     state_ = radio_.setFrequency(newFrequency);
     if (verifyRadioState("Switching to frequency of " + String(newFrequency)))
     {
-        frequency = newFrequency;
+        RadioParams param = ParamStore::getRadioParams();
+        param.freq = newFrequency;
+        ParamStore::applyParamsToCurrentBand(param);
+        return true;
     }
+    return false;
 }
 
-void RadioModule::setBandwidth(float newBandwidth)
+bool RadioModule::setBandwidth(float newBandwidth)
 {
     state_ = radio_.setBandwidth(newBandwidth);
     if (verifyRadioState("Switching to bandwidth of " + String(newBandwidth)))
     {
-        bandwidth = newBandwidth;
+        RadioParams param = ParamStore::getRadioParams();
+        param.bw = newBandwidth;
+        ParamStore::applyParamsToCurrentBand(param);
+        return true;
     }
+    return false;
 }
 
-void RadioModule::setSpreadingFactor(uint8_t newSpreadingFactor)
+bool RadioModule::setSpreadingFactor(uint8_t newSpreadingFactor)
 {
     state_ = radio_.setSpreadingFactor(newSpreadingFactor);
     if (verifyRadioState("Switching to spreading factor of " + String(newSpreadingFactor)))
     {
-        spreadingFactor = newSpreadingFactor;
+        RadioParams param = ParamStore::getRadioParams();
+        param.sf = newSpreadingFactor;
+        ParamStore::applyParamsToCurrentBand(param);
+        return true;
     }
+    return false;
 }
 
-void RadioModule::setCodingRate(uint8_t newCodingRate)
+bool RadioModule::setCodingRate(uint8_t newCodingRate)
 {
     state_ = radio_.setCodingRate(newCodingRate);
     if (verifyRadioState("Switching to coding rate of " + String(newCodingRate)))
     {
-        codingRate = newCodingRate;
+        RadioParams param = ParamStore::getRadioParams();
+        param.cr = newCodingRate;
+        ParamStore::applyParamsToCurrentBand(param);
+        return true;
     }
+    return false;
 }
 
-void RadioModule::setPowerOutput(int8_t newPowerOutput)
+bool RadioModule::setPowerOutput(int8_t newPowerOutput)
 {
     state_ = radio_.setOutputPower(newPowerOutput);
-    if (verifyRadioState("Switching to power output of " + String(newPowerOutput)))
+    if (verifyRadioState("Switching to power of " + String(newPowerOutput)))
     {
-        powerOutput = newPowerOutput;
+        RadioParams param = ParamStore::getRadioParams();
+        param.pow = newPowerOutput;
+        ParamStore::applyParamsToCurrentBand(param);
+        return true;
     }
+    return false;
 }

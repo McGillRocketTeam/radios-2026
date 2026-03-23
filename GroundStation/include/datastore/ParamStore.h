@@ -7,7 +7,7 @@ struct RadioParams {
     float freq;     // actual tuned frequency (MHz), can be 433.0, 915.0, etc.
     float bw;       // kHz
     int sf;         // spreading factor
-    int cr;         // coding rate (your representation)
+    int cr;         // coding rate
     int pow;        // TX power
 };
 
@@ -19,7 +19,7 @@ struct RadioParams {
 // can change, but the band will always stay the same once we set it
 
 namespace ParamStore {
-    const RadioParams& get();
+    const RadioParams& getRadioParams();
     RadioBand band();
 
     bool is903();
@@ -30,4 +30,16 @@ namespace ParamStore {
     bool freqAllowed(float f);
 
     int getFreqPinAnalogValue();
+
+    void applyParamsToCurrentBand(const RadioParams& input);
+
+    // TODO add more storage like API to this object
+    // We dont need EEPROM stuff yet, but this will make it cleaner to apply
+    // getRadioParams() → returns current applied config
+    // validate(params) → checks legality
+    // apply(params) → updates in-memory config
+    // save() → persists it
+    // load() → restores from persistence
+    // resetToBandDefaults() → explicit
+
 }

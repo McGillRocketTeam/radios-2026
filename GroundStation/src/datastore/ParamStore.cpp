@@ -61,7 +61,7 @@ namespace ParamStore
         return g_band;
     }
 
-    const RadioParams &get()
+    const RadioParams &getRadioParams()
     {
         ensureInit();
         return g_params;
@@ -95,6 +95,20 @@ namespace ParamStore
 
     int getFreqPinAnalogValue()
     {
-        return digitalRead(FREQ_PIN);
+        return analogRead(FREQ_PIN);
+    }
+
+    void applyParamsToCurrentBand(const RadioParams &input)
+    {
+        ensureInit();
+
+        RadioParams updated = input;
+        if (!freqAllowed(updated.freq))
+        {
+            LOGGING(CAT_RADIO,CRIT,"set a new param to current band with bad frequency");
+            updated.freq = getDefaultBandFreq();
+        }
+
+        g_params = updated;
     }
 }

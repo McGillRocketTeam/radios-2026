@@ -23,13 +23,9 @@ private:
     bool rxLedState_ = false;
     bool txLedState_ = false;
 
-    float frequency;
-    float bandwidth = BANDWIDTH_USED;
-    int spreadingFactor = SPREADING_FACTOR_USED;
-    int codingRate = CODING_RATE_USED;
-    int syncWord = SYNC_WORD;
-    int powerOutput = POWER_OUTPUT;
-    int preambleLength = PREAMBLE_LENGTH;
+    // TODO we should defer to paramstore every time to get params
+    // What about in the situations where we want to run special stuff? 
+    // We need a smart way to overload paramstore
     uint8_t buffer[RADIO_BUFFER_SIZE];
     int lastPacketLength = 0;
     
@@ -61,11 +57,11 @@ public:
     int getCodingRate();
     int getPowerOutput();
 
-    void setFreq(float newFrequency);
-    void setBandwidth(float newBandwidth);
-    void setSpreadingFactor(uint8_t newSpreadingFactor);
-    void setCodingRate(uint8_t newCodingRate);
-    void setPowerOutput(int8_t newPowerOutput);
+    bool setFreq(float newFrequency);
+    bool setBandwidth(float newBandwidth);
+    bool setSpreadingFactor(uint8_t newSpreadingFactor);
+    bool setCodingRate(uint8_t newCodingRate);
+    bool setPowerOutput(int8_t newPowerOutput);
 
     void checkParams();
     void pingParams();
