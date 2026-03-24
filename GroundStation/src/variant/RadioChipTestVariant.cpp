@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <RadioLib.h>
 #include "ParamStore.h"
-#include "RadioModule.h"
 #include "PinLayout.h"
 #include "LoraParamConfig.h"
 
@@ -23,6 +22,11 @@ void RadioChipTestVariant::setup()
     Serial.println("1. Deducing Radio Frequency Band from pin");
     Serial.print(ParamStore::getDefaultBandFreq());
     Serial.println(" MHz");
+
+    Serial.print("Band pin Voltage ");
+    Serial.print((ParamStore::getFreqPinAnalogValue())/1024);
+    
+
 
     if (is903_pin)
     {
@@ -124,6 +128,8 @@ void RadioChipTestVariant::setup()
         Serial.println("Testing Transmit Mode (Sending 'MRT_TEST')... ");
         uint8_t testMsg[] = "MRT_TEST";
         int txState = active_radio->transmit(testMsg, sizeof(testMsg));
+        Serial.print("TXState ");
+        Serial.println(txState);
 
         // Test Asynchronous Receive Initialization
         Serial.println("Testing Receive Mode... ");
