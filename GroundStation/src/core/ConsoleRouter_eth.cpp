@@ -231,10 +231,11 @@ void ConsoleRouter::sendStatusOk()
     // Use a char buffer for snprintf
     char detailBuffer[128];
     int n = snprintf(detailBuffer, sizeof(detailBuffer),
-                     "%s Band:%s MAC:%s FREQ:%.2f BW:%.2f SF:%d CR:%d PWR:%d",
-                     name, bandStr, macStr,
+                     "%s Band:%s FREQ:%.2f BW:%.2f SF:%d CR:%d PWR:%d MAC:%s ",
+                     name, bandStr,
                      (double)param.freq, (double)param.bw,
-                     param.sf, param.cr, param.pow);
+                     param.sf, param.cr, param.pow
+                     ,macStr);
 
     size_t len = 0;
     if (n > 0)

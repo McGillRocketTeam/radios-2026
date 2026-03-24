@@ -157,12 +157,14 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     case GroundCommand::Action::Freq:
     {
         radioModule->setFreq(command.arg);
+        Console.sendStatusOk();
         break;
     }
 
     case GroundCommand::Action::Bw:
     {
         radioModule->setBandwidth(command.arg);
+        Console.sendStatusOk();
         break;
     }
 
@@ -170,6 +172,7 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     {
         uint8_t cr = (uint8_t)floorf(command.arg);
         radioModule->setCodingRate(cr);
+        Console.sendStatusOk();
         break;
     }
 
@@ -177,6 +180,7 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     {
         uint8_t sf = (uint8_t)floorf(command.arg);
         radioModule->setSpreadingFactor(sf);
+        Console.sendStatusOk();
         break;
     }
 
@@ -184,6 +188,7 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     {
         int8_t pow = (int8_t)floorf(command.arg);
         radioModule->setPowerOutput(pow);
+        Console.sendStatusOk();
         break;
     }
 
