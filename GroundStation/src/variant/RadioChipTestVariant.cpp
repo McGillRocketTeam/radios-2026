@@ -22,11 +22,11 @@ void RadioChipTestVariant::setup()
     Serial.println("1. Deducing Radio Frequency Band from pin");
     Serial.print(ParamStore::getDefaultBandFreq());
     Serial.println(" MHz");
-
-    Serial.print("Band pin Voltage ");
-    Serial.print((ParamStore::getFreqPinAnalogValue())/1024);
     
-
+    // Report the band pin voltage
+    Serial.print("Band pin Voltage ");
+    Serial.print((ParamStore::getFreqPinAnalogValue()));
+    Serial.println("/1023 where max value is 3.3V");
 
     if (is903_pin)
     {
