@@ -1,3 +1,3 @@
-[submodule "EthernetTesting/lib/NativeEthernet"]
-	path = EthernetTesting/lib/NativeEthernet
+[submodule "Lab/EthernetTesting/lib/NativeEthernet"]
+	path = Lab/EthernetTesting/lib/NativeEthernet
 	url = https://github.com/vjmuzik/NativeEthernet.git
