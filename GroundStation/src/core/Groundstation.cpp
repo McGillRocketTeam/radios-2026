@@ -125,7 +125,6 @@ void GroundStation::handleReceivedPacket()
     // Check if we got an interupt and if it has led to a valid packet
     if (!radioModule->pollValidPacketRx())
         return;
-    Serial.println("polled");
     // Populate the current Frame View with the new packet
     readReceivedPacketToFrame();
     sendTelemetryToGui();
