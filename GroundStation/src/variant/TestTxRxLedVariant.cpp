@@ -1,11 +1,11 @@
-#include "TxRxLedTestVariant.h"
+#include "TestTxRxLedVariant.h"
 
 #include <Arduino.h>
 #include <RadioLib.h>
 #include "PinLayout.h"
 #include "LoraParamConfig.h"
 
-void TxRxLedTestVariant::setup() {
+void TestTxRxLedVariant::setup() {
     Serial.begin(115200);
     while (!Serial)
     {
@@ -19,7 +19,7 @@ void TxRxLedTestVariant::setup() {
     Serial.println("Beginning Tx/Rx LED Test...");
 }
 
-void TxRxLedTestVariant::loop() {
+void TestTxRxLedVariant::loop() {
     digitalWrite(RX_LED_PIN, HIGH);
     digitalWrite(TX_LED_PIN, HIGH);
     delay(500);

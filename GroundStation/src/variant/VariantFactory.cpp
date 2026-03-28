@@ -3,10 +3,10 @@
 #include "GroundStationVariant.h"
 #include "TestVariant.h"
 #include "FlightComputerVariant.h"
-#include "RadioChipTestVariant.h"
+#include "TestRadioChipVariant.h"
 #include "RangeTestFCVariant.h"
 #include "RangeTestGSVariant.h"
-#include "TxRxLedTestVariant.h"
+#include "TestTxRxLedVariant.h"
 
 IVariant& getVariant()
 {
@@ -14,7 +14,7 @@ IVariant& getVariant()
     static TestVariant variant;
     return variant;
 #elif defined(DEVICE_VARIANT_RADIO_TEST)
-    static RadioChipTestVariant variant;
+    static TestRadioChipVariant variant;
     return variant;
 #elif defined(DEVICE_VARIANT_GROUNDSTATION)
     static GroundStationVariant variant;
@@ -29,7 +29,7 @@ IVariant& getVariant()
     static FlightComputerVariant variant;
     return variant;
 #elif defined(DEVICE_VARIANT_TXRXLED_TEST)
-    static TxRxLedTestVariant variant;
+    static TestTxRxLedVariant variant;
     return variant;
 #else
     #error "No valid device mode selected"

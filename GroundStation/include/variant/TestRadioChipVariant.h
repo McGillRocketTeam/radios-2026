@@ -1,7 +1,7 @@
 #pragma once
 #include "IVariant.h"
 
-class RadioChipTestVariant : public IVariant
+class TestRadioChipVariant : public IVariant
 {
 public:
     void setup() override;

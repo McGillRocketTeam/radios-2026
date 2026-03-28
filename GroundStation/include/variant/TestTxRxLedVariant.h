@@ -1,7 +1,7 @@
 #pragma once
 #include "IVariant.h"
 
-class TxRxLedTestVariant : public IVariant
+class TestTxRxLedVariant : public IVariant
 {
 public:
     void setup() override;

@@ -1,4 +1,4 @@
-#include "RadioChipTestVariant.h"
+#include "TestRadioChipVariant.h"
 
 #include <Arduino.h>
 #include <RadioLib.h>
@@ -6,7 +6,7 @@
 #include "PinLayout.h"
 #include "LoraParamConfig.h"
 
-void RadioChipTestVariant::setup()
+void TestRadioChipVariant::setup()
 {
     // Waiting for connection
     Serial.begin(115200);
@@ -147,7 +147,7 @@ void RadioChipTestVariant::setup()
     Serial.println("================================================");
 }
 
-void RadioChipTestVariant::loop()
+void TestRadioChipVariant::loop()
 {
     // All work is done in setup
     delay(1000);
