@@ -6,7 +6,7 @@
 #include "RadioChipTestVariant.h"
 #include "RangeTestFCVariant.h"
 #include "RangeTestGSVariant.h"
-
+#include "TxRxLedTestVariant.h"
 
 IVariant& getVariant()
 {
@@ -27,6 +27,9 @@ IVariant& getVariant()
     return variant;
 #elif defined(DEVICE_VARIANT_FLIGHTCOMPUTER)
     static FlightComputerVariant variant;
+    return variant;
+#elif defined(DEVICE_VARIANT_TXRXLED_TEST)
+    static TxRxLedTestVariant variant;
     return variant;
 #else
     #error "No valid device mode selected"
