@@ -148,3 +148,10 @@ float RadioChip::getSNR()
 {
     return _radio->getSNR();
 }
+
+uint32_t RadioChip::getTimeOnAir(size_t len)
+{
+    // RadioLibTime_t is an unsigned long which could be probablematic for the mcu
+    // Static casting to uint32_t should give more stability
+    return static_cast<uint32_t>(_radio->getTimeOnAir(len));
+}

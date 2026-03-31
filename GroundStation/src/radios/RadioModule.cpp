@@ -87,11 +87,12 @@ bool RadioModule::transmitBlocking(const uint8_t *data, size_t size)
 
     // wait for ISR to fire
     uint32_t start = millis();
+    // 10ms + 500% of time on air
+    uint32_t timeout_ms = 10 + ( radio_.getTimeOnAir(size) * 5 ) / 1000;
 
     while (!interruptReceived)
     {
-        // TODO we should calculate the timeout threshold based on toa
-        if (millis() - start > 200)
+        if (millis() - start > timeout_ms)
         {
 
             LOGGING(CAT_RADIO, CRIT, "TX wait timeout");
