@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-03-19 12:10
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-03-31 16:18
 #pragma once
 #ifdef __cplusplus
 #include <cstdint>
@@ -60,8 +60,8 @@ typedef struct __attribute__((__packed__)) prop_atomic_data
 {
     uint16_t cc_pressure;
     uint16_t tank_pressure;
-    uint16_t tank_temp;
-    uint8_t vent_temp;
+    uint16_t tank_temp_celsius;
+    uint8_t vent_temp_celsius;
 } prop_atomic_data;
 
 typedef union prop_atomic_packet {
@@ -73,26 +73,26 @@ typedef union prop_atomic_packet {
 typedef struct __attribute__((__packed__)) flight_atomic_data
 {
     uint8_t flight_stage;
-    float barometer_altitude_from_pad;
-    float barometer_altitude_from_sea_level;
-    float fc_pressure;
-    float apogee_from_ground;
-    int16_t fc_temp;
-    float gps_latitude;
-    float gps_longitude;
-    float gps_altitude;
-    float gps_time_last_update;
-    float vertical_speed;
-    int16_t acceleration_x;
-    int16_t acceleration_y;
-    int16_t acceleration_z;
-    int16_t gyro_rate_x;
-    int16_t gyro_rate_y;
-    int16_t gyro_rate_z;
-    uint8_t fc_rssi;
-    int8_t fc_snr;
-    uint8_t battery_voltage;
-    int16_t battery_current_draw;
+    float barometer_altitude_from_pad_ft;
+    float barometer_altitude_from_sea_level_ft;
+    float fc_pressure_hpa;
+    float apogee_from_ground_ft;
+    int16_t fc_temp_celsius_em2;
+    float gps_latitude_deg_e7;
+    float gps_longitude_deg_e7;
+    float gps_altitude_mm;
+    float gps_time_last_update_s;
+    float vertical_speed_ft_per_sec;
+    int16_t acceleration_x_mg;
+    int16_t acceleration_y_mg;
+    int16_t acceleration_z_mg;
+    int16_t gyro_rate_x_mdeg_per_s;
+    int16_t gyro_rate_y_mdeg_per_s;
+    int16_t gyro_rate_z_mdeg_per_s;
+    uint8_t fc_rssi_dBm;
+    int8_t fc_snr_dB;
+    uint8_t battery_voltage_dV;
+    int16_t battery_current_draw_mA;
 } flight_atomic_data;
 
 typedef union flight_atomic_packet {

@@ -31,9 +31,9 @@ namespace
 
         memcpy(&flight, p, sizeof(flight_atomic_data));
 
-        const float FC_RSSI = -1.0f * (static_cast<int32_t>(flight.fc_rssi) / 2.0f);
-        const float FC_SNR = flight.fc_snr * 0.25f;
-        const float FC_LastTime = flight.gps_time_last_update;
+        const float FC_RSSI = -1.0f * (static_cast<int32_t>(flight.fc_rssi_dBm) / 2.0f);
+        const float FC_SNR = flight.fc_snr_dB * 0.25f;
+        const float FC_LastTime = flight.gps_time_last_update_s;
 
         if (frame.cts() || frame.ack())
         {

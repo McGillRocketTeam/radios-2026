@@ -84,10 +84,10 @@ void RangeTestFCVariant::loop()
     if (view.validate() == ParseError::Ok && view.hasAtomic(AT_FLIGHT_ATOMIC)) {
         auto* p = view.atomicPtr(AT_FLIGHT_ATOMIC);
         auto* flight = reinterpret_cast<flight_atomic_data*>(const_cast<uint8_t*>(p));
-        flight->gps_time_last_update = millis() * 0.001f;
+        flight->gps_time_last_update_s = millis() * 0.001f;
 
-        flight->fc_rssi = (uint16_t)((radioModule->getRSSI() * 2.0f));
-        flight->fc_snr = (int8_t)(radioModule->getSNR() * 4.0f);
+        flight->fc_rssi_dBm = (uint16_t)((radioModule->getRSSI() * 2.0f));
+        flight->fc_snr_dB = (int8_t)(radioModule->getSNR() * 4.0f);
     }
 
     // Send telemetry over radio

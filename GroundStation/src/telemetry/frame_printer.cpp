@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-03-19 12:10
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-03-31 16:18
 #include "frame_printer.h"
 #include <Arduino.h>
 
@@ -68,8 +68,8 @@ void printProp_atomicAtomic(const prop_atomic_data* p) {
   Serial.println(F("prop_atomic {"));
   PRINT_FIELD(p, cc_pressure);
   PRINT_FIELD(p, tank_pressure);
-  PRINT_FIELD(p, tank_temp);
-  PRINT_FIELD(p, vent_temp);
+  PRINT_FIELD(p, tank_temp_celsius);
+  PRINT_FIELD(p, vent_temp_celsius);
   Serial.println(F("}"));
 }
 
@@ -78,26 +78,26 @@ void printFlight_atomicAtomic(const flight_atomic_data* p) {
   if (!p) return;
   Serial.println(F("flight_atomic {"));
   PRINT_FIELD(p, flight_stage);
-  PRINT_FIELD(p, barometer_altitude_from_pad);
-  PRINT_FIELD(p, barometer_altitude_from_sea_level);
-  PRINT_FIELD(p, fc_pressure);
-  PRINT_FIELD(p, apogee_from_ground);
-  PRINT_FIELD(p, fc_temp);
-  PRINT_FIELD(p, gps_latitude);
-  PRINT_FIELD(p, gps_longitude);
-  PRINT_FIELD(p, gps_altitude);
-  PRINT_FIELD(p, gps_time_last_update);
-  PRINT_FIELD(p, vertical_speed);
-  PRINT_FIELD(p, acceleration_x);
-  PRINT_FIELD(p, acceleration_y);
-  PRINT_FIELD(p, acceleration_z);
-  PRINT_FIELD(p, gyro_rate_x);
-  PRINT_FIELD(p, gyro_rate_y);
-  PRINT_FIELD(p, gyro_rate_z);
-  PRINT_FIELD(p, fc_rssi);
-  PRINT_FIELD(p, fc_snr);
-  PRINT_FIELD(p, battery_voltage);
-  PRINT_FIELD(p, battery_current_draw);
+  PRINT_FIELD(p, barometer_altitude_from_pad_ft);
+  PRINT_FIELD(p, barometer_altitude_from_sea_level_ft);
+  PRINT_FIELD(p, fc_pressure_hpa);
+  PRINT_FIELD(p, apogee_from_ground_ft);
+  PRINT_FIELD(p, fc_temp_celsius_em2);
+  PRINT_FIELD(p, gps_latitude_deg_e7);
+  PRINT_FIELD(p, gps_longitude_deg_e7);
+  PRINT_FIELD(p, gps_altitude_mm);
+  PRINT_FIELD(p, gps_time_last_update_s);
+  PRINT_FIELD(p, vertical_speed_ft_per_sec);
+  PRINT_FIELD(p, acceleration_x_mg);
+  PRINT_FIELD(p, acceleration_y_mg);
+  PRINT_FIELD(p, acceleration_z_mg);
+  PRINT_FIELD(p, gyro_rate_x_mdeg_per_s);
+  PRINT_FIELD(p, gyro_rate_y_mdeg_per_s);
+  PRINT_FIELD(p, gyro_rate_z_mdeg_per_s);
+  PRINT_FIELD(p, fc_rssi_dBm);
+  PRINT_FIELD(p, fc_snr_dB);
+  PRINT_FIELD(p, battery_voltage_dV);
+  PRINT_FIELD(p, battery_current_draw_mA);
   Serial.println(F("}"));
 }
 

@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-03-19 12:10
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-03-31 16:18
 #include "telemetry_generator.h"
 
 #include <cstring>
@@ -49,34 +49,34 @@ static void fillPropAtomic(prop_atomic_data& x)
     x = {};
     x.cc_pressure = 0;
     x.tank_pressure = 1;
-    x.tank_temp = 2;
-    x.vent_temp = 0;
+    x.tank_temp_celsius = 2;
+    x.vent_temp_celsius = 0;
 }
 
 static void fillFlightAtomic(flight_atomic_data& x)
 {
     x = {};
     x.flight_stage = 1;
-    x.barometer_altitude_from_pad = 0.0f;
-    x.barometer_altitude_from_sea_level = 0.1f;
-    x.fc_pressure = 0.2f;
-    x.apogee_from_ground = 0.3f;
-    x.fc_temp = 0;
-    x.gps_latitude = 0.4f;
-    x.gps_longitude = 0.5f;
-    x.gps_altitude = 0.6f;
-    x.gps_time_last_update = 0.7f;
-    x.vertical_speed = 0.8f;
-    x.acceleration_x = 1;
-    x.acceleration_y = 2;
-    x.acceleration_z = 3;
-    x.gyro_rate_x = 4;
-    x.gyro_rate_y = 5;
-    x.gyro_rate_z = 6;
-    x.fc_rssi = 2;
-    x.fc_snr = 0;
-    x.battery_voltage = 3;
-    x.battery_current_draw = 7;
+    x.barometer_altitude_from_pad_ft = 0.0f;
+    x.barometer_altitude_from_sea_level_ft = 0.1f;
+    x.fc_pressure_hpa = 0.2f;
+    x.apogee_from_ground_ft = 0.3f;
+    x.fc_temp_celsius_em2 = 0;
+    x.gps_latitude_deg_e7 = 0.4f;
+    x.gps_longitude_deg_e7 = 0.5f;
+    x.gps_altitude_mm = 0.6f;
+    x.gps_time_last_update_s = 0.7f;
+    x.vertical_speed_ft_per_sec = 0.8f;
+    x.acceleration_x_mg = 1;
+    x.acceleration_y_mg = 2;
+    x.acceleration_z_mg = 3;
+    x.gyro_rate_x_mdeg_per_s = 4;
+    x.gyro_rate_y_mdeg_per_s = 5;
+    x.gyro_rate_z_mdeg_per_s = 6;
+    x.fc_rssi_dBm = 2;
+    x.fc_snr_dB = 0;
+    x.battery_voltage_dV = 3;
+    x.battery_current_draw_mA = 7;
 }
 
 static void fillRadioAtomic(radio_atomic_data& x)
