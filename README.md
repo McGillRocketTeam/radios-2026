@@ -1,6 +1,6 @@
 # Radios 2026
 
-Repo for all radios 2026 code for MRT
+Repo for all radios 2026 code for the McGill Rocket Team
 
 **Author and Maintainer:** <br> 
 Jeffrey Lim
@@ -11,8 +11,8 @@ Jeffrey Lim
 
 Before starting, install:
 
-* Visual Studio Code  
-* PlatformIO (VSCode extension)
+* [Visual Studio Code](https://code.visualstudio.com/)
+* [PlatformIO Extension (VSCode Marketplace)](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide)
 
 ### 2. Project Structure
 
