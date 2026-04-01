@@ -10,6 +10,8 @@
 #define FLAG_ACK 0x02
 // BAD command acknowledged
 #define FLAG_BAD 0x04
+// Nop AcKnowledgement 
+#define FLAG_NAK 0x8
 
 #define MAX_NUMBER_OF_ATOMIC_PACKETS 32
 
@@ -31,5 +33,6 @@ typedef union {
 static inline bool header_has_cts(const FrameHeader* h) { return (h->flags & FLAG_CTS) != 0; }
 static inline bool header_has_ack(const FrameHeader* h) { return (h->flags & FLAG_ACK) != 0; }
 static inline bool header_has_bad(const FrameHeader* h) { return (h->flags & FLAG_BAD) != 0; }
+static inline bool header_has_nak(const FrameHeader* h) { return (h->flags & FLAG_NAK) != 0; }
 static inline uint8_t header_get_ack_id(const FrameHeader* h) { return h->ack_id; }
 #endif

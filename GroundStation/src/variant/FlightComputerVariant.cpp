@@ -18,6 +18,7 @@
 enum class FCState : uint8_t
 {
     Transmit_NoCTS,
+    Transmit_NoCTS_NAK,
     Transmit_CTS,
     Waiting_For_Response,
     Transmit_ACK
@@ -42,7 +43,11 @@ static bool setFlagsFromState(FCState state,
     switch (state)
     {
     case FCState::Transmit_NoCTS:
-        // No CTS, no ACK
+        ack_id = 0;
+        return true;
+
+    case FCState::Transmit_NoCTS_NAK:
+        flags = FLAG_NAK;
         ack_id = 0;
         return true;
 
@@ -52,13 +57,10 @@ static bool setFlagsFromState(FCState state,
         return true;
 
     case FCState::Waiting_For_Response:
-        // We should never be waiting for a response
-        // when setting the flags, so do nothing
         return false;
 
     case FCState::Transmit_ACK:
         flags = FLAG_ACK;
-        // ack_id must already be set by RX logic
         return true;
     }
     return true;
@@ -103,7 +105,7 @@ static void handleCommandPacket(const uint8_t* buffer,
 
     // Case-insensitive compare for up to 4-char commands
     if (strncasecmp(pkt.command_string, "nop", 3) == 0) {
-        currentState = FCState::Transmit_NoCTS;
+        currentState = FCState::Transmit_NoCTS_NAK;
         return;
     }
     Serial.print("Setting CMD ID: ");
@@ -185,6 +187,7 @@ void FlightComputerVariant::loop()
     // Finite State Machine Block
 
     // Success sending a CTS tx
+    
     if (txSuccess && currentState == FCState::Transmit_CTS)
     {
         Serial.println("We are now waiting for a response");
@@ -207,6 +210,11 @@ void FlightComputerVariant::loop()
     else if (txSuccess && currentState == FCState::Transmit_NoCTS)
     {
         Serial.println("Successful tx of no CTS packet now swapping to with CTS");
+        currentState = FCState::Transmit_CTS;
+    }
+    else if (txSuccess && currentState == FCState::Transmit_NoCTS_NAK)
+    {
+        Serial.println("Successful tx of NAK packet now swapping to with CTS");
         currentState = FCState::Transmit_CTS;
     }
     else if (txSuccess && currentState == FCState::Transmit_ACK){

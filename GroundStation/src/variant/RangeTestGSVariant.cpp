@@ -35,9 +35,9 @@ namespace
         const float FC_SNR = flight.fc_snr_dB * 0.25f;
         const float FC_LastTime = flight.gps_time_last_update_s;
 
-        if (frame.cts() || frame.ack())
+        if (frame.cts() || frame.ack() || frame.nak())
         {
-            const char *kind = frame.cts() ? "CTS" : "ACK";
+            const char *kind = (frame.cts() || frame.nak() )? "CTS" : "ACK";
 
             char buf[192];
             snprintf(buf,

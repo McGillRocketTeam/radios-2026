@@ -346,19 +346,20 @@ void GroundStation::printVerboseTelemetryPacket()
     }
 
     char buf[128] = {0};
-
+    
     // Standard GS data
     snprintf(buf, sizeof(buf),
-        "RX size=%u seq=%u cts=%u ack=%u bad=%u ack_id=%u gs_t=%.3f gs_rssi=%.2f gs_snr=%.2f",
-        (unsigned)radioModule->getPacketLength(),
+        "RX seq=%u cts=%u ack=%u bad=%u nak=%u ack_id=%u gs_rssi=%.2f gs_snr=%.2f len=%u gs_t=%.3f",
         (unsigned)currentFrameView.header()->seq,
         (unsigned)currentFrameView.cts(),
         (unsigned)currentFrameView.ack(),
         (unsigned)currentFrameView.bad(),
+        (unsigned)currentFrameView.nak(),
         (unsigned)currentFrameView.ack_id(),
-        millis() * 0.001f,
         lastRSSI,
-        lastSNR
+        lastSNR,
+        (unsigned)currentFrameView._len,
+        millis() * 0.001f
     );
     LOGGING(CAT_GS, INFO, buf);
 

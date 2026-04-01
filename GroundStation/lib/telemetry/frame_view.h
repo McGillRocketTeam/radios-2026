@@ -21,6 +21,7 @@ struct FrameView {
     bool cts() const;
     bool ack() const;
     bool bad() const;
+    bool nak() const;
     int ack_id() const;
 
     bool hasAtomic(int idx) const;
