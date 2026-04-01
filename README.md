@@ -2,9 +2,7 @@
 
 ### 👤 Maintainer and Author
 
-**Main Maintainer:** Jeffrey Lim
-
----
+**Maintainer:** Jeffrey Lim
 
 ### 1. Prerequisites
 
@@ -21,20 +19,17 @@ At the root of the repository:
 
 * `lab/` → experimental / R&D code  
 * `rangeTestData/` → scripts and data processing for range tests  
-* `GroundStation/` → **main radios codebase (this is what you use)**  
+* `GroundStation/` → **main radios codebase**  
 
 ---
 
-### 3. Opening the Project (Critical Step)
+### 3. Opening the Project
 
-Do **NOT** open the root repo.
-
-You must open **only**:
+Do **NOT** open the root repo, open:
 
 `/GroundStation`
 
-
-Reason: this folder contains the `platformio.ini` file, which defines all build environments.
+This folder contains the `platformio.ini` file, which defines all build environments.
 
 ---
 
@@ -71,9 +66,7 @@ After initialization, you’ll see the PlatformIO toolbar in VSCode.
 
 ### 6. Selecting the Correct Environment
 
-This is the **most important conceptual step**.
-
-Each PlatformIO environment = a **different firmware behavior**.
+Each PlatformIO environment is a **different firmware behavior**.
 
 ---
 
@@ -122,15 +115,11 @@ Each PlatformIO environment = a **different firmware behavior**.
 
 ---
 
-### 7. Frequency Band Behavior (Important Clarification)
-
-Don’t overthink this:
+### 7. Frequency Band Behavior 
 
 * The code **automatically detects frequency band from hardware**
   * 433 MHz → Band A  
   * 900 MHz → Band B  
-
-You **do not configure this in software**.
 
 ---
 
