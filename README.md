@@ -1,8 +1,11 @@
-## 🧠 Software Setup
+# Radios 2026
 
-### 👤 Maintainer and Author
+Repo for all radios 2026 code for MRT
 
-**Maintainer:** Jeffrey Lim
+**Author and Maintainer:** <br> 
+Jeffrey Lim
+
+## Software Setup
 
 ### 1. Prerequisites
 
@@ -10,8 +13,6 @@ Before starting, install:
 
 * Visual Studio Code  
 * PlatformIO (VSCode extension)
-
----
 
 ### 2. Project Structure
 
@@ -21,8 +22,6 @@ At the root of the repository:
 * `rangeTestData/` → scripts and data processing for range tests  
 * `GroundStation/` → **main radios codebase**  
 
----
-
 ### 3. Opening the Project
 
 Do **NOT** open the root repo, open:
@@ -30,8 +29,6 @@ Do **NOT** open the root repo, open:
 `/GroundStation`
 
 This folder contains the `platformio.ini` file, which defines all build environments.
-
----
 
 ### 4. PlatformIO Initialization
 
@@ -44,7 +41,6 @@ Once `GroundStation/` is opened:
 
 ![PlatformIO Start Screen](assets/images/start_screen.png)
 
----
 
 ### 5. PlatformIO Toolbar (Bottom Bar)
 
@@ -62,13 +58,12 @@ After initialization, you’ll see the PlatformIO toolbar in VSCode.
 * ⚙️ **Environment Selector** → Choose which firmware variant to build  
 * 🔌 **COM Port Selector** → Select target device (auto usually works)  
 
----
 
 ### 6. Selecting the Correct Environment
 
 Each PlatformIO environment is a **different firmware behavior**.
 
----
+
 
 #### 🔧 Core Modes
 
@@ -81,19 +76,15 @@ Each PlatformIO environment is a **different firmware behavior**.
   → Same as above, but identifies as **Pad**  
 
 * `GS_No_Eth`  
-  → Ground station without Ethernet (for Teensy 4.0)  
-
----
+  → Ground station without Ethernet
 
 #### 🚀 Flight Computer Simulation
 
 * `FC_mock`  
   → Simulates Flight Computer  
-  → Sends telemetry  
+  → Sends fixed telemetry  
   → Responds to commands with ACKs  
   → Used for testing without real FC  
-
----
 
 #### 📡 Range Testing
 
@@ -104,16 +95,14 @@ Each PlatformIO environment is a **different firmware behavior**.
 
 * `RANGETEST_FC`  
   → FC-side range test firmware  
-  → Generates structured telemetry  
+  → Generates fixed telemetry with some rangetest specific structured fields
 
----
 
 #### 🧪 Misc
 
 * `TEST_*` → Hardware-specific testing  
 * `DEBUG_*` → Temporary/debug runs  
 
----
 
 ### 7. Frequency Band Behavior 
 
@@ -121,7 +110,7 @@ Each PlatformIO environment is a **different firmware behavior**.
   * 433 MHz → Band A  
   * 900 MHz → Band B  
 
----
+
 
 ### 8. Hardware Compatibility Constraint
 
@@ -136,7 +125,6 @@ Each PlatformIO environment is a **different firmware behavior**.
     * Range test modes
     * `FC_mock`
 
----
 
 ### 9. Build & Upload Flow
 
@@ -148,9 +136,9 @@ Minimal correct workflow:
 4. Click ➡️ Upload  
 5. Open 🔌 Serial Monitor  
 
----
 
-### ⚠️ Quick Debug Checklist
+
+### Quick Debug Checklist
 
 If something doesn’t work, check:
 
@@ -159,4 +147,4 @@ If something doesn’t work, check:
 * Wrong COM port  
 * PlatformIO not finished installing dependencies  
 
----
+
