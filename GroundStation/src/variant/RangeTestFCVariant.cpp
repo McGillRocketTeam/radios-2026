@@ -86,7 +86,7 @@ void RangeTestFCVariant::loop()
         auto* flight = reinterpret_cast<flight_atomic_data*>(const_cast<uint8_t*>(p));
         flight->gps_time_last_update_s = millis() * 0.001f;
 
-        flight->fc_rssi_dBm = (uint16_t)((radioModule->getRSSI() * 2.0f));
+        flight->fc_rssi_dBm = (uint8_t)((radioModule->getRSSI() * -2.0f));
         flight->fc_snr_dB = (int8_t)(radioModule->getSNR() * 4.0f);
     }
 
