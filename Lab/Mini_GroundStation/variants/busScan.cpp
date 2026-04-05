@@ -3,7 +3,7 @@
 void setup()
 {
     Serial.begin(115200);
-    Wire.begin();
+    Wire1.begin();
 
     while (!Serial)
         ;
@@ -12,8 +12,8 @@ void setup()
 
     for (uint8_t addr = 1; addr < 127; addr++)
     {
-        Wire.beginTransmission(addr);
-        if (Wire.endTransmission() == 0)
+        Wire1.beginTransmission(addr);
+        if (Wire1.endTransmission() == 0)
         {
             Serial.print("Found: 0x");
             Serial.println(addr, HEX);
