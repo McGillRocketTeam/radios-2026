@@ -226,6 +226,8 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
         char buf[64];
         snprintf(buf, sizeof(buf), "setting tx from cts b=%s", b ? "true" : "false");
         LOGGING(CAT_GS, DEBUG, buf);
+        // Support the GSC setting the txFromCTS policy
+        Console.sendRadioCmdAck();
         break;
     }
 
@@ -289,33 +291,41 @@ void GroundStation::readReceivedPacketToFrame()
     currentFrameView.reset(rxBuf, rxLen);
     currentFrameState = currentFrameView.validate();
 
-    if (currentFrameState != ParseError::Ok)
+    switch (currentFrameState)
     {
-        // On bad frame we just log, let send to GUI logic decide what to do
-        // with the screwed up frame via currentFrameState
-        LOGGING(CAT_GS, CRIT, "Could not validate frame");
-        if (currentFrameState == ParseError::PayloadTooShort)
-        {
-            LOGGING(CAT_GS, CRIT, "payload too short");
-        }
-        if (currentFrameState == ParseError::TooShort)
-        {
-            LOGGING(CAT_GS, CRIT, "header too short");
-        }
-        if (currentFrameState == ParseError::UnknownAtomicSize)
-        {
-            LOGGING(CAT_GS, CRIT, "uknown atomic");
-        }
-        return;
+    case ParseError::Ok:
+        // No error save metadata and continue
+        lastRSSI = radioModule->getRSSI();
+        lastSNR = radioModule->getSNR();
+        lastRawRSSI = radioModule->getRawRSSI();
+        lastRawSNR = radioModule->getRawSNR();
+        break;
+    case ParseError::COMMAND_PACKET:
+    case ParseError::COMMAND_PACKET_EXTENDED:
+        // TODO perhaps logging the cmd packet info more aggresively
+        // is worth it? Needs evaluating
+        LOGGING(CAT_GS, INFO, "command intercept");
+        break;
+    case ParseError::PayloadTooShort:
+        LOGGING(CAT_GS, CRIT, "payload too short");
+        break;
+    case ParseError::TooShort:
+        LOGGING(CAT_GS, CRIT, "header too short");
+        break;
+    case ParseError::UnknownAtomicSize:
+        LOGGING(CAT_GS, CRIT, "Unknown atomic size");
+        break;
     }
-    lastRSSI = radioModule->getRSSI();
-    lastSNR = radioModule->getSNR();
-    lastRawRSSI = radioModule->getRawRSSI();
-    lastRawSNR = radioModule->getRawSNR();
 }
 
 void GroundStation::sendTelemetryToGui()
 {
+    if (currentFrameState == ParseError::COMMAND_PACKET ||
+        currentFrameState == ParseError::COMMAND_PACKET_EXTENDED)
+    {
+        // On command intercepts we dont send anything to the GUI
+        return;
+    }
     // TODO discuss how to alert GUI to bad ASTRA frames
     if (currentFrameState != ParseError::Ok)
     {
@@ -344,30 +354,30 @@ void GroundStation::printVerboseTelemetryPacket()
         verbosePrintHook(currentFrameView, currentFrameState, lastRSSI, lastSNR);
         return;
     }
+    if (currentFrameState != ParseError::Ok)
+        return;
 
     char buf[128] = {0};
-    
+
     // Standard GS data
     snprintf(buf, sizeof(buf),
-        "RX seq=%u cts=%u ack=%u bad=%u nak=%u ack_id=%u gs_rssi=%.2f gs_snr=%.2f len=%u gs_t=%.3f",
-        (unsigned)currentFrameView.header()->seq,
-        (unsigned)currentFrameView.cts(),
-        (unsigned)currentFrameView.ack(),
-        (unsigned)currentFrameView.bad(),
-        (unsigned)currentFrameView.nak(),
-        (unsigned)currentFrameView.ack_id(),
-        lastRSSI,
-        lastSNR,
-        (unsigned)currentFrameView._len,
-        millis() * 0.001f
-    );
+             "RX seq=%u cts=%u ack=%u bad=%u nak=%u ack_id=%u gs_rssi=%.2f gs_snr=%.2f len=%u gs_t=%.3f",
+             (unsigned)currentFrameView.header()->seq,
+             (unsigned)currentFrameView.cts(),
+             (unsigned)currentFrameView.ack(),
+             (unsigned)currentFrameView.bad(),
+             (unsigned)currentFrameView.nak(),
+             (unsigned)currentFrameView.ack_id(),
+             lastRSSI,
+             lastSNR,
+             (unsigned)currentFrameView._len,
+             millis() * 0.001f);
     LOGGING(CAT_GS, INFO, buf);
 
     if (LoggerGS::getInstance().getCategoryMask() & CAT_TELEMETRY)
     {
         printAtomics(currentFrameView);
     }
-    return;
 }
 
 // === Sending command helpers ===

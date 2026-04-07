@@ -1,4 +1,5 @@
 #include "frame_view.h"
+#include "command_packet.h"
 #ifdef __cplusplus
 
 FrameView::FrameView() : _base(nullptr), _len(0) {}
@@ -6,7 +7,12 @@ FrameView::FrameView(const uint8_t* bytes, size_t len) : _base(bytes), _len(len)
 void FrameView::reset(const uint8_t* bytes, size_t len) { _base = bytes; _len = len; }
 
 ParseError FrameView::validate() const {
-    if (_len < sizeof(FrameHeader)) return ParseError::TooShort;
+    if (_len == sizeof(command_packet_data)) 
+        return ParseError::COMMAND_PACKET;
+    if (_len == sizeof(command_packet_extended)) 
+        return ParseError::COMMAND_PACKET_EXTENDED;
+    if (_len < sizeof(FrameHeader)) 
+        return ParseError::TooShort;
     const auto* h = header();
     const uint32_t need = payload_length_from_bitmap(h->atomics_bitmap);
     if (sizeof(FrameHeader) + need > _len) return ParseError::PayloadTooShort;
