@@ -1,11 +1,13 @@
 #include <cstring>
 
+#include "GroundStation.h"
+
 #include "command_packet.h"
 #include "frame_printer.h"
 
 #include "ConsoleRouter.h"
 #include "GroundCommand.h"
-#include "GroundStation.h"
+#include "GroundStationStore.h"
 #include "LoggerGS.h"
 #include "RocketCommand.h"
 #include "RadioMetadata.h"
@@ -32,7 +34,7 @@ namespace
 // === Public Setup of Groundstation ===
 
 GroundStation::GroundStation()
-    : radioModule(std::make_unique<RadioModule>()), currentFrameView(), canTXFromCTS(ENABLE_RADIO_TX)
+    : radioModule(std::make_unique<RadioModule>()), currentFrameView()
 {
 }
 
@@ -68,10 +70,6 @@ RadioModule *GroundStation::getRadioModule()
     return radioModule.get();
 }
 
-void GroundStation::setCanTXFromCTS(bool enable)
-{
-    canTXFromCTS = enable;
-}
 
 void GroundStation::setVerbosePacket(bool state)
 {
@@ -131,7 +129,7 @@ void GroundStation::handleReceivedPacket()
     printVerboseTelemetryPacket();
 
     // Check the CTS flag and if we want to be able to transmit
-    if (currentFrameView.cts() && canTXFromCTS)
+    if (currentFrameView.cts() && GroundStationStore::canTxFromCTS())
     {
         // With the CTS flag we know to send another command to the rocket,
         handleRocketCommand();
@@ -198,7 +196,7 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     case GroundCommand::Action::Ground:
         radioModule->checkParams();
         Console.print(" TxFromCTS ");
-        Console.print(canTXFromCTS);
+        Console.print(GroundStationStore::canTxFromCTS());
         break;
 
     case GroundCommand::Action::Ping:
@@ -222,12 +220,14 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
     case GroundCommand::Action::SetTx:
     {
         bool b = parseBoolean(command.arg);
-        setCanTXFromCTS(b);
+        GroundStationStore::setCanTxFromCTS(b);
         char buf[64];
         snprintf(buf, sizeof(buf), "setting tx from cts b=%s", b ? "true" : "false");
         LOGGING(CAT_GS, DEBUG, buf);
         // Support the GSC setting the txFromCTS policy
         Console.sendRadioCmdAck();
+        // Refresh the status as well since TxFromCTS is a ground config
+        Console.sendStatusOk();
         break;
     }
 

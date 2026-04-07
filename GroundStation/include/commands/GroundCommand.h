@@ -36,6 +36,7 @@ namespace GroundCommand
     };
 
     bool isGroundCommand(const command_line& s);
+    bool isRocketCommand(const command_line& s);
     Action parseActionToken(const command_line& cmd,uint8_t start, uint8_t end);
     Cmd parseGroundCmd(const command_line &s);
 

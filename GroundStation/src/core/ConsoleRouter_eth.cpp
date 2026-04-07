@@ -5,6 +5,7 @@
 #include "CommandLine.h"
 #include "CommandParser.h"
 #include "GroundCommand.h"
+#include "GroundStationStore.h"
 #include "MqttTopics.h"
 #include "ParamStore.h"
 #include "PinLayout.h"
@@ -228,14 +229,15 @@ void ConsoleRouter::sendStatusOk()
 
     const RadioParams &param = ParamStore::getRadioParams();
 
-    // Use a char buffer for snprintf
-    char detailBuffer[128];
+    char detailBuffer[256];
     int n = snprintf(detailBuffer, sizeof(detailBuffer),
-                     "%s Band:%s FREQ:%.2f BW:%.2f SF:%d CR:%d PWR:%d MAC:%s ",
-                     name, bandStr,
-                     (double)param.freq, (double)param.bw,
-                     param.sf, param.cr, param.pow
-                     ,macStr);
+        "%s TxFromCTS:%s Band:%s FREQ:%.2f BW:%.2f SF:%d CR:%d PWR:%d MAC:%s ",
+        GroundStationStore::canTxFromCTS() ? "true" : "false",
+        name, bandStr,
+        (double)param.freq, (double)param.bw,
+        param.sf, param.cr, param.pow,
+        macStr
+    );
 
     size_t len = 0;
     if (n > 0)
@@ -397,14 +399,17 @@ void ConsoleRouter::handleMqttCommand()
         return;
 
     // A full rocket queue means we need to discard and send TX NOT OK
-    if (!GroundCommand::isGroundCommand(currentCommandLine) &&
+    if (GroundCommand::isRocketCommand(currentCommandLine) &&
         commandParser->isRocketQueueFull())
     {
         command_packet_extended cmd = {};
         commandParser->getNextRocketCommand(cmd);
         sendCmdAckTx(cmd.data.base.data.command_id, false);
     }
-
+    // We need to error here if txFromCTS is false 
+    // GSC will just see that the command never completes so PERHAPS 
+    // its ok? Should we just reject immediately if current Ground policy
+    // doesnt allow tx from CTS?
     commandParser->enqueueCommand(currentCommandLine);
     // Only send acks for rocket commands
     uint8_t id;

@@ -8,6 +8,7 @@
 #include "ConsoleRouter.h"
 #include "MqttTopics.h"
 #include "GroundStation.h"
+#include "GroundStationStore.h"
 
 // Variant for full ground station radio operation
 void GroundStationVariant::setup() {
@@ -16,8 +17,10 @@ void GroundStationVariant::setup() {
     #ifdef DEVICE_VARIANT_GROUNDSTATION
         #ifdef GROUNDSTATION_LOCATION_CONTROLSTATION
             role = MqttTopic::Role::CS;
+            GroundStationStore::setCanTxFromCTS(true);
         #elif defined(GROUNDSTATION_LOCATION_PAD)
             role = MqttTopic::Role::PD;
+            GroundStationStore::setCanTxFromCTS(false);
         #else
             #error "No valid ground station location selected"
         #endif
@@ -27,8 +30,6 @@ void GroundStationVariant::setup() {
 
     auto& gs = GroundStation::getInstance();
     gs.initialise(cmd);
-    gs.setCanTXFromCTS(true);
-
 }
 
 // TODO investigate stabillity of system without delay

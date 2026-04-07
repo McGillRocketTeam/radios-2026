@@ -109,6 +109,11 @@ bool GroundCommand::isGroundCommand(const command_line &cmd)
     return cmd.buf[RADIO_COMMAND_KEY_LEN] == ' ';
 }
 
+bool GroundCommand::isRocketCommand(const command_line &cmd)
+{
+    return !isGroundCommand(cmd);
+}
+
 GroundCommand::Action GroundCommand::parseActionToken(const command_line &cmd,
                                                       uint8_t start, uint8_t end)
 {

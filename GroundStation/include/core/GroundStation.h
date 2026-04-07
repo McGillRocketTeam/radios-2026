@@ -83,12 +83,6 @@ public:
     void printVerboseTelemetryPacket();
 
     /**
-     * @brief Enables or disables TX (transmit) functionality based on CTS logic.
-     * @param enable True to enable TX when CTS is set; false to disable.
-     */
-    void setCanTXFromCTS(bool enable);
-
-    /**
      * @brief Destructor for GroundStation.
      */
     ~GroundStation() = default;
@@ -166,6 +160,4 @@ private:
     /// Flag raised by the timer interrupt to indicate it's time to update the parser
     static volatile bool commandParserFlag;
 
-    /// Enables or disables TX based on CTS logic
-    bool canTXFromCTS;
 };

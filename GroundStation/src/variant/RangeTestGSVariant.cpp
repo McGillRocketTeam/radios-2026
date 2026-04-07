@@ -8,6 +8,7 @@
 #include "ConsoleRouter.h"
 #include "MqttTopics.h"
 #include "GroundStation.h"
+#include "GroundStationStore.h"
 
 namespace
 {
@@ -61,12 +62,12 @@ void RangeTestGSVariant::setup()
 {
     auto &cmd = CommandParser::getInstance();
     auto role = MqttTopic::Role::CS;
-
+    GroundStationStore::setCanTxFromCTS(true);
+    
     Console.begin(role, cmd);
 
     auto &gs = GroundStation::getInstance();
     gs.initialise(cmd);
-    gs.setCanTXFromCTS(true);
 
     // For the range test the GSC only outputs csv logs
     // We are overwriting the default logs
