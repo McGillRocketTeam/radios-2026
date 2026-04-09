@@ -5,7 +5,7 @@ import io
 from enum import Enum
 
 # Path of the .txt file with the data
-FILE_NAME = "./data/No_BODGE.txt"
+FILE_NAME = "./data/RF_SW_TEST_Feb_2026/No_BODGE.txt"
 
 class Data:
     def __init__(self, file_name):
