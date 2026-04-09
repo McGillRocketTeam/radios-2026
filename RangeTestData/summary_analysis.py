@@ -1,6 +1,6 @@
 import pandas as pd
 
-FILE_NAME = "./data/RANGE_TEST_Apr_2026/cwhip_433.csv"
+FILE_NAME = "./data/RANGE_TEST_Apr_2026/omni_433.csv"
 
 
 class Data:
@@ -12,8 +12,9 @@ class Data:
     def _load_raw_data(self) -> pd.DataFrame:
         with open(self.file_name, "r", encoding="utf-8") as file:
             txt = file.readlines()
-
-        csv_data = txt[3:-2]
+        # Note that we ignore the last row since disconnecting power 
+        # at the end of the test will result in a rx error
+        csv_data = txt[:-1]
 
         parsed_rows = []
         max_len = 0
@@ -47,7 +48,7 @@ class Data:
         first_col = raw[0].astype(str).str.strip()
 
         is_ping_ack = first_col.str.contains("ping_ack", case=False, na=False)
-        is_crc_error = first_col.str.contains(r"RX CRC error", case=False, na=False)
+        is_crc_error = first_col.str.contains(r"RX header error|RX CRC error", case=False, na=False)
 
         df = pd.DataFrame(index=raw.index)
 
@@ -115,7 +116,7 @@ class Data:
 
     def count_crc_errors(self) -> None:
         crc_rows = self.df[self.df["is_crc_error"]]
-        print(f"RX CRC errors: {len(crc_rows)}")
+        print(f"RX errors: {len(crc_rows)}")
 
     def count_ping_ack_rows(self) -> None:
         ping_rows = self.df[self.df["is_ping_ack"]]
@@ -212,6 +213,7 @@ class Data:
 
 if __name__ == "__main__":
     data = Data(FILE_NAME)
+    print("Antenna " + FILE_NAME.split("/")[-1])
     data.count_ping_ack_rows()
     data.count_crc_errors()
     data.count_bad_rows()
