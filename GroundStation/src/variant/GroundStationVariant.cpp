@@ -17,15 +17,15 @@ void GroundStationVariant::setup() {
     #ifdef DEVICE_VARIANT_GROUNDSTATION
         #ifdef GROUNDSTATION_LOCATION_CONTROLSTATION
             role = MqttTopic::Role::CS;
-            GroundStationStore::setCanTxFromCTS(true);
         #elif defined(GROUNDSTATION_LOCATION_PAD)
             role = MqttTopic::Role::PD;
-            GroundStationStore::setCanTxFromCTS(false);
+            
         #else
             #error "No valid ground station location selected"
         #endif
     #endif
-
+    // We need to manually enable the tx from CTS every time!
+    GroundStationStore::setCanTxFromCTS(false);
     Console.begin(role,cmd);
 
     auto& gs = GroundStation::getInstance();

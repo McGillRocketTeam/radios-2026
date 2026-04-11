@@ -113,12 +113,12 @@ void ConsoleRouter::handleConsoleReconnect()
 void ConsoleRouter::mqttLoop()
 {
     Ethernet.loop();
-    
+
     if (!ethernetUp())
     {
         return;
     }
-    
+
     if (mqttUp())
     {
         mqttClient.loop();
@@ -231,13 +231,12 @@ void ConsoleRouter::sendStatusOk()
 
     char detailBuffer[256];
     int n = snprintf(detailBuffer, sizeof(detailBuffer),
-        "%s TxFromCTS:%s Band:%s FREQ:%.2f BW:%.2f SF:%d CR:%d PWR:%d MAC:%s ",
-        GroundStationStore::canTxFromCTS() ? "true" : "false",
-        name, bandStr,
-        (double)param.freq, (double)param.bw,
-        param.sf, param.cr, param.pow,
-        macStr
-    );
+                     "%s TxFromCTS:%s Band:%s FREQ:%.2f BW:%.2f SF:%d CR:%d PWR:%d MAC:%s ",
+                     GroundStationStore::canTxFromCTS() ? "true" : "false",
+                     name, bandStr,
+                     (double)param.freq, (double)param.bw,
+                     param.sf, param.cr, param.pow,
+                     macStr);
 
     size_t len = 0;
     if (n > 0)
@@ -283,24 +282,25 @@ void ConsoleRouter::sendCmdAckTx(uint8_t cmd_id, bool success)
     }
 }
 
-void ConsoleRouter::sendRadioCmdAck(){
+void ConsoleRouter::sendRadioCmdAck()
+{
     uint8_t jsonBuffer[64];
 
     // status is a string -> must be JSON-escaped if it can contain quotes/newlines/backslashes.
     int n = snprintf((char *)jsonBuffer,
-                    sizeof(jsonBuffer),
-                    "{\"status\":\"ACK_OK\"}");
+                     sizeof(jsonBuffer),
+                     "{\"status\":\"ACK_OK\"}");
 
     if (n <= 0 || (size_t)n >= sizeof(jsonBuffer))
         return;
 
-    this->publish(ackTopic_, jsonBuffer,(size_t)n);
+    this->publish(ackTopic_, jsonBuffer, (size_t)n);
 }
 
-void ConsoleRouter::sendFallbackError(const char* msg,size_t n)
+void ConsoleRouter::sendFallbackError(const char *msg, size_t n)
 {
     // Reinterpret case the goat
-    this->publish(MqttTopic::FALLBACK_ERROR_TOPIC, reinterpret_cast<const uint8_t*>(msg), n);
+    this->publish(MqttTopic::FALLBACK_ERROR_TOPIC, reinterpret_cast<const uint8_t *>(msg), n);
     sendStatusFailed();
 }
 
@@ -353,9 +353,9 @@ void ConsoleRouter::applyRoleConfig(MqttTopic::Role role)
     radioCommandTopic_ = MqttTopic::topic(role_, band_, MqttTopic::TopicKind::RADIO_COMMANDS);
 }
 
-void ConsoleRouter::setupHostName(MqttTopic::Role role) 
+void ConsoleRouter::setupHostName(MqttTopic::Role role)
 {
-    const char* baseName = MqttTopic::topic(role, band_, MqttTopic::TopicKind::NAME);
+    const char *baseName = MqttTopic::topic(role, band_, MqttTopic::TopicKind::NAME);
 
     uint8_t mac[6];
     getMac(mac);
@@ -366,11 +366,10 @@ void ConsoleRouter::setupHostName(MqttTopic::Role role)
         sizeof(deviceNameBuf_),
         "%s-%02X%02X%02X",
         baseName,
-        mac[3], mac[4], mac[5]
-    );
+        mac[3], mac[4], mac[5]);
 
     Ethernet.setHostname(deviceName_);
-} 
+}
 
 // == Centralised publish stuff ==
 void ConsoleRouter::publish(const char *topic, const uint8_t *payload, unsigned int length)
@@ -398,18 +397,23 @@ void ConsoleRouter::handleMqttCommand()
     if (!takeMqttCmdLine())
         return;
 
-    // A full rocket queue means we need to discard and send TX NOT OK
-    if (GroundCommand::isRocketCommand(currentCommandLine) &&
-        commandParser->isRocketQueueFull())
+    if (GroundCommand::isRocketCommand(currentCommandLine))
     {
-        command_packet_extended cmd = {};
-        commandParser->getNextRocketCommand(cmd);
-        sendCmdAckTx(cmd.data.base.data.command_id, false);
+        // A full rocket queue means we need to discard and send TX NOT OK
+        if (commandParser->isRocketQueueFull())
+        {
+            command_packet_extended cmd = {};
+            commandParser->getNextRocketCommand(cmd);
+            sendCmdAckTx(cmd.data.base.data.command_id, false);
+        }
+        // If we dont have enable from CTS rocket commands are ignored
+        else if (!GroundStationStore::canTxFromCTS())
+        {
+            this->println("Ignoring rocket command, no cts enabled");
+            return;
+        }
     }
-    // We need to error here if txFromCTS is false 
-    // GSC will just see that the command never completes so PERHAPS 
-    // its ok? Should we just reject immediately if current Ground policy
-    // doesnt allow tx from CTS?
+
     commandParser->enqueueCommand(currentCommandLine);
     // Only send acks for rocket commands
     uint8_t id;
@@ -492,7 +496,7 @@ bool ConsoleRouter::mqttReconnect()
 
         sendStatusOk();
         mqttClient.subscribe(commandTopic_, 1);
-        mqttClient.subscribe(radioCommandTopic_,1);
+        mqttClient.subscribe(radioCommandTopic_, 1);
 
         return true;
     }
