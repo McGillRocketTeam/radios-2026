@@ -208,10 +208,16 @@ void ConsoleRouter::sendStatusOk()
     if (!ethernetUp() || !mqttUp())
         return;
 
-    static const uint8_t statusBuffer[] = "OK";
+    static const uint8_t notEnabledStatusBuffer[] = "RECEIVE";
+    static const uint8_t enabledStatusBuffer[] = "OK";
 
     // Status needs to be retained
-    this->publishRetained(statusTopic_, statusBuffer, sizeof(statusBuffer) - 1);
+    if (GroundStationStore::canTxFromCTS()){
+        this->publishRetained(statusTopic_, enabledStatusBuffer, sizeof(enabledStatusBuffer) - 1);
+    }
+    else {
+        this->publishRetained(statusTopic_, notEnabledStatusBuffer, sizeof(notEnabledStatusBuffer) - 1);
+    }
 
     Serial.println("mqtt status refresh");
 
