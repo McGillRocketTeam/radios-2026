@@ -151,6 +151,11 @@ public:
     // Return time on air based on params + length in micro seconds
     uint32_t getTimeOnAir(size_t len);
 
+    // TODO investigate reset(bool verify) to trigger a reset of the radio
+    // can be used to recover from being stuck in BUSY 
+    // also can be used as a software triggered reset of the system
+    // where we reset the sx126x and then we can assert reset in the mcu
+
 private:
     /// RadioLib SX1262 driver instance
     SX1262 _radio1262;
