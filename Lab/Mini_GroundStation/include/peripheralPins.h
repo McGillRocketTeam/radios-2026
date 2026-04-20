@@ -23,8 +23,17 @@ constexpr int DISPLAY_CS_PIN   = 9;
 constexpr int DISPLAY_DC_PIN   = 8;
 constexpr int DISPLAY_RST_PIN  = 7;
 
+// Button Pad
+constexpr int BUTTON_PAD_PRESSED_PIN    = 6;
+constexpr int BUTTON_PAD_UP_PIN         = 5;
+constexpr int BUTTON_PAD_RIGHT_PIN      = 4;
+constexpr int BUTTON_PAD_LEFT_PIN       = 3;
+constexpr int BUTTON_PAD_DOWN_PIN       = 2;
+
 // Joystick
-constexpr int STICK_VRX_PIN = 19;
-constexpr int STICK_VRY_PIN = 20;
-constexpr int STICK_SW_PIN = 21;
+// constexpr int STICK_VRX_PIN = 19;
+// constexpr int STICK_VRY_PIN = 20;
+// constexpr int STICK_SW_PIN = 21;
+
+
 
