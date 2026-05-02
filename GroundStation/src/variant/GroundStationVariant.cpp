@@ -23,7 +23,7 @@ void GroundStationVariant::setup() {
             role = MqttTopic::Role::PD;
             // We need to manually enable the tx from CTS every time!
             GroundStationStore::setCanTxFromCTS(false);
-        #elif defined(DGROUNDSTATION_LOCATION_NO_ETH)
+        #elif defined(GROUNDSTATION_LOCATION_NO_ETH)
             role = MqttTopic::Role::CS;
             // When testing we allow tx from cts since we have no GSC
             GroundStationStore::setCanTxFromCTS(true);
