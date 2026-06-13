@@ -250,7 +250,7 @@ void ConsoleRouter::sendStatusOk()
         len = (n >= (int)sizeof(detailBuffer)) ? (sizeof(detailBuffer) - 1) : (size_t)n;
     }
 
-    this->publish(detailTopic_, (const uint8_t *)detailBuffer, len);
+    this->publishRetained(detailTopic_, (const uint8_t *)detailBuffer, len);
 }
 
 void ConsoleRouter::sendStatusFailed()
