@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstring>
 
 #include "GroundStation.h"
@@ -18,6 +19,32 @@ volatile bool GroundStation::commandParserFlag = false;
 
 namespace
 {
+    constexpr int16_t INVALID_JUNCTION_TEMP_CENTI_C = INT16_MIN;
+
+    int16_t getJunctionTempCentiC()
+    {
+#if defined(__IMXRT1062__)
+        const float tempC = tempmonGetTemp();
+        if (!isfinite(tempC))
+        {
+            return INVALID_JUNCTION_TEMP_CENTI_C;
+        }
+
+        float centiC = roundf(tempC * 100.0f);
+        if (centiC < static_cast<float>(INT16_MIN + 1))
+        {
+            centiC = static_cast<float>(INT16_MIN + 1);
+        }
+        if (centiC > static_cast<float>(INT16_MAX))
+        {
+            centiC = static_cast<float>(INT16_MAX);
+        }
+        return static_cast<int16_t>(centiC);
+#else
+        return INVALID_JUNCTION_TEMP_CENTI_C;
+#endif
+    }
+
     bool parseBoolean(const float value)
     {
         if (value == 0)
@@ -341,6 +368,7 @@ void GroundStation::sendTelemetryToGui()
     packet.data.radio_rssi = lastRawRSSI;
     packet.data.radio_snr = lastRawSNR;
     packet.data.seq = currentFrameView.header()->seq;
+    packet.data.junction_temp_centi_c = getJunctionTempCentiC();
 
     Console.sendRadioTelemetry(packet.bytes, sizeof(packet.bytes));
     return;

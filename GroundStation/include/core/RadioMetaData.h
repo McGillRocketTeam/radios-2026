@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 
 // Radio meta data struct to report gs radio data to gsc
@@ -10,6 +12,9 @@ struct __attribute__((__packed__)) radio_metadata_data
     // values in these fields are raw register values
     uint8_t radio_rssi; // real value is radio_rssi/ -2.0
     int8_t radio_snr;  // real value is radio_snr/4
+
+    // Teensy CPU junction temperature in centi-degrees Celsius.
+    int16_t junction_temp_centi_c;
 };
 
 union radio_metadata_data_packet {
