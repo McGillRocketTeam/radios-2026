@@ -83,7 +83,7 @@ namespace MqttTopic {
             // Band::B
             {
                 "SystemB/Rocket/FlightComputer/telemetry",
-                "SystemA/Pad/Radio/acks",
+                "SystemB/Pad/Radio/acks",
                 "SystemB/Rocket/FlightComputer/commands",
                 "radio-pad-b",
                 "SystemB/Pad/Radio/telemetry",
