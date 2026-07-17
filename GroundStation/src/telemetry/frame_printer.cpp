@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-05-23 12:10
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-06-27 13:01
 #include "frame_printer.h"
 #include <Arduino.h>
 
@@ -26,6 +26,7 @@ const __FlashStringHelper* atomicTypeName(AtomicType at) {
     case AT_GPS_ATOMIC: return F("gps_atomic");
     case AT_RADIO_ATOMIC: return F("radio_atomic");
     case AT_SD_ATOMIC: return F("sd_atomic");
+    case AT_PAYLOAD_ATOMIC: return F("payload_atomic");
     default: return F("unknown_atomic");
   }
 }
@@ -177,6 +178,22 @@ void printSd_atomicAtomic(const sd_atomic_data* p) {
   Serial.println(F("}"));
 }
 
+// ---------------- payload_atomic ----------------
+void printPayload_atomicAtomic(const payload_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("payload_atomic {"));
+  PRINT_FIELD(p, payload_ok);
+  PRINT_FIELD(p, payload_sampling);
+  PRINT_FIELD(p, payload_freq_x);
+  PRINT_FIELD(p, payload_freq_y);
+  PRINT_FIELD(p, payload_freq_z);
+  PRINT_FIELD(p, payload_amp_x);
+  PRINT_FIELD(p, payload_amp_y);
+  PRINT_FIELD(p, payload_amp_z);
+  PRINT_FIELD(p, payload_time_elapsed);
+  Serial.println(F("}"));
+}
+
 void printAtomic(const FrameView& view, AtomicType at) {
   switch (at) {
     case AT_RECOV_ATOMIC: {
@@ -237,6 +254,11 @@ void printAtomic(const FrameView& view, AtomicType at) {
     case AT_SD_ATOMIC: {
       const auto* p = view.atomicAs<sd_atomic_data>(AT_SD_ATOMIC);
       printSd_atomicAtomic(p);
+      break;
+    }
+    case AT_PAYLOAD_ATOMIC: {
+      const auto* p = view.atomicAs<payload_atomic_data>(AT_PAYLOAD_ATOMIC);
+      printPayload_atomicAtomic(p);
       break;
     }
     default: Serial.print(F("Unknown atomic type: ")); Serial.println(static_cast<int>(at)); break;

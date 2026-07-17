@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-05-23 12:10
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-06-27 13:01
 #include "telemetry_packets.h"
 
 // ---------- Atomic Size Catalog (definition) ----------
@@ -15,4 +15,5 @@ const uint16_t AT_SIZE[AT_TOTAL] = {
     /*9*/ sizeof(gps_atomic_data),
     /*10*/ sizeof(radio_atomic_data),
     /*11*/ sizeof(sd_atomic_data),
+    /*12*/ sizeof(payload_atomic_data),
 };

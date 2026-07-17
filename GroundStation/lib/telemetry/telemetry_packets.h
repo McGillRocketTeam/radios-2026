@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-05-23 12:10
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-06-27 13:01
 #pragma once
 #ifdef __cplusplus
 #include <cstdint>
@@ -17,6 +17,7 @@ enum AtomicType {
     AT_GPS_ATOMIC           = 9,  // bit 9
     AT_RADIO_ATOMIC         = 10,  // bit 10
     AT_SD_ATOMIC            = 11,  // bit 11
+    AT_PAYLOAD_ATOMIC       = 12,  // bit 12
     AT_TOTAL                             // total count
 };
 
@@ -77,8 +78,8 @@ typedef struct __attribute__((__packed__)) prop_atomic_data
 {
     uint16_t cc_pressure;
     uint16_t tank_pressure;
-    uint16_t tank_temp_celsius;
-    uint8_t vent_temp_celsius;
+    int16_t tank_temp_celsius;
+    int16_t vent_temp_celsius;
 } prop_atomic_data;
 
 typedef union prop_atomic_packet {
@@ -202,6 +203,25 @@ typedef union sd_atomic_packet {
     sd_atomic_data data;
     uint8_t bytes[sizeof(sd_atomic_data)];
 } sd_atomic_packet;
+
+// ---------- payload_atomic atomic ----------
+typedef struct __attribute__((__packed__)) payload_atomic_data
+{
+    bool payload_ok : 1;
+    bool payload_sampling : 1;
+    uint16_t payload_freq_x;
+    uint16_t payload_freq_y;
+    uint16_t payload_freq_z;
+    uint16_t payload_amp_x;
+    uint16_t payload_amp_y;
+    uint16_t payload_amp_z;
+    uint32_t payload_time_elapsed;
+} payload_atomic_data;
+
+typedef union payload_atomic_packet {
+    payload_atomic_data data;
+    uint8_t bytes[sizeof(payload_atomic_data)];
+} payload_atomic_packet;
 
 // ---------- Atomic Size Catalog (declaration) ----------
 extern const uint16_t AT_SIZE[AT_TOTAL];
