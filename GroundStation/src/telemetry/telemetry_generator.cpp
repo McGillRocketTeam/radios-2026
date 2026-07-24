@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-06-27 13:01
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-23 22:35
 #include "telemetry_generator.h"
 
 #include <cstring>
@@ -68,12 +68,12 @@ static void fillFcInternalAtomic(fc_internal_atomic_data& x)
 {
     x = {};
     x.fc_pressure_hpa = 0.0f;
-    x.fc_temp_celsius_em2 = 2;
-    x.fc_rssi_dBm = 1;
-    x.fc_snr_dB = 0;
-    x.battery_voltage_dV = 2;
-    x.battery_current_draw_mA = 3;
     x.fc_time_since_start = 0;
+    x.fc_temp_celsius_em2 = 2;
+    x.battery_current_draw_mA = 3;
+    x.battery_voltage_dV = 1;
+    x.fc_rssi_dBm = 2;
+    x.fc_snr_dB = 0;
 }
 
 static void fillAltitudeAtomic(altitude_atomic_data& x)
@@ -131,18 +131,68 @@ static void fillSdAtomic(sd_atomic_data& x)
     x.sd_card_deletion_armed = true;
 }
 
-static void fillPayloadAtomic(payload_atomic_data& x)
+static void fillPayloadStatusAtomic(payload_status_atomic_data& x)
 {
     x = {};
+    x.payload_time_elapsed = 1;
     x.payload_ok = false;
     x.payload_sampling = true;
+}
+
+static void fillPayloadDataAtomic(payload_data_atomic_data& x)
+{
+    x = {};
     x.payload_freq_x = 2;
     x.payload_freq_y = 3;
     x.payload_freq_z = 4;
     x.payload_amp_x = 5;
     x.payload_amp_y = 6;
     x.payload_amp_z = 7;
-    x.payload_time_elapsed = 1;
+}
+
+static void fillPayloadAdapter0Atomic(payload_adapter0_atomic_data& x)
+{
+    x = {};
+    x.payload_adapter_0_raw_x = 8;
+    x.payload_adapter_0_raw_y = 9;
+    x.payload_adapter_0_raw_z = 10;
+}
+
+static void fillPayloadAdapter1Atomic(payload_adapter1_atomic_data& x)
+{
+    x = {};
+    x.payload_adapter_1_raw_x = 11;
+    x.payload_adapter_1_raw_y = 12;
+    x.payload_adapter_1_raw_z = 13;
+}
+
+static void fillPayloadAdapter2Atomic(payload_adapter_2_atomic_data& x)
+{
+    x = {};
+    x.payload_adapter_2_raw_x = 14;
+    x.payload_adapter_2_raw_y = 15;
+    x.payload_adapter_2_raw_z = 16;
+}
+
+static void fillPayloadAdapter3Atomic(payload_adapter_3_atomic_data& x)
+{
+    x = {};
+    x.payload_adapter_3_raw_x = 17;
+    x.payload_adapter_3_raw_y = 18;
+    x.payload_adapter_3_raw_z = 19;
+}
+
+static void fillGpsDebugAtomic(gps_debug_atomic_data& x)
+{
+    x = {};
+    x.gps_hacc_mm = 2;
+    x.gps_vacc_mm = 3;
+    x.gps_ground_speed_mmps = 0;
+    x.gps_heading_motion_deg_e5 = 1;
+    x.gps_pdop_centi = 20;
+    x.gps_fix_type = 3;
+    x.gps_satellites = 4;
+    x.gps_fix_ok = false;
 }
 
 bool buildTelemetryFrame(uint8_t* frameBuf,
@@ -164,7 +214,13 @@ bool buildTelemetryFrame(uint8_t* frameBuf,
     gps_atomic_data gps_atomic_instance_9{};
     radio_atomic_data radio_atomic_instance_10{};
     sd_atomic_data sd_atomic_instance_11{};
-    payload_atomic_data payload_atomic_instance_12{};
+    payload_status_atomic_data payload_status_atomic_instance_12{};
+    payload_data_atomic_data payload_data_atomic_instance_13{};
+    payload_adapter0_atomic_data payload_adapter0_atomic_instance_14{};
+    payload_adapter1_atomic_data payload_adapter1_atomic_instance_15{};
+    payload_adapter_2_atomic_data payload_adapter_2_atomic_instance_16{};
+    payload_adapter_3_atomic_data payload_adapter_3_atomic_instance_17{};
+    gps_debug_atomic_data gps_debug_atomic_instance_18{};
 
     fillRecovAtomic(recov_atomic_instance_0);
     fillPropStatesAtomic(prop_states_atomic_instance_1);
@@ -178,7 +234,13 @@ bool buildTelemetryFrame(uint8_t* frameBuf,
     fillGpsAtomic(gps_atomic_instance_9);
     fillRadioAtomic(radio_atomic_instance_10);
     fillSdAtomic(sd_atomic_instance_11);
-    fillPayloadAtomic(payload_atomic_instance_12);
+    fillPayloadStatusAtomic(payload_status_atomic_instance_12);
+    fillPayloadDataAtomic(payload_data_atomic_instance_13);
+    fillPayloadAdapter0Atomic(payload_adapter0_atomic_instance_14);
+    fillPayloadAdapter1Atomic(payload_adapter1_atomic_instance_15);
+    fillPayloadAdapter2Atomic(payload_adapter_2_atomic_instance_16);
+    fillPayloadAdapter3Atomic(payload_adapter_3_atomic_instance_17);
+    fillGpsDebugAtomic(gps_debug_atomic_instance_18);
 
     FrameBuilder fb(frameBuf, frameCap);
 
@@ -195,7 +257,13 @@ bool buildTelemetryFrame(uint8_t* frameBuf,
     ok &= fb.addAtomic((int)AT_GPS_ATOMIC, &gps_atomic_instance_9, sizeof(gps_atomic_instance_9));
     ok &= fb.addAtomic((int)AT_RADIO_ATOMIC, &radio_atomic_instance_10, sizeof(radio_atomic_instance_10));
     ok &= fb.addAtomic((int)AT_SD_ATOMIC, &sd_atomic_instance_11, sizeof(sd_atomic_instance_11));
-    ok &= fb.addAtomic((int)AT_PAYLOAD_ATOMIC, &payload_atomic_instance_12, sizeof(payload_atomic_instance_12));
+    ok &= fb.addAtomic((int)AT_PAYLOAD_STATUS_ATOMIC, &payload_status_atomic_instance_12, sizeof(payload_status_atomic_instance_12));
+    ok &= fb.addAtomic((int)AT_PAYLOAD_DATA_ATOMIC, &payload_data_atomic_instance_13, sizeof(payload_data_atomic_instance_13));
+    ok &= fb.addAtomic((int)AT_PAYLOAD_ADAPTER0_ATOMIC, &payload_adapter0_atomic_instance_14, sizeof(payload_adapter0_atomic_instance_14));
+    ok &= fb.addAtomic((int)AT_PAYLOAD_ADAPTER1_ATOMIC, &payload_adapter1_atomic_instance_15, sizeof(payload_adapter1_atomic_instance_15));
+    ok &= fb.addAtomic((int)AT_PAYLOAD_ADAPTER_2_ATOMIC, &payload_adapter_2_atomic_instance_16, sizeof(payload_adapter_2_atomic_instance_16));
+    ok &= fb.addAtomic((int)AT_PAYLOAD_ADAPTER_3_ATOMIC, &payload_adapter_3_atomic_instance_17, sizeof(payload_adapter_3_atomic_instance_17));
+    ok &= fb.addAtomic((int)AT_GPS_DEBUG_ATOMIC, &gps_debug_atomic_instance_18, sizeof(gps_debug_atomic_instance_18));
 
     if (!ok)
         return false;

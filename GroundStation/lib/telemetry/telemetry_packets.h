@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-06-27 13:01
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-23 22:35
 #pragma once
 #ifdef __cplusplus
 #include <cstdint>
@@ -17,7 +17,13 @@ enum AtomicType {
     AT_GPS_ATOMIC           = 9,  // bit 9
     AT_RADIO_ATOMIC         = 10,  // bit 10
     AT_SD_ATOMIC            = 11,  // bit 11
-    AT_PAYLOAD_ATOMIC       = 12,  // bit 12
+    AT_PAYLOAD_STATUS_ATOMIC = 12,  // bit 12
+    AT_PAYLOAD_DATA_ATOMIC  = 13,  // bit 13
+    AT_PAYLOAD_ADAPTER0_ATOMIC = 14,  // bit 14
+    AT_PAYLOAD_ADAPTER1_ATOMIC = 15,  // bit 15
+    AT_PAYLOAD_ADAPTER_2_ATOMIC = 16,  // bit 16
+    AT_PAYLOAD_ADAPTER_3_ATOMIC = 17,  // bit 17
+    AT_GPS_DEBUG_ATOMIC     = 18,  // bit 18
     AT_TOTAL                             // total count
 };
 
@@ -102,12 +108,12 @@ typedef union flight_stage_atomic_packet {
 typedef struct __attribute__((__packed__)) fc_internal_atomic_data
 {
     float fc_pressure_hpa;
+    uint32_t fc_time_since_start;
     int16_t fc_temp_celsius_em2;
+    int16_t battery_current_draw_mA;
+    uint8_t battery_voltage_dV;
     uint8_t fc_rssi_dBm;
     int8_t fc_snr_dB;
-    uint8_t battery_voltage_dV;
-    int16_t battery_current_draw_mA;
-    uint32_t fc_time_since_start;
 } fc_internal_atomic_data;
 
 typedef union fc_internal_atomic_packet {
@@ -204,24 +210,104 @@ typedef union sd_atomic_packet {
     uint8_t bytes[sizeof(sd_atomic_data)];
 } sd_atomic_packet;
 
-// ---------- payload_atomic atomic ----------
-typedef struct __attribute__((__packed__)) payload_atomic_data
+// ---------- payload_status_atomic atomic ----------
+typedef struct __attribute__((__packed__)) payload_status_atomic_data
 {
+    uint32_t payload_time_elapsed;
     bool payload_ok : 1;
     bool payload_sampling : 1;
+} payload_status_atomic_data;
+
+typedef union payload_status_atomic_packet {
+    payload_status_atomic_data data;
+    uint8_t bytes[sizeof(payload_status_atomic_data)];
+} payload_status_atomic_packet;
+
+// ---------- payload_data_atomic atomic ----------
+typedef struct __attribute__((__packed__)) payload_data_atomic_data
+{
     uint16_t payload_freq_x;
     uint16_t payload_freq_y;
     uint16_t payload_freq_z;
     uint16_t payload_amp_x;
     uint16_t payload_amp_y;
     uint16_t payload_amp_z;
-    uint32_t payload_time_elapsed;
-} payload_atomic_data;
+} payload_data_atomic_data;
 
-typedef union payload_atomic_packet {
-    payload_atomic_data data;
-    uint8_t bytes[sizeof(payload_atomic_data)];
-} payload_atomic_packet;
+typedef union payload_data_atomic_packet {
+    payload_data_atomic_data data;
+    uint8_t bytes[sizeof(payload_data_atomic_data)];
+} payload_data_atomic_packet;
+
+// ---------- payload_adapter0_atomic atomic ----------
+typedef struct __attribute__((__packed__)) payload_adapter0_atomic_data
+{
+    uint16_t payload_adapter_0_raw_x;
+    uint16_t payload_adapter_0_raw_y;
+    uint16_t payload_adapter_0_raw_z;
+} payload_adapter0_atomic_data;
+
+typedef union payload_adapter0_atomic_packet {
+    payload_adapter0_atomic_data data;
+    uint8_t bytes[sizeof(payload_adapter0_atomic_data)];
+} payload_adapter0_atomic_packet;
+
+// ---------- payload_adapter1_atomic atomic ----------
+typedef struct __attribute__((__packed__)) payload_adapter1_atomic_data
+{
+    uint16_t payload_adapter_1_raw_x;
+    uint16_t payload_adapter_1_raw_y;
+    uint16_t payload_adapter_1_raw_z;
+} payload_adapter1_atomic_data;
+
+typedef union payload_adapter1_atomic_packet {
+    payload_adapter1_atomic_data data;
+    uint8_t bytes[sizeof(payload_adapter1_atomic_data)];
+} payload_adapter1_atomic_packet;
+
+// ---------- payload_adapter_2_atomic atomic ----------
+typedef struct __attribute__((__packed__)) payload_adapter_2_atomic_data
+{
+    uint16_t payload_adapter_2_raw_x;
+    uint16_t payload_adapter_2_raw_y;
+    uint16_t payload_adapter_2_raw_z;
+} payload_adapter_2_atomic_data;
+
+typedef union payload_adapter_2_atomic_packet {
+    payload_adapter_2_atomic_data data;
+    uint8_t bytes[sizeof(payload_adapter_2_atomic_data)];
+} payload_adapter_2_atomic_packet;
+
+// ---------- payload_adapter_3_atomic atomic ----------
+typedef struct __attribute__((__packed__)) payload_adapter_3_atomic_data
+{
+    uint16_t payload_adapter_3_raw_x;
+    uint16_t payload_adapter_3_raw_y;
+    uint16_t payload_adapter_3_raw_z;
+} payload_adapter_3_atomic_data;
+
+typedef union payload_adapter_3_atomic_packet {
+    payload_adapter_3_atomic_data data;
+    uint8_t bytes[sizeof(payload_adapter_3_atomic_data)];
+} payload_adapter_3_atomic_packet;
+
+// ---------- gps_debug_atomic atomic ----------
+typedef struct __attribute__((__packed__)) gps_debug_atomic_data
+{
+    uint32_t gps_hacc_mm;
+    uint32_t gps_vacc_mm;
+    int32_t gps_ground_speed_mmps;
+    int32_t gps_heading_motion_deg_e5;
+    uint16_t gps_pdop_centi;
+    uint8_t gps_fix_type;
+    uint8_t gps_satellites;
+    bool gps_fix_ok : 1;
+} gps_debug_atomic_data;
+
+typedef union gps_debug_atomic_packet {
+    gps_debug_atomic_data data;
+    uint8_t bytes[sizeof(gps_debug_atomic_data)];
+} gps_debug_atomic_packet;
 
 // ---------- Atomic Size Catalog (declaration) ----------
 extern const uint16_t AT_SIZE[AT_TOTAL];

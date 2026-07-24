@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-06-27 13:01
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-23 22:35
 #include "frame_printer.h"
 #include <Arduino.h>
 
@@ -26,7 +26,13 @@ const __FlashStringHelper* atomicTypeName(AtomicType at) {
     case AT_GPS_ATOMIC: return F("gps_atomic");
     case AT_RADIO_ATOMIC: return F("radio_atomic");
     case AT_SD_ATOMIC: return F("sd_atomic");
-    case AT_PAYLOAD_ATOMIC: return F("payload_atomic");
+    case AT_PAYLOAD_STATUS_ATOMIC: return F("payload_status_atomic");
+    case AT_PAYLOAD_DATA_ATOMIC: return F("payload_data_atomic");
+    case AT_PAYLOAD_ADAPTER0_ATOMIC: return F("payload_adapter0_atomic");
+    case AT_PAYLOAD_ADAPTER1_ATOMIC: return F("payload_adapter1_atomic");
+    case AT_PAYLOAD_ADAPTER_2_ATOMIC: return F("payload_adapter_2_atomic");
+    case AT_PAYLOAD_ADAPTER_3_ATOMIC: return F("payload_adapter_3_atomic");
+    case AT_GPS_DEBUG_ATOMIC: return F("gps_debug_atomic");
     default: return F("unknown_atomic");
   }
 }
@@ -101,12 +107,12 @@ void printFc_internal_atomicAtomic(const fc_internal_atomic_data* p) {
   if (!p) return;
   Serial.println(F("fc_internal_atomic {"));
   PRINT_FIELD(p, fc_pressure_hpa);
+  PRINT_FIELD(p, fc_time_since_start);
   PRINT_FIELD(p, fc_temp_celsius_em2);
+  PRINT_FIELD(p, battery_current_draw_mA);
+  PRINT_FIELD(p, battery_voltage_dV);
   PRINT_FIELD(p, fc_rssi_dBm);
   PRINT_FIELD(p, fc_snr_dB);
-  PRINT_FIELD(p, battery_voltage_dV);
-  PRINT_FIELD(p, battery_current_draw_mA);
-  PRINT_FIELD(p, fc_time_since_start);
   Serial.println(F("}"));
 }
 
@@ -178,19 +184,81 @@ void printSd_atomicAtomic(const sd_atomic_data* p) {
   Serial.println(F("}"));
 }
 
-// ---------------- payload_atomic ----------------
-void printPayload_atomicAtomic(const payload_atomic_data* p) {
+// ---------------- payload_status_atomic ----------------
+void printPayload_status_atomicAtomic(const payload_status_atomic_data* p) {
   if (!p) return;
-  Serial.println(F("payload_atomic {"));
+  Serial.println(F("payload_status_atomic {"));
+  PRINT_FIELD(p, payload_time_elapsed);
   PRINT_FIELD(p, payload_ok);
   PRINT_FIELD(p, payload_sampling);
+  Serial.println(F("}"));
+}
+
+// ---------------- payload_data_atomic ----------------
+void printPayload_data_atomicAtomic(const payload_data_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("payload_data_atomic {"));
   PRINT_FIELD(p, payload_freq_x);
   PRINT_FIELD(p, payload_freq_y);
   PRINT_FIELD(p, payload_freq_z);
   PRINT_FIELD(p, payload_amp_x);
   PRINT_FIELD(p, payload_amp_y);
   PRINT_FIELD(p, payload_amp_z);
-  PRINT_FIELD(p, payload_time_elapsed);
+  Serial.println(F("}"));
+}
+
+// ---------------- payload_adapter0_atomic ----------------
+void printPayload_adapter0_atomicAtomic(const payload_adapter0_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("payload_adapter0_atomic {"));
+  PRINT_FIELD(p, payload_adapter_0_raw_x);
+  PRINT_FIELD(p, payload_adapter_0_raw_y);
+  PRINT_FIELD(p, payload_adapter_0_raw_z);
+  Serial.println(F("}"));
+}
+
+// ---------------- payload_adapter1_atomic ----------------
+void printPayload_adapter1_atomicAtomic(const payload_adapter1_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("payload_adapter1_atomic {"));
+  PRINT_FIELD(p, payload_adapter_1_raw_x);
+  PRINT_FIELD(p, payload_adapter_1_raw_y);
+  PRINT_FIELD(p, payload_adapter_1_raw_z);
+  Serial.println(F("}"));
+}
+
+// ---------------- payload_adapter_2_atomic ----------------
+void printPayload_adapter_2_atomicAtomic(const payload_adapter_2_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("payload_adapter_2_atomic {"));
+  PRINT_FIELD(p, payload_adapter_2_raw_x);
+  PRINT_FIELD(p, payload_adapter_2_raw_y);
+  PRINT_FIELD(p, payload_adapter_2_raw_z);
+  Serial.println(F("}"));
+}
+
+// ---------------- payload_adapter_3_atomic ----------------
+void printPayload_adapter_3_atomicAtomic(const payload_adapter_3_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("payload_adapter_3_atomic {"));
+  PRINT_FIELD(p, payload_adapter_3_raw_x);
+  PRINT_FIELD(p, payload_adapter_3_raw_y);
+  PRINT_FIELD(p, payload_adapter_3_raw_z);
+  Serial.println(F("}"));
+}
+
+// ---------------- gps_debug_atomic ----------------
+void printGps_debug_atomicAtomic(const gps_debug_atomic_data* p) {
+  if (!p) return;
+  Serial.println(F("gps_debug_atomic {"));
+  PRINT_FIELD(p, gps_hacc_mm);
+  PRINT_FIELD(p, gps_vacc_mm);
+  PRINT_FIELD(p, gps_ground_speed_mmps);
+  PRINT_FIELD(p, gps_heading_motion_deg_e5);
+  PRINT_FIELD(p, gps_pdop_centi);
+  PRINT_FIELD(p, gps_fix_type);
+  PRINT_FIELD(p, gps_satellites);
+  PRINT_FIELD(p, gps_fix_ok);
   Serial.println(F("}"));
 }
 
@@ -256,9 +324,39 @@ void printAtomic(const FrameView& view, AtomicType at) {
       printSd_atomicAtomic(p);
       break;
     }
-    case AT_PAYLOAD_ATOMIC: {
-      const auto* p = view.atomicAs<payload_atomic_data>(AT_PAYLOAD_ATOMIC);
-      printPayload_atomicAtomic(p);
+    case AT_PAYLOAD_STATUS_ATOMIC: {
+      const auto* p = view.atomicAs<payload_status_atomic_data>(AT_PAYLOAD_STATUS_ATOMIC);
+      printPayload_status_atomicAtomic(p);
+      break;
+    }
+    case AT_PAYLOAD_DATA_ATOMIC: {
+      const auto* p = view.atomicAs<payload_data_atomic_data>(AT_PAYLOAD_DATA_ATOMIC);
+      printPayload_data_atomicAtomic(p);
+      break;
+    }
+    case AT_PAYLOAD_ADAPTER0_ATOMIC: {
+      const auto* p = view.atomicAs<payload_adapter0_atomic_data>(AT_PAYLOAD_ADAPTER0_ATOMIC);
+      printPayload_adapter0_atomicAtomic(p);
+      break;
+    }
+    case AT_PAYLOAD_ADAPTER1_ATOMIC: {
+      const auto* p = view.atomicAs<payload_adapter1_atomic_data>(AT_PAYLOAD_ADAPTER1_ATOMIC);
+      printPayload_adapter1_atomicAtomic(p);
+      break;
+    }
+    case AT_PAYLOAD_ADAPTER_2_ATOMIC: {
+      const auto* p = view.atomicAs<payload_adapter_2_atomic_data>(AT_PAYLOAD_ADAPTER_2_ATOMIC);
+      printPayload_adapter_2_atomicAtomic(p);
+      break;
+    }
+    case AT_PAYLOAD_ADAPTER_3_ATOMIC: {
+      const auto* p = view.atomicAs<payload_adapter_3_atomic_data>(AT_PAYLOAD_ADAPTER_3_ATOMIC);
+      printPayload_adapter_3_atomicAtomic(p);
+      break;
+    }
+    case AT_GPS_DEBUG_ATOMIC: {
+      const auto* p = view.atomicAs<gps_debug_atomic_data>(AT_GPS_DEBUG_ATOMIC);
+      printGps_debug_atomicAtomic(p);
       break;
     }
     default: Serial.print(F("Unknown atomic type: ")); Serial.println(static_cast<int>(at)); break;
