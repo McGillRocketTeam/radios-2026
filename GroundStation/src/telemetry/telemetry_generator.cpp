@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-23 22:35
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-25 17:12
 #include "telemetry_generator.h"
 
 #include <cstring>
@@ -190,8 +190,56 @@ static void fillGpsDebugAtomic(gps_debug_atomic_data& x)
     x.gps_ground_speed_mmps = 0;
     x.gps_heading_motion_deg_e5 = 1;
     x.gps_pdop_centi = 20;
+    x.gps_satellite_1_azimuth_deg = 10;
+    x.gps_satellite_2_azimuth_deg = 11;
+    x.gps_satellite_3_azimuth_deg = 12;
+    x.gps_satellite_4_azimuth_deg = 13;
+    x.gps_satellite_5_azimuth_deg = 14;
+    x.gps_satellite_6_azimuth_deg = 15;
+    x.gps_satellite_7_azimuth_deg = 16;
+    x.gps_satellite_8_azimuth_deg = 17;
     x.gps_fix_type = 3;
     x.gps_satellites = 4;
+    x.gps_satellite_1_gnss_id = 5;
+    x.gps_satellite_1_sv_id = 6;
+    x.gps_satellite_1_cno_dbhz = 7;
+    x.gps_satellite_1_elevation_deg = 1;
+    x.gps_satellite_2_gnss_id = 8;
+    x.gps_satellite_2_sv_id = 9;
+    x.gps_satellite_2_cno_dbhz = 10;
+    x.gps_satellite_2_elevation_deg = 2;
+    x.gps_satellite_3_gnss_id = 11;
+    x.gps_satellite_3_sv_id = 12;
+    x.gps_satellite_3_cno_dbhz = 13;
+    x.gps_satellite_3_elevation_deg = 3;
+    x.gps_satellite_4_gnss_id = 14;
+    x.gps_satellite_4_sv_id = 15;
+    x.gps_satellite_4_cno_dbhz = 16;
+    x.gps_satellite_4_elevation_deg = 4;
+    x.gps_satellite_5_gnss_id = 17;
+    x.gps_satellite_5_sv_id = 18;
+    x.gps_satellite_5_cno_dbhz = 19;
+    x.gps_satellite_5_elevation_deg = 5;
+    x.gps_satellite_6_gnss_id = 20;
+    x.gps_satellite_6_sv_id = 21;
+    x.gps_satellite_6_cno_dbhz = 22;
+    x.gps_satellite_6_elevation_deg = 6;
+    x.gps_satellite_7_gnss_id = 23;
+    x.gps_satellite_7_sv_id = 24;
+    x.gps_satellite_7_cno_dbhz = 25;
+    x.gps_satellite_7_elevation_deg = 7;
+    x.gps_satellite_8_gnss_id = 26;
+    x.gps_satellite_8_sv_id = 27;
+    x.gps_satellite_8_cno_dbhz = 28;
+    x.gps_satellite_8_elevation_deg = 8;
+    x.gps_satellite_1_used_in_fix = false;
+    x.gps_satellite_2_used_in_fix = true;
+    x.gps_satellite_3_used_in_fix = false;
+    x.gps_satellite_4_used_in_fix = true;
+    x.gps_satellite_5_used_in_fix = false;
+    x.gps_satellite_6_used_in_fix = true;
+    x.gps_satellite_7_used_in_fix = false;
+    x.gps_satellite_8_used_in_fix = true;
     x.gps_fix_ok = false;
 }
 

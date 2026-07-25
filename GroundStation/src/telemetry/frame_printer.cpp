@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-23 22:35
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-25 17:12
 #include "frame_printer.h"
 #include <Arduino.h>
 
@@ -256,8 +256,56 @@ void printGps_debug_atomicAtomic(const gps_debug_atomic_data* p) {
   PRINT_FIELD(p, gps_ground_speed_mmps);
   PRINT_FIELD(p, gps_heading_motion_deg_e5);
   PRINT_FIELD(p, gps_pdop_centi);
+  PRINT_FIELD(p, gps_satellite_1_azimuth_deg);
+  PRINT_FIELD(p, gps_satellite_2_azimuth_deg);
+  PRINT_FIELD(p, gps_satellite_3_azimuth_deg);
+  PRINT_FIELD(p, gps_satellite_4_azimuth_deg);
+  PRINT_FIELD(p, gps_satellite_5_azimuth_deg);
+  PRINT_FIELD(p, gps_satellite_6_azimuth_deg);
+  PRINT_FIELD(p, gps_satellite_7_azimuth_deg);
+  PRINT_FIELD(p, gps_satellite_8_azimuth_deg);
   PRINT_FIELD(p, gps_fix_type);
   PRINT_FIELD(p, gps_satellites);
+  PRINT_FIELD(p, gps_satellite_1_gnss_id);
+  PRINT_FIELD(p, gps_satellite_1_sv_id);
+  PRINT_FIELD(p, gps_satellite_1_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_1_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_2_gnss_id);
+  PRINT_FIELD(p, gps_satellite_2_sv_id);
+  PRINT_FIELD(p, gps_satellite_2_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_2_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_3_gnss_id);
+  PRINT_FIELD(p, gps_satellite_3_sv_id);
+  PRINT_FIELD(p, gps_satellite_3_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_3_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_4_gnss_id);
+  PRINT_FIELD(p, gps_satellite_4_sv_id);
+  PRINT_FIELD(p, gps_satellite_4_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_4_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_5_gnss_id);
+  PRINT_FIELD(p, gps_satellite_5_sv_id);
+  PRINT_FIELD(p, gps_satellite_5_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_5_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_6_gnss_id);
+  PRINT_FIELD(p, gps_satellite_6_sv_id);
+  PRINT_FIELD(p, gps_satellite_6_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_6_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_7_gnss_id);
+  PRINT_FIELD(p, gps_satellite_7_sv_id);
+  PRINT_FIELD(p, gps_satellite_7_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_7_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_8_gnss_id);
+  PRINT_FIELD(p, gps_satellite_8_sv_id);
+  PRINT_FIELD(p, gps_satellite_8_cno_dbhz);
+  PRINT_FIELD(p, gps_satellite_8_elevation_deg);
+  PRINT_FIELD(p, gps_satellite_1_used_in_fix);
+  PRINT_FIELD(p, gps_satellite_2_used_in_fix);
+  PRINT_FIELD(p, gps_satellite_3_used_in_fix);
+  PRINT_FIELD(p, gps_satellite_4_used_in_fix);
+  PRINT_FIELD(p, gps_satellite_5_used_in_fix);
+  PRINT_FIELD(p, gps_satellite_6_used_in_fix);
+  PRINT_FIELD(p, gps_satellite_7_used_in_fix);
+  PRINT_FIELD(p, gps_satellite_8_used_in_fix);
   PRINT_FIELD(p, gps_fix_ok);
   Serial.println(F("}"));
 }
