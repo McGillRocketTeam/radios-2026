@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-25 17:12
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-27 19:39
 #include "telemetry_generator.h"
 
 #include <cstring>
@@ -74,6 +74,8 @@ static void fillFcInternalAtomic(fc_internal_atomic_data& x)
     x.battery_voltage_dV = 1;
     x.fc_rssi_dBm = 2;
     x.fc_snr_dB = 0;
+    x.vx_sense_HW = false;
+    x.vx_sense_SW = true;
 }
 
 static void fillAltitudeAtomic(altitude_atomic_data& x)

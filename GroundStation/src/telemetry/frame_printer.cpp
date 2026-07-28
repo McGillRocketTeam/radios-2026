@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-25 17:12
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-27 19:39
 #include "frame_printer.h"
 #include <Arduino.h>
 
@@ -113,6 +113,8 @@ void printFc_internal_atomicAtomic(const fc_internal_atomic_data* p) {
   PRINT_FIELD(p, battery_voltage_dV);
   PRINT_FIELD(p, fc_rssi_dBm);
   PRINT_FIELD(p, fc_snr_dB);
+  PRINT_FIELD(p, vx_sense_HW);
+  PRINT_FIELD(p, vx_sense_SW);
   Serial.println(F("}"));
 }
 

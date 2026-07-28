@@ -1,4 +1,4 @@
-// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-25 17:12
+// AUTO-GENERATED. Do not edit by hand. Generated on: 2026-07-27 19:39
 #pragma once
 #ifdef __cplusplus
 #include <cstdint>
@@ -114,6 +114,8 @@ typedef struct __attribute__((__packed__)) fc_internal_atomic_data
     uint8_t battery_voltage_dV;
     uint8_t fc_rssi_dBm;
     int8_t fc_snr_dB;
+    bool vx_sense_HW : 1;
+    bool vx_sense_SW : 1;
 } fc_internal_atomic_data;
 
 typedef union fc_internal_atomic_packet {
