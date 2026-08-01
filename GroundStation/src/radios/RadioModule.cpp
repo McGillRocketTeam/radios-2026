@@ -322,7 +322,7 @@ float RadioModule::getSNR()
 
 int8_t RadioModule::getRawSNR()
 {
-    float f = radio_.getRSSI() * 4.0;
+    float f = radio_.getSNR() * 4.0;
 
     // clamp rogue values, to match the register size
     if (f < -125.0f)
