@@ -67,7 +67,7 @@ void drawTelemetryPage(U8G2& display, const TelemetryInfo& info, uint8_t startIn
     display.setFont(u8g2_font_6x12_tr);
 
     const int lineHeight = 12;
-    const int maxLines = 5;
+    const int maxLines = static_cast<int>(TELEMETRY_VISIBLE_FIELD_COUNT);
 
     char lineBuf[32];
 
