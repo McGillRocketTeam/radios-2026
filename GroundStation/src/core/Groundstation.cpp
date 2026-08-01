@@ -250,7 +250,7 @@ void GroundStation::implementGroundCommand(GroundCommand::Cmd command)
         GroundStationStore::setCanTxFromCTS(b);
         char buf[64];
         snprintf(buf, sizeof(buf), "setting tx from cts b=%s", b ? "true" : "false");
-        LOGGING(CAT_GS, DEBUG, buf);
+        LOGGING(CAT_GS, CRIT, buf);
         // Support the GSC setting the txFromCTS policy
         Console.sendRadioCmdAck();
         // Refresh the status as well since TxFromCTS is a ground config

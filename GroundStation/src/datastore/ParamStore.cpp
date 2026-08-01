@@ -37,7 +37,7 @@ namespace ParamStore
         // TO DO fix this analog read once the RF_SW pin is fixed
         int v = analogRead(FREQ_PIN);
         char debug[64];
-        if (v > 50)
+        if (v > 350)
         {
             g_band = RadioBand::B903;
             g_params = defaultsFor903();
