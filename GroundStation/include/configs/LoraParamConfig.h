@@ -3,11 +3,11 @@
 #include <cstdint>
 
 // Both frequency values are in MHz for RadioLib
-constexpr float FREQUENCY_435 = 435.00f;
-constexpr float FREQUENCY_903 = 903.00f;
+constexpr float FREQUENCY_435 = 433.00f;
+constexpr float FREQUENCY_903 = 914.50f;
 
-static constexpr const char* FREQUENCY_435_STR = "435.00";
-static constexpr const char* FREQUENCY_903_STR = "903.00";
+static constexpr const char* FREQUENCY_435_STR = "433.00";
+static constexpr const char* FREQUENCY_903_STR = "914.50";
 
 
 // Refer to LoRa Datasheet for allowed bandwidths, in kHz for RadioLib
