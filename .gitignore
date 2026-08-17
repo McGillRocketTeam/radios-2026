@@ -1,2 +1,6 @@
 AstraTelemetry/*.csv
 **/logs
+**/.ccls-cache/
+**/compile_commands.json
+**/.cache/clangd/
+.opencode/
