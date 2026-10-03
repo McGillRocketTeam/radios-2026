@@ -12,8 +12,8 @@ struct TelemetryInfo
     float gps_time_last_update_s;
     float baro_altitude_ft;
     uint16_t packet_sequence_number;
-    uint8_t rssi_dbm;
-    int8_t snr_db;
+    float rssi_dbm;
+    float snr_db;
 };
 
 enum class FieldType : uint8_t
@@ -42,8 +42,8 @@ static const TelemetryFieldDescriptor TELEMETRY_FIELDS[] =
     { "GPS Age",  FieldType::FLOAT, offsetof(TelemetryInfo, gps_time_last_update_s),    1, " s"   },
     { "Baro Alt", FieldType::FLOAT, offsetof(TelemetryInfo, baro_altitude_ft),          1, " ft"  },
     { "Packet",   FieldType::UINT16, offsetof(TelemetryInfo, packet_sequence_number),   0, ""     },
-    { "FC RSSI",  FieldType::UINT8,  offsetof(TelemetryInfo, rssi_dbm),                 0, " dBm" },
-    { "FC SNR",   FieldType::INT8,   offsetof(TelemetryInfo, snr_db),                   0, " dB"  }
+    { "FC RSSI",  FieldType::FLOAT,  offsetof(TelemetryInfo, rssi_dbm),                 1, " dBm" },
+    { "FC SNR",   FieldType::FLOAT,  offsetof(TelemetryInfo, snr_db),                   2, " dB"  }
 };
 
 static constexpr size_t TELEMETRY_FIELD_COUNT =

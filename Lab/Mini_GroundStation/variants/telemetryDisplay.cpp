@@ -19,8 +19,8 @@ TelemetryInfo info =
     1.2f,         // gps_time_last_update_s
     118.7f,       // baro_altitude_ft
     9932,         // packet_sequence_number
-    87,           // rssi_dbm
-    9             // snr_db
+    -87.5f,       // calibrated rssi_dbm
+    2.25f         // calibrated snr_db
 };
 
 void setup()

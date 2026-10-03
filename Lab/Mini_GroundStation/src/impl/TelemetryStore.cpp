@@ -11,29 +11,7 @@ static_assert(AT_TOTAL < 32, "ASTRA atomic bitmap must fit in uint32_t");
 
 size_t atomicSize(int atomicType)
 {
-    switch (atomicType)
-    {
-        case AT_RECOV_ATOMIC: return sizeof(recov_atomic_data);
-        case AT_PROP_STATES_ATOMIC: return sizeof(prop_states_atomic_data);
-        case AT_PROP_ATOMIC: return sizeof(prop_atomic_data);
-        case AT_FLIGHT_STAGE_ATOMIC: return sizeof(flight_stage_atomic_data);
-        case AT_FC_INTERNAL_ATOMIC: return sizeof(fc_internal_atomic_data);
-        case AT_ALTITUDE_ATOMIC: return sizeof(altitude_atomic_data);
-        case AT_ALTITUDE_EVENTS_ATOMIC: return sizeof(altitude_events_atomic_data);
-        case AT_ACCELERATION_ATOMIC: return sizeof(acceleration_atomic_data);
-        case AT_GYRO_ATOMIC: return sizeof(gyro_atomic_data);
-        case AT_GPS_ATOMIC: return sizeof(gps_atomic_data);
-        case AT_RADIO_ATOMIC: return sizeof(radio_atomic_data);
-        case AT_SD_ATOMIC: return sizeof(sd_atomic_data);
-        case AT_PAYLOAD_STATUS_ATOMIC: return sizeof(payload_status_atomic_data);
-        case AT_PAYLOAD_DATA_ATOMIC: return sizeof(payload_data_atomic_data);
-        case AT_PAYLOAD_ADAPTER0_ATOMIC: return sizeof(payload_adapter0_atomic_data);
-        case AT_PAYLOAD_ADAPTER1_ATOMIC: return sizeof(payload_adapter1_atomic_data);
-        case AT_PAYLOAD_ADAPTER_2_ATOMIC: return sizeof(payload_adapter_2_atomic_data);
-        case AT_PAYLOAD_ADAPTER_3_ATOMIC: return sizeof(payload_adapter_3_atomic_data);
-        case AT_GPS_DEBUG_ATOMIC: return sizeof(gps_debug_atomic_data);
-        default: return 0;
-    }
+    return atomicType >= 0 && atomicType < AT_TOTAL ? AT_SIZE[atomicType] : 0;
 }
 
 bool validateFrame(const FrameHeader& header, size_t length)
@@ -60,7 +38,7 @@ bool validateFrame(const FrameHeader& header, size_t length)
         requiredLength += size;
     }
 
-    return requiredLength <= length;
+    return header.atomics_bitmap != 0 && requiredLength == length;
 }
 
 template <typename T>
@@ -116,9 +94,10 @@ bool TelemetryStore::updateFromFrame(const uint8_t* frame, size_t length)
     gps_atomic_data gps{};
     if (copyAtomic(frame, length, header, AT_GPS_ATOMIC, gps))
     {
-        next.gps_latitude_deg = gps.gps_latitude_deg_e7;
-        next.gps_longitude_deg = gps.gps_longitude_deg_e7;
-        next.gps_altitude_m = gps.gps_altitude_mm;
+        // Match the calibrated units in ground-station's rocket.xml.
+        next.gps_latitude_deg = gps.gps_latitude_deg_e7 / 10000000.0f;
+        next.gps_longitude_deg = gps.gps_longitude_deg_e7 / 10000000.0f;
+        next.gps_altitude_m = gps.gps_altitude_mm / 1000.0f;
         next.gps_time_last_update_s = gps.gps_time_last_update_s;
     }
 
@@ -131,8 +110,8 @@ bool TelemetryStore::updateFromFrame(const uint8_t* frame, size_t length)
     fc_internal_atomic_data fcInternal{};
     if (copyAtomic(frame, length, header, AT_FC_INTERNAL_ATOMIC, fcInternal))
     {
-        next.rssi_dbm = fcInternal.fc_rssi_dBm;
-        next.snr_db = fcInternal.fc_snr_dB;
+        next.rssi_dbm = fcInternal.fc_rssi_dBm / -2.0f;
+        next.snr_db = fcInternal.fc_snr_dB / 4.0f;
     }
 
     latest_ = next;
