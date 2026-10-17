@@ -34,7 +34,8 @@ namespace
 
         const float FC_RSSI = -1.0f * (flight.fc_rssi_dBm / 2.0f);
         const float FC_SNR = flight.fc_snr_dB * 0.25f;
-        const float FC_LastTime = flight.fc_time_since_start;
+        // The range test FC sends uptime in milliseconds; CSV timestamps use seconds.
+        const float FC_LastTime = flight.fc_time_since_start * 0.001f;
 
         if (frame.cts() || frame.ack() || frame.nak())
         {
