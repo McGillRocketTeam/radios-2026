@@ -95,7 +95,7 @@ Each PlatformIO environment is a **different firmware behavior**.
 
 * `RANGETEST_FC`  
   → FC-side range test firmware  
-  → Generates fixed telemetry with some rangetest specific structured fields
+  → Sends recovery and FC internal telemetry only (26 bytes including the frame header), with FC uptime and RSSI/SNR for the range test CSV logs
 
 
 #### 🧪 Misc

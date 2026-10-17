@@ -8,10 +8,8 @@
 #include "command_packet.h"
 #include "frame_builder.h"
 #include "frame_header.h"
-#include "frame_printer.h"
 #include "frame_view.h"
 #include "telemetry_packets.h"
-#include "telemetry_generator.h"
 
 // ========================================================
 // Variant of main.cpp for RANGE TEST
@@ -54,7 +52,8 @@ void RangeTestFCVariant::setup()
 
 void RangeTestFCVariant::loop()
 {
-    uint8_t frameBuf[512] = {0};
+    // Range tests only carry recovery and FC internal telemetry.
+    uint8_t frameBuf[sizeof(FrameHeader) + sizeof(recov_atomic_data) + sizeof(fc_internal_atomic_data)] = {0};
     size_t frameLen = 0;
 
     if (!setFlagsFromState(currentState, flags, ack_id))
@@ -63,11 +62,31 @@ void RangeTestFCVariant::loop()
         return;
     }
 
-    if (!buildTelemetryFrame(frameBuf, sizeof(frameBuf), frameLen, sequenceNumber, flags, ack_id))
+    recov_atomic_data recovery{};
+    recovery.drogue_armed_HW = true;
+    recovery.drogue_energizedGate_HW = true;
+    recovery.drogue_continuity_HW = true;
+    recovery.main_armed_HW = true;
+    recovery.main_energizedGate_HW = true;
+    recovery.main_continuity_HW = true;
+
+    fc_internal_atomic_data flight{};
+    flight.fc_time_since_start = millis() / 1000;
+    flight.fc_temp_celsius_em2 = 2;
+    flight.battery_current_draw_mA = 3;
+    flight.battery_voltage_dV = 1;
+    flight.fc_rssi_dBm = (uint8_t)(radioModule->getRSSI() * -2.0f);
+    flight.fc_snr_dB = (int8_t)(radioModule->getSNR() * 4.0f);
+    flight.vx_sense_SW = true;
+
+    FrameBuilder builder(frameBuf, sizeof(frameBuf));
+    if (!builder.addAtomic(AT_RECOV_ATOMIC, &recovery, sizeof(recovery)) ||
+        !builder.addAtomic(AT_FC_INTERNAL_ATOMIC, &flight, sizeof(flight)))
     {
         Serial.println("Error: atomic size mismatch or buffer too small.");
         return;
     }
+    frameLen = builder.finalize(sequenceNumber++, flags, ack_id);
 
     FrameView view(frameBuf, frameLen);
     auto err = view.validate();
@@ -78,18 +97,6 @@ void RangeTestFCVariant::loop()
         delay(1000);
         return;
     }
-    // Spooky access to set the flight atomic
-    // TODO We should make a custom rangeTest atomic
-    // that always exists to handle this 
-    if (view.validate() == ParseError::Ok && view.hasAtomic(AT_FC_INTERNAL_ATOMIC)) {
-        auto* p = view.atomicPtr(AT_FC_INTERNAL_ATOMIC);
-        auto* flight = reinterpret_cast<fc_internal_atomic_data*>(const_cast<uint8_t*>(p));
-        flight->fc_time_since_start = millis() * 0.001f;
-
-        flight->fc_rssi_dBm = (uint8_t)((radioModule->getRSSI() * -2.0f));
-        flight->fc_snr_dB = (int8_t)(radioModule->getSNR() * 4.0f);
-    }
-
     // Send telemetry over radio
     Serial.print("Sending telemetry over radio CTS =");
     Serial.print((flags & FLAG_CTS) ? "YES" : "NO");
