@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Upload RANGETEST_GS and collect its serial output on macOS.
 
-Install dependencies: python3 -m pip install pyserial platformio
-Run: python3 rangesTestCollectMac.py [--port /dev/cu.usbmodem123]
+Run these commands from the GroundStation directory:
+  Install dependencies: python3 -m pip install pyserial platformio
+  List serial ports:    python3 rangesTestCollectMac.py --list-ports
+  Run (auto-detect GS): python3 rangesTestCollectMac.py
+  Run (choose GS port): python3 rangesTestCollectMac.py --port /dev/cu.usbmodem123
+
+Close other serial monitors before running. Press Ctrl+C to stop logging.
 """
 
 import argparse

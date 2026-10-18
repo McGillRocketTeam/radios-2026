@@ -1,3 +1,10 @@
+# Run these commands from the GroundStation directory:
+#   Install dependencies: python -m pip install pyserial platformio
+#   List serial ports:    python -m serial.tools.list_ports -v
+#   Set UPLOAD_PORT below to the GS port (e.g. COM6).
+#   Run the collector:    python rangeTestCollect.py
+# Close other serial monitors before running. Press Ctrl+C to stop logging.
+
 import subprocess
 import sys
 import time
