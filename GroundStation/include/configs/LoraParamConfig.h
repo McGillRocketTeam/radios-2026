@@ -11,7 +11,14 @@ static constexpr const char* FREQUENCY_903_STR = "914.50";
 
 
 // Refer to LoRa Datasheet for allowed bandwidths, in kHz for RadioLib
-constexpr float BANDWIDTH_USED = 250.00f;
+constexpr float BANDWIDTH_USED = 125.00f;
+
+
+//  Config  SF  BW          Airtime(ms)
+//  0       8   250.00f     185
+//  1       8   125.00f     369
+//  2       10  125.00f     1,214
+//  3       12  62.50f      2,953
 
 // Spreading factor (range from 7-12) 
 constexpr int SPREADING_FACTOR_USED = 8;
