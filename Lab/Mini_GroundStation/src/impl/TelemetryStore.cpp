@@ -120,6 +120,13 @@ bool TelemetryStore::updateFromFrame(const uint8_t* frame, size_t length)
     return true;
 }
 
+void TelemetryStore::updateLinkQuality(float rssiDbm, float snrDb)
+{
+    latest_.gs_rssi_dbm = rssiDbm;
+    latest_.gs_snr_db = snrDb;
+    ++revision_;
+}
+
 const TelemetryInfo& TelemetryStore::latest() const
 {
     return latest_;
