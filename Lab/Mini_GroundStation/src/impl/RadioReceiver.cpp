@@ -121,12 +121,16 @@ bool RadioReceiver::poll(TelemetryStore& telemetry)
     }
 
     const int16_t state = radio_->readData(buffer_, packetLength);
+    
+
     if (state != RADIOLIB_ERR_NONE)
     {
         logRadioError("readData", state);
         ready_ = restartReceive();
         return false;
     }
+
+    telemetry.updateLinkQuality(radio_->getRSSI(), radio_->getSNR());
 
     ready_ = restartReceive();
     if (!ready_)
