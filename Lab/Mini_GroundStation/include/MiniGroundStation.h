@@ -22,12 +22,14 @@ private:
     };
 
     static constexpr uint32_t RADIO_RETRY_INTERVAL_MS = 1000;
+    static constexpr uint32_t PAGE_NAME_DURATION_MS = 800;
 
     void pollRadio();
     void pollButtons();
     void handleButtonEvent(ButtonPad::Event event);
     void redrawCurrentPage();
     void drawIntroPage();
+    void showPageName();
 
     U8G2_SSD1309_128X64_NONAME0_F_4W_HW_SPI display_{
         U8G2_R0,
@@ -47,6 +49,9 @@ private:
 
     PageMode currentPage_ = PageMode::TELEMETRY;
     uint8_t displayOffset_ = 0;
+    size_t telemetryPageIndex_ = 0;
+    bool pageNameVisible_ = false;
+    uint32_t pageNameStartedMs_ = 0;
     uint32_t displayedTelemetryRevision_ = 0;
     uint32_t lastRadioInitAttemptMs_ = 0;
 };

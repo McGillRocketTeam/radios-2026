@@ -1,6 +1,6 @@
 #pragma once
 
-#include "telemetryInfo.h"
+#include "telemetryPages.h"
 #include <U8g2lib.h>
 #include <cstdint>
 #include <cstddef>
@@ -12,4 +12,6 @@ void formatTelemetryLine(
     size_t outSize
 );
 
-void drawTelemetryPage(U8G2& display, const TelemetryInfo& info, uint8_t startIndex);
+void drawTelemetryPage(U8G2& display, const TelemetryInfo& info,
+                       const TelemetryPageDescriptor& page, uint8_t startIndex);
+void drawTelemetryPageName(U8G2& display, const char* name);

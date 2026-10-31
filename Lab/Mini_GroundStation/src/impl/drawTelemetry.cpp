@@ -61,7 +61,8 @@ void formatTelemetryLine(
     }
 }
 
-void drawTelemetryPage(U8G2& display, const TelemetryInfo& info, uint8_t startIndex)
+void drawTelemetryPage(U8G2& display, const TelemetryInfo& info,
+                       const TelemetryPageDescriptor& page, uint8_t startIndex)
 {
     display.clearBuffer();
     display.setFont(u8g2_font_6x12_tr);
@@ -74,14 +75,24 @@ void drawTelemetryPage(U8G2& display, const TelemetryInfo& info, uint8_t startIn
     for (int i = 0; i < maxLines; i++)
     {
         size_t fieldIndex = startIndex + i;
-        if (fieldIndex >= TELEMETRY_FIELD_COUNT)
+        if (fieldIndex >= page.fieldCount)
         {
             break;
         }
 
-        formatTelemetryLine(info, TELEMETRY_FIELDS[fieldIndex], lineBuf, sizeof(lineBuf));
+        formatTelemetryLine(info, *page.fields[fieldIndex], lineBuf, sizeof(lineBuf));
         display.drawStr(0, (i + 1) * lineHeight, lineBuf);
     }
 
+    display.sendBuffer();
+}
+
+void drawTelemetryPageName(U8G2& display, const char* name)
+{
+    display.clearBuffer();
+    display.setFont(u8g2_font_6x12_tr);
+    const int x = (static_cast<int>(display.getDisplayWidth()) -
+                   static_cast<int>(display.getStrWidth(name))) / 2;
+    display.drawStr(x, 36, name);
     display.sendBuffer();
 }

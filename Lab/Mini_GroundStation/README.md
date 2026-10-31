@@ -5,7 +5,12 @@ build/upload `GroundStation/platformio.ini`'s `FC_Mock` environment. Both device
 use the shared radio settings in `GroundStation/include/configs/LoraParamConfig.h`
 and must use the same hardware frequency band.
 
-Press the button pad to open telemetry; use up/down to scroll. Mini GS only
+Left/right cycle between Signal quality (FC/GS RSSI, FC/GS SNR, packet number)
+and Flight computer (GPS latitude, longitude, altitude, age, barometer altitude).
+Each page name appears for 800 ms on entry, then gives way to its parameters.
+Radio reception continues during the title. Up/down scroll within the current
+page if more than five parameters are configured. Press toggles the intro image.
+Mini GS only
 receives, so FC_Mock's CTS response timeouts are expected and it continues sending.
 
 The decoder uses GroundStation's generated packet structs and size catalog.

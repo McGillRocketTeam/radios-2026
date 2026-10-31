@@ -10,7 +10,7 @@ void MiniGroundStation::setup()
 
     buttonPad_.begin();
     display_.begin();
-    redrawCurrentPage();
+    showPageName();
 
     lastRadioInitAttemptMs_ = millis();
     if (radio_.begin())
@@ -23,6 +23,11 @@ void MiniGroundStation::poll()
 {
     pollRadio();
     pollButtons();
+    if (pageNameVisible_ && millis() - pageNameStartedMs_ >= PAGE_NAME_DURATION_MS)
+    {
+        pageNameVisible_ = false;
+        redrawCurrentPage();
+    }
 }
 
 void MiniGroundStation::pollRadio()
@@ -39,7 +44,7 @@ void MiniGroundStation::pollRadio()
     }
 
     radio_.poll(telemetry_);
-    if (currentPage_ == PageMode::TELEMETRY &&
+    if (currentPage_ == PageMode::TELEMETRY && !pageNameVisible_ &&
         displayedTelemetryRevision_ != telemetry_.revision())
     {
         redrawCurrentPage();
@@ -66,7 +71,15 @@ void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
         currentPage_ = currentPage_ == PageMode::INTRO
             ? PageMode::TELEMETRY
             : PageMode::INTRO;
-        redrawCurrentPage();
+        if (currentPage_ == PageMode::TELEMETRY)
+        {
+            showPageName();
+        }
+        else
+        {
+            pageNameVisible_ = false;
+            redrawCurrentPage();
+        }
         return;
     }
 
@@ -75,10 +88,19 @@ void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
         return;
     }
 
-    constexpr size_t offsetCount =
-        TELEMETRY_FIELD_COUNT > TELEMETRY_VISIBLE_FIELD_COUNT
-            ? TELEMETRY_FIELD_COUNT - TELEMETRY_VISIBLE_FIELD_COUNT + 1
-            : 1;
+    if (event == ButtonPad::Event::LEFT || event == ButtonPad::Event::RIGHT)
+    {
+        telemetryPageIndex_ = event == ButtonPad::Event::RIGHT
+            ? (telemetryPageIndex_ + 1) % TELEMETRY_PAGE_COUNT
+            : (telemetryPageIndex_ + TELEMETRY_PAGE_COUNT - 1) % TELEMETRY_PAGE_COUNT;
+        displayOffset_ = 0;
+        showPageName();
+        return;
+    }
+
+    const auto& page = TELEMETRY_PAGES[telemetryPageIndex_];
+    const size_t offsetCount = page.fieldCount > TELEMETRY_VISIBLE_FIELD_COUNT
+        ? page.fieldCount - TELEMETRY_VISIBLE_FIELD_COUNT + 1 : 1;
 
     if (event == ButtonPad::Event::UP)
     {
@@ -102,7 +124,14 @@ void MiniGroundStation::redrawCurrentPage()
         return;
     }
 
-    drawTelemetryPage(display_, telemetry_.latest(), displayOffset_);
+    if (pageNameVisible_)
+    {
+        drawTelemetryPageName(display_, TELEMETRY_PAGES[telemetryPageIndex_].name);
+        return;
+    }
+
+    drawTelemetryPage(display_, telemetry_.latest(),
+                      TELEMETRY_PAGES[telemetryPageIndex_], displayOffset_);
     displayedTelemetryRevision_ = telemetry_.revision();
 }
 
@@ -111,4 +140,11 @@ void MiniGroundStation::drawIntroPage()
     display_.clearBuffer();
     display_.drawXBM(0, 0, 128, 64, intro_bits);
     display_.sendBuffer();
+}
+
+void MiniGroundStation::showPageName()
+{
+    pageNameVisible_ = true;
+    pageNameStartedMs_ = millis();
+    redrawCurrentPage();
 }

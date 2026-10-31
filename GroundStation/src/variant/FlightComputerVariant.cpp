@@ -163,6 +163,18 @@ void FlightComputerVariant::loop()
         return;
     }
 
+    gps_atomic_data gps{};
+    if (const auto* gpsBytes = view.atomicPtr(AT_GPS_ATOMIC))
+    {
+        memcpy(&gps, gpsBytes, sizeof(gps));
+        const uint32_t now = millis();
+        const float phase = (now % 20000UL) / 10000.0f;
+        const float offset = (phase < 1.0f ? phase : 2.0f - phase) * 0.02f - 0.01f;
+        gps.gps_latitude_deg_e7 = (100.0f + offset) * 10000000.0f;
+        gps.gps_longitude_deg_e7 = (-100.0f - offset) * 10000000.0f;
+        gps.gps_time_last_update_s = static_cast<float>(now) / 1000.0f;
+        memcpy(frameBuf + (gpsBytes - frameBuf), &gps, sizeof(gps));
+    }
     // Send telemetry over radio
     Serial.print("Sending telemetry over radio CTS =");
     Serial.print((flags & FLAG_CTS) ? "YES" : "NO");

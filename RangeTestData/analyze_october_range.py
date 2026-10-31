@@ -128,7 +128,8 @@ def main():
             ax.fill_between(x, [v.quantile(.1) for v in vals],
                             [v.quantile(.9) for v in vals], color=color, alpha=.13)
             for distance, mean in zip(x, means):
-                ax.annotate(f"{mean:.1f}", (distance, mean), xytext=(0, -18 if receiver == "GS" else 10),
+                label_above = (receiver == "GS") if metric == "SNR" else (receiver == "FC")
+                ax.annotate(f"{mean:.1f}", (distance, mean), xytext=(0, 10 if label_above else -18),
                             textcoords="offset points", ha="center", color=color, fontsize=9)
         ax.set_xticks(x, [f"L{r['location']}\n{r['distance']:g}" for r in baseline])
         ax.set_xlabel("Planned range (km)")
