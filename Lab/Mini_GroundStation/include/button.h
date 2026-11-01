@@ -18,4 +18,6 @@ public:
 
     // Returns true once when a debounced falling edge is detected
     bool poll();
+
+    bool isPressed() const;
 };

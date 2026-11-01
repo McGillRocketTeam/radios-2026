@@ -4,12 +4,12 @@ ButtonPad::ButtonPad(uint8_t leftPin,
                      uint8_t rightPin,
                      uint8_t upPin,
                      uint8_t downPin,
-                     uint8_t pressPin)
+                     uint8_t middlePin)
     : leftButton_(leftPin),
       rightButton_(rightPin),
       upButton_(upPin),
       downButton_(downPin),
-      pressButton_(pressPin),
+      middleButton_(middlePin),
       queueHead_(0),
       queueTail_(0),
       queueCount_(0)
@@ -22,15 +22,49 @@ void ButtonPad::begin()
     rightButton_.begin();
     upButton_.begin();
     downButton_.begin();
-    pressButton_.begin();
+    middleButton_.begin();
 
     queueHead_ = 0;
     queueTail_ = 0;
     queueCount_ = 0;
+
+    middleWasPressed_ = middleButton_.isPressed();
+    middleLongPressSent_ = false;
+    middlePressStartTimeMS_ = millis();
 }
 
 void ButtonPad::update()
 {
+    // Special handling for the middle button
+    middleButton_.poll();
+
+    const bool pressed = middleButton_.isPressed();
+    const unsigned long now = millis();
+
+    if  (pressed && !middleWasPressed_) // Pressed and was not pressed before
+    {
+        middlePressStartTimeMS_ = now;
+        middleLongPressSent_ = false;
+    }
+    else if (pressed && !middleLongPressSent_) // Still pressed and long press not sent yet
+    {
+        if (now - middlePressStartTimeMS_ >= LONG_PRESS_THRESHOLD_MS)
+        {
+            pushEvent(Event::MIDDLE_LONG_PRESSED);
+            middleLongPressSent_ = true;
+        }
+    }
+    else if (!pressed && middleWasPressed_) // Released and was pressed before
+    {
+        if (!middleLongPressSent_)
+        {
+            pushEvent(Event::MIDDLE);
+        }
+    }
+
+    middleWasPressed_ = pressed;
+
+    // Simple logic for other buttons
     if (leftButton_.poll())
     {
         pushEvent(Event::LEFT);
@@ -49,11 +83,6 @@ void ButtonPad::update()
     if (downButton_.poll())
     {
         pushEvent(Event::DOWN);
-    }
-
-    if (pressButton_.poll())
-    {
-        pushEvent(Event::PRESSED);
     }
 }
 
@@ -80,7 +109,8 @@ const char* ButtonPad::eventToString(Event event) const
         case Event::RIGHT:   return "RIGHT";
         case Event::UP:      return "UP";
         case Event::DOWN:    return "DOWN";
-        case Event::PRESSED: return "PRESSED";
+        case Event::MIDDLE: return "PRESSED";
+        case Event::MIDDLE_LONG_PRESSED: return "LONG_PRESSED";
         default:             return "NONE";
     }
 }

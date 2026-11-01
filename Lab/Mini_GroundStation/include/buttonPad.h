@@ -14,14 +14,15 @@ public:
         RIGHT,
         UP,
         DOWN,
-        PRESSED
+        MIDDLE,
+        MIDDLE_LONG_PRESSED
     };
 
     ButtonPad(uint8_t leftPin,
               uint8_t rightPin,
               uint8_t upPin,
               uint8_t downPin,
-              uint8_t pressPin);
+              uint8_t middlePin);
 
     void begin();
     void update();
@@ -33,12 +34,17 @@ public:
 
 private:
     static constexpr uint8_t EVENT_QUEUE_SIZE = 8;
+    static constexpr unsigned long LONG_PRESS_THRESHOLD_MS = 800;
+
+    bool middleWasPressed_ = false;
+    bool middleLongPressSent_ = false; // Prevent multiple long press events for a single press
+    unsigned long middlePressStartTimeMS_ = 0;
 
     Button leftButton_;
     Button rightButton_;
     Button upButton_;
     Button downButton_;
-    Button pressButton_;
+    Button middleButton_;
 
     Event eventQueue_[EVENT_QUEUE_SIZE];
     uint8_t queueHead_;

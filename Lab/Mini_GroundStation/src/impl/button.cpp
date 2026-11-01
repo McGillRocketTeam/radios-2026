@@ -37,3 +37,7 @@ bool Button::poll() {
 
     return false;
 }
+
+bool Button::isPressed() const {
+    return stableState_ == LOW;
+}

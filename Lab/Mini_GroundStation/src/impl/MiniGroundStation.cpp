@@ -44,8 +44,8 @@ void MiniGroundStation::pollRadio()
     }
 
     radio_.poll(telemetry_);
-    if (currentPage_ == PageMode::TELEMETRY && !pageNameVisible_ &&
-        displayedTelemetryRevision_ != telemetry_.revision())
+    if (currentScreen_ == Screen::MODE && activeMode_ == OperatingMode::RECOVERY && 
+        !pageNameVisible_ && displayedTelemetryRevision_ != telemetry_.revision())
     {
         redrawCurrentPage();
     }
@@ -66,7 +66,12 @@ void MiniGroundStation::pollButtons()
 
 void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
 {
-    if (event == ButtonPad::Event::PRESSED)
+    if (event == ButtonPad::Event::MIDDLE_LONG_PRESSED)
+    {
+        
+    }
+
+    if (event == ButtonPad::Event::MIDDLE)
     {
         currentPage_ = currentPage_ == PageMode::INTRO
             ? PageMode::TELEMETRY
@@ -147,4 +152,10 @@ void MiniGroundStation::showPageName()
     pageNameVisible_ = true;
     pageNameStartedMs_ = millis();
     redrawCurrentPage();
+}
+
+void MiniGroundStation::drawModeMenuPage()
+{
+    display_.clearBuffer();
+
 }

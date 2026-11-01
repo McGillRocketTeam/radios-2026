@@ -15,10 +15,18 @@ public:
     void poll();
 
 private:
-    enum class PageMode : uint8_t
+
+    enum class Screen : uint8_t
     {
-        INTRO,
-        TELEMETRY
+        MODE,
+        MENU,
+        INTRO
+    };
+
+    enum class OperatingMode : uint8_t
+    {
+        RECOVERY,
+        MOCKFC
     };
 
     static constexpr uint32_t RADIO_RETRY_INTERVAL_MS = 1000;
@@ -30,6 +38,7 @@ private:
     void redrawCurrentPage();
     void drawIntroPage();
     void showPageName();
+    void drawModeMenuPage();
 
     U8G2_SSD1309_128X64_NONAME0_F_4W_HW_SPI display_{
         U8G2_R0,
@@ -47,7 +56,12 @@ private:
     RadioReceiver radio_;
     TelemetryStore telemetry_;
 
-    PageMode currentPage_ = PageMode::TELEMETRY;
+    Screen currentScreen_ = Screen::MODE;
+    OperatingMode activeMode_ = OperatingMode::RECOVERY;
+
+    uint8_t menuSelection_ = 0;
+    static constexpr uint8_t MODE_COUNT = 2;
+
     uint8_t displayOffset_ = 0;
     size_t telemetryPageIndex_ = 0;
     bool pageNameVisible_ = false;
