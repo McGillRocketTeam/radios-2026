@@ -10,7 +10,15 @@ void MiniGroundStation::setup()
 
     buttonPad_.begin();
     display_.begin();
-    showPageName();
+    if (currentScreen_ == Screen::MODE &&
+    activeMode_ == OperatingMode::RECOVERY)
+    {
+        showPageName();
+    }
+    else
+    {
+        redrawCurrentPage();
+    }
 
     lastRadioInitAttemptMs_ = millis();
     if (radio_.begin())
@@ -23,7 +31,8 @@ void MiniGroundStation::poll()
 {
     pollRadio();
     pollButtons();
-    if (pageNameVisible_ && millis() - pageNameStartedMs_ >= PAGE_NAME_DURATION_MS)
+    if (currentScreen_ == Screen::MODE && activeMode_ == OperatingMode::RECOVERY &&
+        pageNameVisible_ && millis() - pageNameStartedMs_ >= PAGE_NAME_DURATION_MS)
     {
         pageNameVisible_ = false;
         redrawCurrentPage();
@@ -66,29 +75,75 @@ void MiniGroundStation::pollButtons()
 
 void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
 {
-    if (event == ButtonPad::Event::MIDDLE_LONG_PRESSED)
+    if (event == ButtonPad::Event::MIDDLE_LONG_PRESSED) // Toggle between INTRO and MENU screens
     {
-        
-    }
-
-    if (event == ButtonPad::Event::MIDDLE)
-    {
-        currentPage_ = currentPage_ == PageMode::INTRO
-            ? PageMode::TELEMETRY
-            : PageMode::INTRO;
-        if (currentPage_ == PageMode::TELEMETRY)
+        if (currentScreen_ == Screen::INTRO)
         {
-            showPageName();
+            currentScreen_ = Screen::MENU;
         }
         else
         {
-            pageNameVisible_ = false;
-            redrawCurrentPage();
+            currentScreen_ = Screen::INTRO;
         }
+
+        pageNameVisible_ = false;
+        redrawCurrentPage();
         return;
     }
 
-    if (currentPage_ != PageMode::TELEMETRY)
+    if (currentScreen_ == Screen::INTRO) // Only long press can exit INTRO
+    {
+        return;
+    }
+
+    if (currentScreen_ == Screen::MENU)
+    {
+        if (event == ButtonPad::Event::UP)
+        {
+            menuSelection_ = (menuSelection_ + MODE_COUNT - 1) % MODE_COUNT;
+        }
+        else if (event == ButtonPad::Event::DOWN)
+        {
+            menuSelection_ = (menuSelection_ + 1) % MODE_COUNT;
+        }
+        else if (event == ButtonPad::Event::MIDDLE) // Select the current menu option
+        {
+            if (menuSelection_ == 0)
+            {
+                activeMode_ = OperatingMode::RECOVERY;
+            }
+            else if (menuSelection_ == 1)
+            {
+                activeMode_ = OperatingMode::MOCKFC;
+            }
+            currentScreen_ = Screen::MODE;
+            pageNameVisible_ = false;
+
+            if (activeMode_ == OperatingMode::RECOVERY)
+            {
+                telemetryPageIndex_ = 0;
+                displayOffset_ = 0;
+                showPageName();
+            }
+            else
+            {
+                redrawCurrentPage();
+            }
+            return;
+        }
+        redrawCurrentPage();
+        return;
+    }
+
+    if (event == ButtonPad::Event::MIDDLE) // Exit to MENU screen from MODE
+    {
+        currentScreen_ = Screen::MENU;
+        pageNameVisible_ = false;
+        drawMenuPage();
+        return;
+    }
+
+    if (currentScreen_ != Screen::MODE || activeMode_ != OperatingMode::RECOVERY)
     {
         return;
     }
@@ -123,9 +178,25 @@ void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
 
 void MiniGroundStation::redrawCurrentPage()
 {
-    if (currentPage_ == PageMode::INTRO)
+    if (currentScreen_ == Screen::INTRO)
     {
         drawIntroPage();
+        return;
+    }
+
+    if (currentScreen_ == Screen::MENU)
+    {
+        drawMenuPage();
+        return;
+    }
+
+    if (activeMode_ == OperatingMode::MOCKFC) // TODO: Implement MockFC mode
+    {
+        display_.clearBuffer();
+        display_.setFont(u8g2_font_ncenB08_tr);
+        display_.drawStr(0, 20, "MockFC mode");
+        display_.drawStr(0, 40, "Not implemented");
+        display_.sendBuffer();
         return;
     }
 
@@ -154,8 +225,25 @@ void MiniGroundStation::showPageName()
     redrawCurrentPage();
 }
 
-void MiniGroundStation::drawModeMenuPage()
+void MiniGroundStation::drawMenuPage()
 {
-    display_.clearBuffer();
+    static const char* labels[] = { "Recovery Mode", "MockFC Mode" };
 
+    display_.clearBuffer();
+    display_.setFont(u8g2_font_ncenB08_tr);
+    display_.drawStr(0, 10, "Select Mode:");
+
+    for (uint8_t i = 0; i < MODE_COUNT; ++i)
+    {
+        const int y = 28 + i * 12;
+
+        if (i == menuSelection_)
+        {
+            display_.drawStr(0, y, ">");
+        }
+
+        display_.drawStr(12, y, labels[i]);
+    }
+
+    display_.sendBuffer();
 }

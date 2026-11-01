@@ -38,7 +38,7 @@ private:
     void redrawCurrentPage();
     void drawIntroPage();
     void showPageName();
-    void drawModeMenuPage();
+    void drawMenuPage();
 
     U8G2_SSD1309_128X64_NONAME0_F_4W_HW_SPI display_{
         U8G2_R0,
@@ -56,10 +56,10 @@ private:
     RadioReceiver radio_;
     TelemetryStore telemetry_;
 
-    Screen currentScreen_ = Screen::MODE;
+    Screen currentScreen_ = Screen::INTRO;
     OperatingMode activeMode_ = OperatingMode::RECOVERY;
 
-    uint8_t menuSelection_ = 0;
+    uint8_t menuSelection_ = 0; // 0 for Recovery, 1 for MockFC
     static constexpr uint8_t MODE_COUNT = 2;
 
     uint8_t displayOffset_ = 0;
