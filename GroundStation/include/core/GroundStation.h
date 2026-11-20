@@ -1,6 +1,6 @@
 #pragma once
 
-#include <IntervalTimer.h>
+#include "IntervalTimerCompat.h"
 #include <memory>
 
 #include "CommandParser.h"

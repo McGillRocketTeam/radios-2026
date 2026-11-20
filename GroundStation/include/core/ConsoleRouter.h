@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <IntervalTimer.h>
+#include "IntervalTimerCompat.h"
 
 #include "CommandParser.h"
 #include "MqttTopics.h"
