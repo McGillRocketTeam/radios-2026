@@ -1,4 +1,5 @@
 #include "RadioModule.h"
+#include "RadioSpi.h"
 
 #include "ConsoleRouter.h"
 #include "LoggerGS.h"
@@ -11,7 +12,7 @@ volatile bool RadioModule::radioBusy = false;
 // === Setup ===
 
 RadioModule::RadioModule()
-    : mod_(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN),
+    : mod_(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN, radioSPI()),
       radio_(&mod_)
 {
     // Default initiliased pins need to be set in the right mode

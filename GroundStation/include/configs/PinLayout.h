@@ -38,6 +38,11 @@
     constexpr int RX_LED_PIN = PB8;
     constexpr int TX_LED_PIN = PB9;
 
+    // spi pins
+    constexpr int RADIO_SCK_PIN  = PC10;   
+    constexpr int RADIO_MISO_PIN = PC11;   
+    constexpr int RADIO_MOSI_PIN = PC12;   
+
 #else
     #error "No pin layout defined for this board"
 

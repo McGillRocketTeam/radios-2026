@@ -1,4 +1,5 @@
 #include "TestRadioChipVariant.h"
+#include "RadioSpi.h"
 
 #include <Arduino.h>
 #include <RadioLib.h>
@@ -45,7 +46,7 @@ void TestRadioChipVariant::setup()
 
     // 2. Probing the actual chip using RadioLib directly
     Serial.println("2. Probing Physical Chip via SPI");
-    Module mod(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN);
+    Module mod(NSS_PIN, DIO1_PIN, RST_PIN, BUSY_PIN, radioSPI());
     SX1262 probe1262(&mod);
     SX1268 probe1268(&mod);
 
