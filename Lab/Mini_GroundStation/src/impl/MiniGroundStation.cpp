@@ -23,14 +23,14 @@ void MiniGroundStation::setup()
     lastRadioInitAttemptMs_ = millis();
     if (radio_.begin())
     {
-        Serial.println("Mini ground station ready in receive-only mode");
+        Serial.println("Mini ground station radio ready");
     }
 }
 
 void MiniGroundStation::poll()
 {
-    pollRadio();
     pollButtons();
+    pollRadio();
     if (currentScreen_ == Screen::MODE && activeMode_ == OperatingMode::RECOVERY &&
         pageNameVisible_ && millis() - pageNameStartedMs_ >= PAGE_NAME_DURATION_MS)
     {
@@ -48,6 +48,15 @@ void MiniGroundStation::pollRadio()
         {
             lastRadioInitAttemptMs_ = now;
             radio_.begin();
+        }
+        return;
+    }
+
+    if (activeMode_ == OperatingMode::MOCKFC)
+    {
+        if (currentScreen_ == Screen::MODE && mockFC_.poll(radio_))
+        {
+            redrawCurrentPage();
         }
         return;
     }
@@ -127,6 +136,7 @@ void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
             }
             else
             {
+                mockFC_.reset();
                 redrawCurrentPage();
             }
             return;
@@ -190,13 +200,9 @@ void MiniGroundStation::redrawCurrentPage()
         return;
     }
 
-    if (activeMode_ == OperatingMode::MOCKFC) // TODO: Implement MockFC mode
+    if (activeMode_ == OperatingMode::MOCKFC)
     {
-        display_.clearBuffer();
-        display_.setFont(u8g2_font_ncenB08_tr);
-        display_.drawStr(0, 20, "MockFC mode");
-        display_.drawStr(0, 40, "Not implemented");
-        display_.sendBuffer();
+        drawMockFCPage();
         return;
     }
 
@@ -209,6 +215,24 @@ void MiniGroundStation::redrawCurrentPage()
     drawTelemetryPage(display_, telemetry_.latest(),
                       TELEMETRY_PAGES[telemetryPageIndex_], displayOffset_);
     displayedTelemetryRevision_ = telemetry_.revision();
+}
+
+void MiniGroundStation::drawMockFCPage()
+{
+    display_.clearBuffer();
+    display_.setFont(u8g2_font_6x10_tr);
+    display_.drawStr(0, 10, "MockFC Mode");
+    display_.setCursor(0, 22);
+    display_.print("Packet: ");
+    display_.print(mockFC_.lastSequence());
+    display_.setCursor(0, 34);
+    display_.print("Flags: ");
+    display_.print(mockFC_.lastFlags());
+    display_.print(" ACK ID: ");
+    display_.print(mockFC_.ackId());
+    display_.drawStr(0, 46, radio_.isReady() ? mockFC_.status() : "Radio unavailable");
+    display_.drawStr(0, 62, "Press: exit to menu");
+    display_.sendBuffer();
 }
 
 void MiniGroundStation::drawIntroPage()

@@ -18,6 +18,10 @@ public:
     // Non-blocking receive poll. Returns true when a telemetry snapshot changed.
     bool poll(TelemetryStore& telemetry);
 
+    // Raw command reception and telemetry transmission for MockFC mode.
+    bool receivePacket(const uint8_t*& data, size_t& length);
+    bool transmit(const uint8_t* data, size_t length);
+
     bool isReady() const;
 
 private:
@@ -36,4 +40,6 @@ private:
     int frequencyPinValue_ = 0;
     bool bandDetected_ = false;
     bool ready_ = false;
+    float lastRssi_ = 0;
+    float lastSnr_ = 0;
 };

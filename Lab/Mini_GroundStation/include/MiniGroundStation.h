@@ -4,6 +4,7 @@
 #include <U8g2lib.h>
 
 #include "ButtonPad.h"
+#include "MockFlightComputer.h"
 #include "RadioReceiver.h"
 #include "TelemetryStore.h"
 #include "peripheralPins.h"
@@ -39,6 +40,7 @@ private:
     void drawIntroPage();
     void showPageName();
     void drawMenuPage();
+    void drawMockFCPage();
 
     U8G2_SSD1309_128X64_NONAME0_F_4W_HW_SPI display_{
         U8G2_R0,
@@ -54,6 +56,7 @@ private:
         BUTTON_PAD_PRESSED_PIN};
 
     RadioReceiver radio_;
+    MockFlightComputer mockFC_;
     TelemetryStore telemetry_;
 
     Screen currentScreen_ = Screen::INTRO;

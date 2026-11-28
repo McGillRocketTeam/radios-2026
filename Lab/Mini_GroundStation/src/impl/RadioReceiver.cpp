@@ -75,6 +75,29 @@ bool RadioReceiver::begin()
 
 bool RadioReceiver::poll(TelemetryStore& telemetry)
 {
+    const uint8_t* data = nullptr;
+    size_t length = 0;
+    if (!receivePacket(data, length))
+    {
+        return false;
+    }
+
+    telemetry.updateLinkQuality(lastRssi_, lastSnr_);
+    if (!telemetry.updateFromFrame(data, length))
+    {
+        Serial.println("Radio RX ignored a non-telemetry or invalid ASTRA frame");
+        return false;
+    }
+
+    Serial.print("Radio RX telemetry seq ");
+    Serial.println(telemetry.latest().packet_sequence_number);
+    return true;
+}
+
+bool RadioReceiver::receivePacket(const uint8_t*& data, size_t& length)
+{
+    data = nullptr;
+    length = 0;
     if (!ready_ || radio_ == nullptr)
     {
         return false;
@@ -130,7 +153,8 @@ bool RadioReceiver::poll(TelemetryStore& telemetry)
         return false;
     }
 
-    telemetry.updateLinkQuality(radio_->getRSSI(), radio_->getSNR());
+    lastRssi_ = radio_->getRSSI();
+    lastSnr_ = radio_->getSNR();
 
     ready_ = restartReceive();
     if (!ready_)
@@ -138,15 +162,29 @@ bool RadioReceiver::poll(TelemetryStore& telemetry)
         return false;
     }
 
-    if (!telemetry.updateFromFrame(buffer_, packetLength))
+    data = buffer_;
+    length = packetLength;
+    return true;
+}
+
+bool RadioReceiver::transmit(const uint8_t* data, size_t length)
+{
+    if (!ready_ || radio_ == nullptr)
     {
-        Serial.println("Radio RX ignored a non-telemetry or invalid ASTRA frame");
         return false;
     }
 
-    Serial.print("Radio RX telemetry seq ");
-    Serial.println(telemetry.latest().packet_sequence_number);
-    return true;
+    const int16_t state = radio_->transmit(data, length);
+    if (state != RADIOLIB_ERR_NONE)
+    {
+        logRadioError("transmit", state);
+    }
+
+    noInterrupts();
+    interruptReceived_ = false;
+    interrupts();
+    ready_ = restartReceive();
+    return state == RADIOLIB_ERR_NONE && ready_;
 }
 
 bool RadioReceiver::isReady() const
