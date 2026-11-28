@@ -31,6 +31,7 @@ void MiniGroundStation::poll()
 {
     pollButtons();
     pollRadio();
+    pollLaunchAnimation();
     if (currentScreen_ == Screen::MODE && activeMode_ == OperatingMode::RECOVERY &&
         pageNameVisible_ && millis() - pageNameStartedMs_ >= PAGE_NAME_DURATION_MS)
     {
@@ -84,11 +85,18 @@ void MiniGroundStation::pollButtons()
 
 void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
 {
+    if (currentScreen_ == Screen::LAUNCH)
+    {
+        return;
+    }
+
     if (event == ButtonPad::Event::MIDDLE_LONG_PRESSED) // Toggle between INTRO and MENU screens
     {
         if (currentScreen_ == Screen::INTRO)
         {
-            currentScreen_ = Screen::MENU;
+            currentScreen_ = Screen::LAUNCH;
+            launchStartedMs_ = millis();
+            lastLaunchFrameMs_ = launchStartedMs_;
         }
         else
         {
@@ -188,6 +196,12 @@ void MiniGroundStation::handleButtonEvent(ButtonPad::Event event)
 
 void MiniGroundStation::redrawCurrentPage()
 {
+    if (currentScreen_ == Screen::LAUNCH)
+    {
+        drawLaunchFrame(millis() - launchStartedMs_);
+        return;
+    }
+
     if (currentScreen_ == Screen::INTRO)
     {
         drawIntroPage();
@@ -239,6 +253,79 @@ void MiniGroundStation::drawIntroPage()
 {
     display_.clearBuffer();
     display_.drawXBM(0, 0, 128, 64, intro_bits);
+    display_.sendBuffer();
+}
+
+void MiniGroundStation::pollLaunchAnimation()
+{
+    if (currentScreen_ != Screen::LAUNCH)
+    {
+        return;
+    }
+
+    const uint32_t now = millis();
+    const uint32_t elapsedMs = now - launchStartedMs_;
+    if (elapsedMs >= LAUNCH_DURATION_MS)
+    {
+        currentScreen_ = Screen::MENU;
+        redrawCurrentPage();
+    }
+    else if (now - lastLaunchFrameMs_ >= LAUNCH_FRAME_INTERVAL_MS)
+    {
+        lastLaunchFrameMs_ = now;
+        drawLaunchFrame(elapsedMs);
+    }
+}
+
+void MiniGroundStation::drawLaunchFrame(uint32_t elapsedMs)
+{
+    // Preserve the title while moving only the rocket from the intro bitmap.
+    display_.clearBuffer();
+    display_.drawXBM(0, 0, 128, 64, intro_bits);
+    display_.setDrawColor(0);
+    display_.drawBox(0, 0, 40, 64);
+    display_.setDrawColor(1);
+
+    // Quadratic travel starts gently, then accelerates beyond the top edge.
+    const int lift = static_cast<int>(
+        72UL * elapsedMs * elapsedMs / (LAUNCH_DURATION_MS * LAUNCH_DURATION_MS));
+    for (int y = 8; y <= 44; ++y)
+    {
+        const int screenY = y - lift;
+        if (screenY < 0 || screenY >= 64)
+        {
+            continue;
+        }
+        for (int x = 0; x < 40; ++x)
+        {
+            if (intro_bits[y * 16 + x / 8] & (1U << (x % 8)))
+            {
+                display_.drawPixel(x, screenY);
+            }
+        }
+    }
+
+    // Flicker the exhaust length and tip to give the monochrome flame motion.
+    const uint32_t frame = elapsedMs / LAUNCH_FRAME_INTERVAL_MS;
+    const int flameLength = 12 + (frame * 7 % 9);
+    const int tailY = 45 - lift;
+    for (int row = 0; row < flameLength; ++row)
+    {
+        const int screenY = tailY + row;
+        if (screenY < 0 || screenY >= 64)
+        {
+            continue;
+        }
+        const int halfWidth = 4 * (flameLength - row) / flameLength;
+        const int centerX = 23 + (row > 5 ? static_cast<int>((frame + row / 3) % 3) - 1 : 0);
+        display_.drawHLine(centerX - halfWidth, screenY, 2 * halfWidth + 1);
+        if (row < flameLength / 2)
+        {
+            display_.setDrawColor(0);
+            display_.drawPixel(centerX, screenY);
+            display_.setDrawColor(1);
+        }
+    }
     display_.sendBuffer();
 }
 

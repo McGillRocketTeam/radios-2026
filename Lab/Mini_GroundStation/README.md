@@ -22,6 +22,10 @@ settings as GroundStation's `FC_Mock`. A receiving ground station must use the
 same frequency band. The screen shows the last successfully transmitted packet,
 flags (CTS = 1, ACK = 2, NAK = 8), command ACK ID, and current status.
 
+Leaving the intro/standby screen plays a 900 ms upward rocket launch with
+flickering tail flames before opening the menu. Radio reception continues during
+the animation; button inputs are ignored until the menu appears.
+
 The simulator sends a packet without CTS, then CTS packets. After each CTS it
 listens for a command for one second; if none arrives, it retries. Normal and
 extended command packets receive an ACK with their command ID; `nop` receives a

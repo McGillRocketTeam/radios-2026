@@ -21,6 +21,7 @@ private:
     {
         MODE,
         MENU,
+        LAUNCH,
         INTRO
     };
 
@@ -32,12 +33,16 @@ private:
 
     static constexpr uint32_t RADIO_RETRY_INTERVAL_MS = 1000;
     static constexpr uint32_t PAGE_NAME_DURATION_MS = 800;
+    static constexpr uint32_t LAUNCH_DURATION_MS = 900;
+    static constexpr uint32_t LAUNCH_FRAME_INTERVAL_MS = 33;
 
     void pollRadio();
     void pollButtons();
     void handleButtonEvent(ButtonPad::Event event);
     void redrawCurrentPage();
     void drawIntroPage();
+    void pollLaunchAnimation();
+    void drawLaunchFrame(uint32_t elapsedMs);
     void showPageName();
     void drawMenuPage();
     void drawMockFCPage();
@@ -71,4 +76,6 @@ private:
     uint32_t pageNameStartedMs_ = 0;
     uint32_t displayedTelemetryRevision_ = 0;
     uint32_t lastRadioInitAttemptMs_ = 0;
+    uint32_t launchStartedMs_ = 0;
+    uint32_t lastLaunchFrameMs_ = 0;
 };
